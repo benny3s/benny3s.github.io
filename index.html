@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Benny</title>
+<meta name="description" content="Benny의 프로젝트 모음">
+<style>
+:root{
+  --bg:#f7f7f5; --card:#fff; --line:#e4e4e0; --ink:#1b1b19; --muted:#6e6e67;
+  --accent:#2f7d4f; --shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141517; --card:#1e2023; --line:#2f3238; --ink:#ededec; --muted:#98988f;
+    --accent:#6dc08c; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141517; --card:#1e2023; --line:#2f3238; --ink:#ededec; --muted:#98988f;
+  --accent:#6dc08c; --shadow:none;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",
+       "Malgun Gothic",system-ui,sans-serif;
+  padding:0 16px 60px; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:620px;margin:0 auto}
+
+header{padding-block:52px 30px}
+.mark{
+  width:40px;height:40px;border-radius:11px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;margin-bottom:16px
+}
+h1{margin:0 0 5px;font-size:27px;letter-spacing:-.03em}
+.sub{margin:0;color:var(--muted);font-size:14px}
+
+.list{display:flex;flex-direction:column;gap:11px}
+a.card{
+  display:block;text-decoration:none;color:inherit;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:17px 18px;box-shadow:var(--shadow);
+  transition:transform .12s ease, border-color .12s ease;
+}
+a.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+a.card:active{transform:translateY(0)}
+.top{display:flex;align-items:center;gap:11px}
+.emoji{font-size:21px;line-height:1;flex-shrink:0}
+.name{font-size:16.5px;font-weight:700;letter-spacing:-.015em;flex:1;min-width:0}
+.arrow{color:var(--muted);font-size:17px;flex-shrink:0}
+a.card:hover .arrow{color:var(--accent)}
+.desc{margin:7px 0 0;color:var(--muted);font-size:13.5px}
+.host{margin:9px 0 0;color:var(--muted);font-size:11.5px;opacity:.75;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+
+footer{margin-top:34px;color:var(--muted);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="mark">B</div>
+    <h1>Benny</h1>
+    <p class="sub">만들어 둔 것들 모아놓은 곳</p>
+  </header>
+
+  <div class="list" id="list"></div>
+
+  <footer>github.com/benny3s</footer>
+</div>
+
+<script>
+const PROJECTS = [
+  {
+    emoji: "🌉",
+    name: "베니브릿지",
+    desc: "모임 만들고 사람들 모으는 곳",
+    url: "https://benny3s.github.io/benny-meeting/"
+  },
+  {
+    emoji: "🎸",
+    name: "밴드매니저",
+    desc: "애쉬만루트 합주 가능 날짜 취합 — 그루브 사당점 C룸",
+    url: "https://benny3s.github.io/band-manager/"
+  },
+  {
+    emoji: "🍅",
+    name: "포모도로 타이머",
+    desc: "집중 타이머와 할 일 목록",
+    url: "https://benny3s.github.io/pomodoro-timer/"
+  }
+];
+
+const list = document.getElementById("list");
+PROJECTS.forEach(p => {
+  const a = document.createElement("a");
+  a.className = "card";
+  a.href = p.url;
+  a.innerHTML =
+    '<div class="top">' +
+      '<span class="emoji">' + p.emoji + '</span>' +
+      '<span class="name"></span>' +
+      '<span class="arrow">→</span>' +
+    '</div>' +
+    '<p class="desc"></p>' +
+    '<p class="host"></p>';
+  a.querySelector(".name").textContent = p.name;
+  a.querySelector(".desc").textContent = p.desc;
+  a.querySelector(".host").textContent = p.url.replace(/^https:\/\//, "");
+  list.appendChild(a);
+});
+</script>
+</body>
+</html>
