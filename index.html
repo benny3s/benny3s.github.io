@@ -3,22 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f7f7f5">
 <title>Benny</title>
 <meta name="description" content="Benny의 프로젝트 모음">
 <style>
+/* 항상 라이트 — 약속 잡자·밴드매니저와 같게 (2026-10-01 Benny: "라이트 모드로 안돼?") */
 :root{
+  color-scheme:light;
   --bg:#f7f7f5; --card:#fff; --line:#e4e4e0; --ink:#1b1b19; --muted:#6e6e67;
   --accent:#2f7d4f; --shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#141517; --card:#1e2023; --line:#2f3238; --ink:#ededec; --muted:#98988f;
-    --accent:#6dc08c; --shadow:none;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#141517; --card:#1e2023; --line:#2f3238; --ink:#ededec; --muted:#98988f;
-  --accent:#6dc08c; --shadow:none;
 }
 *{box-sizing:border-box}
 body{
