@@ -130,7 +130,8 @@ footer{margin-top:34px;color:var(--muted);font-size:11.5px;text-align:center}
 <script>
 /* 기본 목록. 관리자 모드에서 숨김/공개·문구를 바꾸면 Firestore portal/config 문서(json 필드)에 저장되고,
    그 문서가 있으면 이 기본값 대신 그걸 씀. 숨김은 '단순 숨김'(보호가 필요한 자료는 링크 대상에서 따로 보호).
-   관리자 확인은 베니브릿지 서버 adminLogin(같은 관리자 비번, 실패 잠금 포함) — 이 페이지엔 비번이 남지 않음. */
+   관리자 확인은 베니브릿지 서버 adminLogin(같은 관리자 비번, 실패 잠금 포함) — 이 페이지엔 비번이 남지 않음.
+   로그인은 베니브릿지와 공유(같은 주소·같은 Firebase 프로젝트의 기본 앱): 한쪽에서 관리자로 로그인하면 다른 쪽도 관리자. */
 const DEFAULT_ITEMS = [
   { id: "bridge", emoji: "🌉", name: "베니브릿지", desc: "링크로 연결되는, 신뢰 기반 커뮤니티", url: "https://benny3s.github.io/bridge/", hidden: false },
   { id: "band", emoji: "🎸", name: "밴드매니저", desc: "밴드 합주 일정 취합 · 합주곡 · 진행 이력", url: "https://benny3s.github.io/band-manager/", hidden: false },
@@ -221,7 +222,13 @@ document.getElementById("brand").addEventListener("click", () => {
   if (!app && !loading) ensureFirebase().catch(() => {});  // 첫 클릭부터 미리 불러와서 로그인 대기 줄이기
   clicks++; clearTimeout(clickTimer);
   clickTimer = setTimeout(() => { clicks = 0; }, 700);
-  if (clicks >= 3) { clicks = 0; if (!admin) openLogin(); }
+  if (clicks >= 3) {
+    clicks = 0;
+    if (admin) return;
+    try { sessionStorage.removeItem(OFF_KEY); } catch (e) {}
+    // 베니브릿지에서 이미 관리자로 로그인돼 있으면 비번 없이 바로
+    isAdminSession().then(ok => { if (ok) enterAdmin(); else openLogin(); });
+  }
 });
 
 function loadScript(src) { return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -232,13 +239,52 @@ function ensureFirebase() {
   loading = (async () => {
     await loadScript(SDK + "firebase-app-compat.js");
     await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)));
-    const a = firebase.initializeApp(FB, "portal");  // 이름 붙인 앱: 베니브릿지 로그인 상태와 섞이지 않게
-    await a.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+    // 기본 앱 + 기본(브라우저에 남는) 로그인 = 베니브릿지(같은 주소·같은 프로젝트)와 로그인 공유
+    const a = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
     app = a;
     return a;
   })();
   return loading;
 }
+/* ── 로그인 공유: 베니브릿지가 남긴 로그인(IndexedDB)을 먼저 가볍게 보고, 관리자일 때만 SDK를 불러 확인 */
+const OFF_KEY = "portalAdminOff";  // '나가기' 누른 탭에선 자동으로 다시 켜지 않음
+const AUTH_KEY = "firebase:authUser:" + FB.apiKey + ":[DEFAULT]";
+function storedUid() {
+  return new Promise(ok => {
+    try {
+      const req = indexedDB.open("firebaseLocalStorageDb");
+      req.onupgradeneeded = () => { req.transaction.abort(); ok(""); };  // 저장된 게 없으면 새로 만들지 않음
+      req.onerror = () => ok("");
+      req.onsuccess = () => {
+        const db = req.result;
+        try {
+          const g = db.transaction("firebaseLocalStorage", "readonly").objectStore("firebaseLocalStorage").get(AUTH_KEY);
+          g.onsuccess = () => { const v = g.result && g.result.value; ok((v && v.uid) || ""); db.close(); };
+          g.onerror = () => { ok(""); db.close(); };
+        } catch (e) { ok(""); db.close(); }
+      };
+    } catch (e) { ok(""); }
+  });
+}
+async function isAdminSession() {
+  if ((await storedUid()) !== "admin") return false;
+  try {
+    const a = await ensureFirebase();
+    // 저장된 로그인이 깨져 있으면 상태 알림이 안 올 수 있어 8초 제한
+    const u = await new Promise(ok => {
+      const t = setTimeout(() => ok(null), 8000);
+      const off = a.auth().onAuthStateChanged(x => { clearTimeout(t); off(); ok(x); }, () => { clearTimeout(t); ok(null); });
+    });
+    if (!u) return false;
+    const r = await u.getIdTokenResult();
+    return r.claims.admin === 1;
+  } catch (e) { return false; }
+}
+async function autoAdmin() {
+  let off = false; try { off = sessionStorage.getItem(OFF_KEY) === "1"; } catch (e) {}
+  if (!off && await isAdminSession()) enterAdmin();
+}
+
 function warmUp() {  // 서버 함수가 잠들어 있으면 깨우기: 빈 비번은 서버가 바로 거절(실패 횟수에 안 셈)
   ensureFirebase().then(a => a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: "" })).catch(() => {});
 }
@@ -291,12 +337,14 @@ document.getElementById("save").onclick = async () => {
 };
 document.getElementById("logout").onclick = async () => {
   if (dirty) { document.getElementById("dirty").textContent = "· 저장 안 한 변경이 있어요 (저장 후 나가기)"; dirty = false; return; }
-  try { if (app) await app.auth().signOut(); } catch (e) {}
+  // 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 이 탭에서 관리자 화면만 끔
+  try { sessionStorage.setItem(OFF_KEY, "1"); } catch (e) {}
   admin = false; preview = false; document.body.classList.remove("admin", "preview"); render();
 };
 
 loadConfig().then(render);
 render();
+autoAdmin();
 </script>
 </body>
 </html>
