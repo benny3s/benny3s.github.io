@@ -137,6 +137,7 @@ const DEFAULT_ITEMS = [
   { id: "band", emoji: "🎸", name: "밴드매니저", desc: "밴드 합주 일정 취합 · 합주곡 · 진행 이력", url: "https://benny3s.github.io/band-manager/", hidden: false },
   { id: "when", emoji: "📅", name: "약속 잡자", desc: "되는 날 ○ 안 되는 날 ✕ · 링크만 보내면 끝", url: "https://benny3s.github.io/when/", hidden: false },
   { id: "wishtag", emoji: "🎁", name: "위시태그", desc: "선물이 겹치지 않게 · 링크로 골라서 선점", url: "https://benny3s.github.io/wishtag/", hidden: false },
+  { id: "trip", emoji: "🧳", name: "여행 가자", desc: "공지·일정 · 준비물 준비→챙김 · 정산 — 링크 하나로 같이", url: "https://benny3s.github.io/trip/", hidden: true },
   { id: "ai", emoji: "🤖", name: "AI 공부방", desc: "강화학습 · 초파리 뇌 · 반도체 설계 실습 기록", url: "https://benny3s.github.io/ai/", hidden: true },
   { id: "shorts", emoji: "🎬", name: "AI 실험 쇼츠", desc: "초파리 뇌로 움직이는 로봇 개 · 벽돌깨기 · 스타1 (비공개 영상관)", url: "https://claude.ai/artifact/WC33rPqhYLhdUcq4PqrJi2", hidden: true }
 ];
@@ -162,7 +163,11 @@ async function loadConfig() {
     const doc = await r.json();
     const j = doc.fields && doc.fields.json && doc.fields.json.stringValue;
     const cfg = j ? JSON.parse(j) : null;
-    if (cfg && Array.isArray(cfg.items)) items = cfg.items;
+    if (cfg && Array.isArray(cfg.items)) {
+      items = cfg.items;
+      /* 저장된 목록에 없는 기본 항목(새로 만든 앱)은 뒤에 붙인다 — 기본값 그대로(숨김이면 관리자에게만). 관리자가 저장하면 목록에 들어감 (2026-10-09 여행 가자) */
+      DEFAULT_ITEMS.forEach(d => { if (!items.some(x => x.id === d.id)) items.push({ ...d }); });
+    }
   } catch (e) { /* 실패하면 기본 목록 */ }
 }
 
@@ -176,6 +181,11 @@ function render() {
     const card = document.createElement(admin ? "div" : "a");
     card.className = "card" + (p.hidden ? " hidden-item" : "");
     if (!admin) card.href = p.url;
+    /* 관리자 화면도 카드 아무 데나 누르면 열기 — 버튼·수정 칸은 빼고 (2026-10-09 Benny: "열기 버튼 따로 없애고") */
+    else {
+      card.style.cursor = "pointer";
+      card.onclick = e => { if (e.target.closest("button, input, textarea, label, .edit")) return; window.open(p.url, "_blank", "noopener"); };
+    }
     const top = document.createElement("div");
     top.className = "top";
     top.innerHTML = '<span class="emoji"></span><span class="name"></span>';
@@ -201,7 +211,6 @@ function adminTools(p, idx) {
   mk("수정", () => { box.querySelector(".edit").hidden = !box.querySelector(".edit").hidden; });
   mk("↑", () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; mark(); render(); } });
   mk("↓", () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; mark(); render(); } });
-  mk("열기", () => window.open(p.url, "_blank", "noopener"));
   box.appendChild(tools);
   const ed = document.createElement("div"); ed.className = "edit"; ed.hidden = true;
   [["emoji", "아이콘(이모지)"], ["name", "이름"], ["desc", "설명"], ["url", "주소"]].forEach(([k, lab]) => {
