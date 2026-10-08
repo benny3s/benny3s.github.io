@@ -13,6 +13,7 @@
   color-scheme:light;
   --bg:#f7f7f5; --card:#fff; --line:#e4e4e0; --ink:#1b1b19; --muted:#6e6e67;
   --accent:#2f7d4f; --shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
+  --warn:#a3561b; --hide:#f1efe9;
 }
 *{box-sizing:border-box}
 body{
@@ -27,13 +28,14 @@ header{padding-block:52px 30px}
 .mark{
   width:40px;height:40px;border-radius:11px;background:var(--accent);
   display:flex;align-items:center;justify-content:center;
-  color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;margin-bottom:16px
+  color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;margin-bottom:16px;
+  user-select:none
 }
-h1{margin:0 0 5px;font-size:27px;letter-spacing:-.03em}
+h1{margin:0 0 5px;font-size:27px;letter-spacing:-.03em;user-select:none;cursor:default;display:inline-block}
 .sub{margin:0;color:var(--muted);font-size:14px}
 
 .list{display:flex;flex-direction:column;gap:11px}
-a.card{
+.card{
   display:block;text-decoration:none;color:inherit;
   background:var(--card);border:1px solid var(--line);border-radius:14px;
   padding:17px 18px;box-shadow:var(--shadow);
@@ -46,9 +48,35 @@ a.card:active{transform:translateY(0)}
 .name{font-size:16.5px;font-weight:700;letter-spacing:-.015em;flex:1;min-width:0}
 .arrow{color:var(--muted);font-size:17px;flex-shrink:0}
 a.card:hover .arrow{color:var(--accent)}
-.desc{margin:7px 0 0;color:var(--muted);font-size:13.5px}
+.desc{margin:7px 0 0;color:var(--muted);font-size:13.5px;white-space:pre-line}
 .host{margin:9px 0 0;color:var(--muted);font-size:11.5px;opacity:.75;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+
+/* 관리자 모드 */
+.adminbar{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;
+  border:1px dashed var(--accent);border-radius:12px;background:#eef6f0;font-size:13px}
+body.admin .adminbar{display:flex}
+.adminbar b{flex:1;min-width:140px}
+.btn{font:inherit;font-size:13px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card.hidden-item{background:var(--hide);border-style:dashed}
+.tag{font-size:11px;padding:1px 7px;border-radius:99px;background:#fff;border:1px solid var(--line);color:var(--warn);flex-shrink:0}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.edit{display:grid;gap:7px;margin-top:11px}
+.edit[hidden]{display:none}
+.edit label{font-size:12px;color:var(--muted);display:grid;gap:3px}
+.edit input,.edit textarea{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff}
+.edit textarea{min-height:58px;resize:vertical}
+.dirty{color:var(--warn);font-size:12px}
+
+dialog{border:0;border-radius:14px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.2);max-width:min(340px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.3)}
+dialog h2{margin:0 0 10px;font-size:17px}
+dialog input{font:inherit;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px}
+dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+dialog .msg{font-size:12.5px;color:var(--warn);min-height:18px;margin-top:6px}
 
 footer{margin-top:34px;color:var(--muted);font-size:11.5px;text-align:center}
 </style>
@@ -58,61 +86,190 @@ footer{margin-top:34px;color:var(--muted);font-size:11.5px;text-align:center}
 
   <header>
     <div class="mark">B</div>
-    <h1>Benny</h1>
+    <h1 id="brand">Benny</h1>
     <p class="sub">만들어 둔 것들 모아놓은 곳</p>
   </header>
+
+  <div class="adminbar">
+    <b>관리자 모드 <span class="dirty" id="dirty"></span></b>
+    <button class="btn" id="add" type="button">+ 새 항목</button>
+    <button class="btn primary" id="save" type="button">저장</button>
+    <button class="btn" id="logout" type="button">나가기</button>
+  </div>
 
   <div class="list" id="list"></div>
 
   <footer>github.com/benny3s</footer>
 </div>
 
-<script>
-const PROJECTS = [
-  {
-    emoji: "🌉",
-    name: "베니브릿지",
-    desc: "링크로 연결되는, 신뢰 기반 커뮤니티",
-    url: "https://benny3s.github.io/bridge/"
-  },
-  {
-    emoji: "🎸",
-    name: "밴드매니저",
-    desc: "밴드 합주 일정 취합 · 합주곡 · 진행 이력",
-    url: "https://benny3s.github.io/band-manager/"
-  },
-  {
-    emoji: "📅",
-    name: "약속 잡자",
-    desc: "되는 날 ○ 안 되는 날 ✕ · 링크만 보내면 끝",
-    url: "https://benny3s.github.io/when/"
-  },
-  {
-    emoji: "🎁",
-    name: "위시태그",
-    desc: "선물이 겹치지 않게 · 링크로 골라서 선점",
-    url: "https://benny3s.github.io/wishtag/"
-  }
-];
+<dialog id="login">
+  <form method="dialog" id="loginForm">
+    <h2>관리자</h2>
+    <input type="password" id="pw" autocomplete="current-password" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호">
+    <div class="msg" id="loginMsg"></div>
+    <div class="row">
+      <button class="btn" type="button" id="cancel">취소</button>
+      <button class="btn primary" type="submit" id="go">들어가기</button>
+    </div>
+  </form>
+</dialog>
 
-const list = document.getElementById("list");
-PROJECTS.forEach(p => {
-  const a = document.createElement("a");
-  a.className = "card";
-  a.href = p.url;
-  a.innerHTML =
-    '<div class="top">' +
-      '<span class="emoji">' + p.emoji + '</span>' +
-      '<span class="name"></span>' +
-      '<span class="arrow">→</span>' +
-    '</div>' +
-    '<p class="desc"></p>' +
-    '<p class="host"></p>';
-  a.querySelector(".name").textContent = p.name;
-  a.querySelector(".desc").textContent = p.desc;
-  a.querySelector(".host").textContent = p.url.replace(/^https:\/\//, "");
-  list.appendChild(a);
+<script>
+/* 기본 목록. 관리자 모드에서 숨김/공개·문구를 바꾸면 Firestore portal/config 문서(json 필드)에 저장되고,
+   그 문서가 있으면 이 기본값 대신 그걸 씀. 숨김은 '단순 숨김'(보호가 필요한 자료는 링크 대상에서 따로 보호).
+   관리자 확인은 베니브릿지 서버 adminLogin(같은 관리자 비번, 실패 잠금 포함) — 이 페이지엔 비번이 남지 않음. */
+const DEFAULT_ITEMS = [
+  { id: "bridge", emoji: "🌉", name: "베니브릿지", desc: "링크로 연결되는, 신뢰 기반 커뮤니티", url: "https://benny3s.github.io/bridge/", hidden: false },
+  { id: "band", emoji: "🎸", name: "밴드매니저", desc: "밴드 합주 일정 취합 · 합주곡 · 진행 이력", url: "https://benny3s.github.io/band-manager/", hidden: false },
+  { id: "when", emoji: "📅", name: "약속 잡자", desc: "되는 날 ○ 안 되는 날 ✕ · 링크만 보내면 끝", url: "https://benny3s.github.io/when/", hidden: false },
+  { id: "wishtag", emoji: "🎁", name: "위시태그", desc: "선물이 겹치지 않게 · 링크로 골라서 선점", url: "https://benny3s.github.io/wishtag/", hidden: false },
+  { id: "ai", emoji: "🤖", name: "AI 공부방", desc: "강화학습 · 초파리 뇌 · 반도체 설계 실습 기록", url: "https://benny3s.github.io/ai/", hidden: true },
+  { id: "shorts", emoji: "🎬", name: "AI 실험 쇼츠", desc: "초파리 뇌로 움직이는 로봇 개 · 보상 설계 대결", url: "https://www.youtube.com/", hidden: true }
+];
+const FB = {
+  apiKey: "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs",
+  authDomain: "benny-meeting.firebaseapp.com",
+  projectId: "benny-meeting",
+  storageBucket: "benny-meeting.firebasestorage.app",
+  messagingSenderId: "925758544707",
+  appId: "1:925758544707:web:a0c55e596ae0b15e7fadf6"
+};
+const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+let items = DEFAULT_ITEMS.map(x => ({ ...x }));
+let admin = false, dirty = false, app = null;
+const listEl = document.getElementById("list");
+
+/* ── 공개 읽기: 로그인 없이 REST로 portal/config 한 번 */
+async function loadConfig() {
+  try {
+    const r = await fetch("https://firestore.googleapis.com/v1/projects/" + FB.projectId +
+      "/databases/(default)/documents/portal/config?key=" + FB.apiKey, { cache: "no-store" });
+    if (!r.ok) return;
+    const doc = await r.json();
+    const j = doc.fields && doc.fields.json && doc.fields.json.stringValue;
+    const cfg = j ? JSON.parse(j) : null;
+    if (cfg && Array.isArray(cfg.items)) items = cfg.items;
+  } catch (e) { /* 실패하면 기본 목록 */ }
+}
+
+function host(u) { return String(u || "").replace(/^https?:\/\//, ""); }
+
+function render() {
+  listEl.textContent = "";
+  items.forEach((p, idx) => {
+    if (p.hidden && !admin) return;
+    const card = document.createElement(admin ? "div" : "a");
+    card.className = "card" + (p.hidden ? " hidden-item" : "");
+    if (!admin) card.href = p.url;
+    const top = document.createElement("div");
+    top.className = "top";
+    top.innerHTML = '<span class="emoji"></span><span class="name"></span>';
+    top.querySelector(".emoji").textContent = p.emoji || "•";
+    top.querySelector(".name").textContent = p.name;
+    if (admin && p.hidden) { const t = document.createElement("span"); t.className = "tag"; t.textContent = "숨김"; top.appendChild(t); }
+    if (!admin) { const a = document.createElement("span"); a.className = "arrow"; a.textContent = "→"; top.appendChild(a); }
+    card.appendChild(top);
+    const d = document.createElement("p"); d.className = "desc"; d.textContent = p.desc || ""; card.appendChild(d);
+    const h = document.createElement("p"); h.className = "host"; h.textContent = host(p.url); card.appendChild(h);
+    if (admin) card.appendChild(adminTools(p, idx));
+    listEl.appendChild(card);
+  });
+}
+
+function mark() { dirty = true; document.getElementById("dirty").textContent = "· 저장 안 됨"; }
+
+function adminTools(p, idx) {
+  const box = document.createElement("div");
+  const tools = document.createElement("div"); tools.className = "tools";
+  const mk = (label, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = label; b.onclick = fn; tools.appendChild(b); return b; };
+  mk(p.hidden ? "공개하기" : "숨기기", () => { p.hidden = !p.hidden; mark(); render(); });
+  mk("수정", () => { box.querySelector(".edit").hidden = !box.querySelector(".edit").hidden; });
+  mk("↑", () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; mark(); render(); } });
+  mk("↓", () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; mark(); render(); } });
+  mk("열기", () => window.open(p.url, "_blank", "noopener"));
+  mk("삭제", () => { if (confirmDelete(p)) { items.splice(idx, 1); mark(); render(); } });
+  box.appendChild(tools);
+  const ed = document.createElement("div"); ed.className = "edit"; ed.hidden = true;
+  [["emoji", "아이콘(이모지)"], ["name", "이름"], ["desc", "설명"], ["url", "주소"]].forEach(([k, lab]) => {
+    const l = document.createElement("label"); l.textContent = lab;
+    const inp = document.createElement(k === "desc" ? "textarea" : "input");
+    inp.value = p[k] || "";
+    inp.oninput = () => { p[k] = inp.value; mark(); };
+    inp.onchange = () => render();
+    l.appendChild(inp); ed.appendChild(l);
+  });
+  box.appendChild(ed);
+  return box;
+}
+
+let pendingDelete = null;
+function confirmDelete(p) {  // 같은 항목 '삭제'를 2초 안에 두 번 누르면 삭제
+  if (pendingDelete === p) { pendingDelete = null; return true; }
+  pendingDelete = p; setTimeout(() => { if (pendingDelete === p) pendingDelete = null; }, 2000);
+  document.getElementById("dirty").textContent = "· 삭제하려면 '삭제'를 한 번 더";
+  return false;
+}
+
+/* ── Benny 3번 클릭 → 관리자 로그인 */
+let clicks = 0, clickTimer = null;
+document.getElementById("brand").addEventListener("click", () => {
+  clicks++; clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => { clicks = 0; }, 700);
+  if (clicks >= 3) { clicks = 0; if (!admin) openLogin(); }
 });
+
+function loadScript(src) { return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
+async function ensureFirebase() {
+  if (app) return app;
+  for (const f of ["firebase-app-compat.js", "firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"]) await loadScript(SDK + f);
+  app = firebase.initializeApp(FB, "portal");  // 이름 붙인 앱: 베니브릿지 로그인 상태와 섞이지 않게
+  await app.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+  return app;
+}
+
+const dlg = document.getElementById("login");
+function openLogin() { document.getElementById("loginMsg").textContent = ""; document.getElementById("pw").value = ""; dlg.showModal(); document.getElementById("pw").focus(); }
+document.getElementById("cancel").onclick = () => dlg.close();
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pw = document.getElementById("pw").value;
+  const msg = document.getElementById("loginMsg");
+  if (!pw) { msg.textContent = "비밀번호를 입력해 주세요."; return; }
+  msg.textContent = "확인 중…";
+  try {
+    const a = await ensureFirebase();
+    const res = await a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: pw });
+    await a.auth().signInWithCustomToken(res.data.token);
+    document.getElementById("pw").value = "";
+    dlg.close();
+    enterAdmin();
+  } catch (err) {
+    msg.textContent = (err && err.message) ? err.message : "들어가지 못했어요.";
+  }
+});
+
+function enterAdmin() { admin = true; document.body.classList.add("admin"); render(); }
+
+document.getElementById("add").onclick = () => {
+  items.push({ id: "item" + Date.now(), emoji: "✨", name: "새 항목", desc: "", url: "https://", hidden: true });
+  mark(); render();
+};
+document.getElementById("save").onclick = async () => {
+  const st = document.getElementById("dirty");
+  try {
+    st.textContent = "· 저장 중…";
+    await app.firestore().doc("portal/config").set({ json: JSON.stringify({ items }), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    dirty = false; st.textContent = "· 저장됨";
+  } catch (err) { st.textContent = "· 저장 실패: " + (err && err.message ? err.message : err); }
+};
+document.getElementById("logout").onclick = async () => {
+  if (dirty) { document.getElementById("dirty").textContent = "· 저장 안 한 변경이 있어요 (저장 후 나가기)"; dirty = false; return; }
+  try { if (app) await app.auth().signOut(); } catch (e) {}
+  admin = false; document.body.classList.remove("admin"); render();
+};
+
+loadConfig().then(render);
+render();
 </script>
 </body>
 </html>
