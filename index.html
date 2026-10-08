@@ -28,10 +28,11 @@ header{padding-block:52px 30px}
 .mark{
   width:40px;height:40px;border-radius:11px;background:var(--accent);
   display:flex;align-items:center;justify-content:center;
-  color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;margin-bottom:16px;
-  user-select:none
+  color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;
+  user-select:none;flex-shrink:0
 }
-h1{margin:0 0 5px;font-size:27px;letter-spacing:-.03em;user-select:none;cursor:default;display:inline-block}
+.brandrow{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+h1{margin:0;font-size:27px;letter-spacing:-.03em;user-select:none;cursor:default;display:inline-block}
 .sub{margin:0;color:var(--muted);font-size:14px}
 
 .list{display:flex;flex-direction:column;gap:11px}
@@ -85,8 +86,10 @@ footer{margin-top:34px;color:var(--muted);font-size:11.5px;text-align:center}
 <div class="wrap">
 
   <header>
-    <div class="mark">B</div>
-    <h1 id="brand">Benny</h1>
+    <div class="brandrow">
+      <div class="mark">B</div>
+      <h1 id="brand">Benny</h1>
+    </div>
     <p class="sub">만들어 둔 것들 모아놓은 곳</p>
   </header>
 
@@ -124,7 +127,7 @@ const DEFAULT_ITEMS = [
   { id: "when", emoji: "📅", name: "약속 잡자", desc: "되는 날 ○ 안 되는 날 ✕ · 링크만 보내면 끝", url: "https://benny3s.github.io/when/", hidden: false },
   { id: "wishtag", emoji: "🎁", name: "위시태그", desc: "선물이 겹치지 않게 · 링크로 골라서 선점", url: "https://benny3s.github.io/wishtag/", hidden: false },
   { id: "ai", emoji: "🤖", name: "AI 공부방", desc: "강화학습 · 초파리 뇌 · 반도체 설계 실습 기록", url: "https://benny3s.github.io/ai/", hidden: true },
-  { id: "shorts", emoji: "🎬", name: "AI 실험 쇼츠", desc: "초파리 뇌로 움직이는 로봇 개 · 보상 설계 대결", url: "https://www.youtube.com/", hidden: true }
+  { id: "shorts", emoji: "🎬", name: "AI 실험 쇼츠", desc: "초파리 뇌로 움직이는 로봇 개 · 벽돌깨기 · 스타1 (비공개 영상관)", url: "https://claude.ai/artifact/WC33rPqhYLhdUcq4PqrJi2", hidden: true }
 ];
 const FB = {
   apiKey: "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs",
@@ -187,7 +190,6 @@ function adminTools(p, idx) {
   mk("↑", () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; mark(); render(); } });
   mk("↓", () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; mark(); render(); } });
   mk("열기", () => window.open(p.url, "_blank", "noopener"));
-  mk("삭제", () => { if (confirmDelete(p)) { items.splice(idx, 1); mark(); render(); } });
   box.appendChild(tools);
   const ed = document.createElement("div"); ed.className = "edit"; ed.hidden = true;
   [["emoji", "아이콘(이모지)"], ["name", "이름"], ["desc", "설명"], ["url", "주소"]].forEach(([k, lab]) => {
@@ -202,33 +204,36 @@ function adminTools(p, idx) {
   return box;
 }
 
-let pendingDelete = null;
-function confirmDelete(p) {  // 같은 항목 '삭제'를 2초 안에 두 번 누르면 삭제
-  if (pendingDelete === p) { pendingDelete = null; return true; }
-  pendingDelete = p; setTimeout(() => { if (pendingDelete === p) pendingDelete = null; }, 2000);
-  document.getElementById("dirty").textContent = "· 삭제하려면 '삭제'를 한 번 더";
-  return false;
-}
-
 /* ── Benny 3번 클릭 → 관리자 로그인 */
 let clicks = 0, clickTimer = null;
 document.getElementById("brand").addEventListener("click", () => {
+  if (!app && !loading) ensureFirebase().catch(() => {});  // 첫 클릭부터 미리 불러와서 로그인 대기 줄이기
   clicks++; clearTimeout(clickTimer);
   clickTimer = setTimeout(() => { clicks = 0; }, 700);
   if (clicks >= 3) { clicks = 0; if (!admin) openLogin(); }
 });
 
 function loadScript(src) { return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
-async function ensureFirebase() {
-  if (app) return app;
-  for (const f of ["firebase-app-compat.js", "firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"]) await loadScript(SDK + f);
-  app = firebase.initializeApp(FB, "portal");  // 이름 붙인 앱: 베니브릿지 로그인 상태와 섞이지 않게
-  await app.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
-  return app;
+let loading = null;
+function ensureFirebase() {
+  if (app) return Promise.resolve(app);
+  if (loading) return loading;
+  loading = (async () => {
+    await loadScript(SDK + "firebase-app-compat.js");
+    await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)));
+    const a = firebase.initializeApp(FB, "portal");  // 이름 붙인 앱: 베니브릿지 로그인 상태와 섞이지 않게
+    await a.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+    app = a;
+    return a;
+  })();
+  return loading;
+}
+function warmUp() {  // 서버 함수가 잠들어 있으면 깨우기: 빈 비번은 서버가 바로 거절(실패 횟수에 안 셈)
+  ensureFirebase().then(a => a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: "" })).catch(() => {});
 }
 
 const dlg = document.getElementById("login");
-function openLogin() { document.getElementById("loginMsg").textContent = ""; document.getElementById("pw").value = ""; dlg.showModal(); document.getElementById("pw").focus(); }
+function openLogin() { document.getElementById("loginMsg").textContent = ""; document.getElementById("pw").value = ""; dlg.showModal(); document.getElementById("pw").focus(); warmUp(); }
 document.getElementById("cancel").onclick = () => dlg.close();
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
