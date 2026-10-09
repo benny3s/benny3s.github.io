@@ -234,7 +234,6 @@ document.getElementById("brand").addEventListener("click", () => {
   if (clicks >= 3) {
     clicks = 0;
     if (admin) return;
-    try { sessionStorage.removeItem(OFF_KEY); } catch (e) {}
     // 베니브릿지에서 이미 관리자로 로그인돼 있으면 비번 없이 바로
     isAdminSession().then(ok => { if (ok) enterAdmin(); else openLogin(); });
   }
@@ -256,7 +255,6 @@ function ensureFirebase() {
   return loading;
 }
 /* ── 로그인 공유: 베니브릿지가 남긴 로그인(IndexedDB)을 먼저 가볍게 보고, 관리자일 때만 SDK를 불러 확인 */
-const OFF_KEY = "portalAdminOff";  // '나가기' 누른 탭에선 자동으로 다시 켜지 않음
 const AUTH_KEY = "firebase:authUser:" + FB.apiKey + ":[DEFAULT]";
 function storedUid() {
   return new Promise(ok => {
@@ -289,10 +287,6 @@ async function isAdminSession() {
     return r.claims.admin === 1;
   } catch (e) { return false; }
 }
-async function autoAdmin() {
-  let off = false; try { off = sessionStorage.getItem(OFF_KEY) === "1"; } catch (e) {}
-  if (!off && await isAdminSession()) enterAdmin();
-}
 
 function warmUp() {  // 서버 함수가 잠들어 있으면 깨우기: 빈 비번은 서버가 바로 거절(실패 횟수에 안 셈)
   ensureFirebase().then(a => a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: "" })).catch(() => {});
@@ -319,7 +313,10 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   }
 });
 
-function enterAdmin() { admin = true; preview = false; document.body.classList.add("admin"); render(); }
+/* 관리자 모드는 'Benny' 3번 클릭으로만 켠다 — 로그인돼 있어도 첫 화면은 늘 방문자 화면 (2026-10-09 Benny: "자꾸 관리자 화면이 먼저 보여 불편")
+   켜 있는 동안만 다른 앱(약속 잡자 ?admin)도 관리 화면을 연다 → localStorage bennyAdminAt (6시간) */
+const ADMIN_AT = "bennyAdminAt";
+function enterAdmin() { admin = true; preview = false; document.body.classList.add("admin"); try { localStorage.setItem(ADMIN_AT, String(Date.now())); } catch (e) {} render(); }
 function setPreview(on) {  // 관리자 상태는 그대로 두고 화면만 방문자처럼
   preview = on;
   document.body.classList.toggle("admin", !on);
@@ -346,14 +343,14 @@ document.getElementById("save").onclick = async () => {
 };
 document.getElementById("logout").onclick = async () => {
   if (dirty) { document.getElementById("dirty").textContent = "· 저장 안 한 변경이 있어요 (저장 후 나가기)"; dirty = false; return; }
-  // 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 이 탭에서 관리자 화면만 끔
-  try { sessionStorage.setItem(OFF_KEY, "1"); } catch (e) {}
+  // 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 관리자 화면만 끔
+  try { localStorage.removeItem(ADMIN_AT); } catch (e) {}
   admin = false; preview = false; document.body.classList.remove("admin", "preview"); render();
 };
 
 loadConfig().then(render);
 render();
-autoAdmin();
+/* 자동으로 관리자 모드를 켜지 않는다 (예전 autoAdmin) — Benny 3번 클릭 때 로그인돼 있으면 비번 없이 바로 */
 </script>
 </body>
 </html>
