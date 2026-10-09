@@ -1,0 +1,31 @@
+# 메인 페이지 기본 문구를 서버(관리자 모드로 고친) 문구와 맞춘다 — 하루 한 번 + 버튼으로 (2026-10-10)
+name: 기본 문구 맞추기
+
+on:
+  schedule:
+    - cron: "0 18 * * *"      # 매일 새벽 3시 (한국 시간)
+  workflow_dispatch: {}       # GitHub Actions 화면의 'Run workflow' 버튼
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-portal-defaults
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 서버 문구 읽어서 비교
+        id: sync
+        run: echo "result=$(python3 tools/sync_portal_defaults.py | tail -1)" >> "$GITHUB_OUTPUT"
+      - name: 바뀌었으면 커밋
+        if: steps.sync.outputs.result == 'changed'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "기본 문구를 서버 문구와 맞춤 (자동)"
+          git push
