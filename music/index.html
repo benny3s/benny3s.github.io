@@ -118,6 +118,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .note{font-size:13px;color:var(--mute);margin-top:8px}
 .tabbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
 .teach{line-height:1.7} .teach li{margin:4px 0}
+.lyr{max-height:62vh;overflow:auto;padding:2px}
+.lyr .ln{padding:6px 10px;border-radius:9px;cursor:pointer;color:var(--mute)}
+.lyr .ln:hover{background:var(--panel2)}
+.lyr .ln.cur{color:var(--text);background:#10302b}
+.lyr .ch{position:relative;height:17px;font-size:12px;font-weight:800;color:var(--accent)}
+.lyr .ch span{position:absolute;top:0;white-space:nowrap}
+.lyr .tx{font-size:17px;line-height:1.35}
+.lyr .gap{font-size:12px;color:#4b535b;padding:4px 10px}
 
 /* transport */
 .transport{position:sticky;top:56px;background:rgba(11,13,15,.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:6px 0 10px;z-index:15;margin-bottom:12px}
@@ -314,7 +322,10 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
           <div class="note" id="tabNote"></div>
           <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
         </div>
-        <div id="pLyrics" hidden><div class="empty" style="padding:18px">가사는 다음 업데이트에서 붙어요 (인터넷 가사 + 노래에 맞춰 흘러가기).</div></div>
+        <div id="pLyrics" hidden>
+          <div class="tabbar" id="lyrBar"></div>
+          <div class="lyr" id="lyrBox"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -331,6 +342,14 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
     <div style="display:flex;justify-content:flex-end"><button class="btn pri">들어가기</button></div>
   </form>
 </dialog>
+<dialog id="lyrDlg">
+  <h3 style="margin-top:0">가사 붙여넣기</h3>
+  <p class="small mute" style="margin-top:0">정확한 가사를 한 줄씩 붙여넣으면, 노래에서 받아 적은 시간에 맞춰 자동으로 줄을 맞춰요. 밴드 모두에게 보여요.</p>
+  <textarea id="lyrText" rows="14" style="width:100%;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px;font:inherit"></textarea>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+    <button class="btn sm" id="lyrCancel">닫기</button><button class="btn sm pri" id="lyrSave">맞춰서 저장</button>
+  </div>
+</dialog>
 <dialog id="secDlg">
   <h3 style="margin:0" id="secDlgTitle">섹션</h3>
   <div class="labgrid" id="secLabels"></div>
@@ -342,7 +361,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18q";
+const BUILD = "2026-10-18r";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -765,7 +784,7 @@ async function openSong(id) {
   startMix(s);
   P.bars = bars();
   buildKey(); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
-  tabLoaded = false; VIEW = null; applyViews();
+  tabLoaded = false; VIEW = null; LYR = null; applyViews();
   render(true);
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
@@ -828,7 +847,7 @@ async function changeKey(d) {
       a.src = u; a.preservesPitch = true; a.playbackRate = P.rate;
       a.addEventListener("canplay", res, { once: true }); setTimeout(res, 4000);
     })));
-    P.semi = n; pitchReady[n] = true; seek(t); applyMix(); buildKey(); buildChords(); buildInfo(); render(true); tabNote();
+    P.semi = n; pitchReady[n] = true; seek(t); applyMix(); buildKey(); buildChords(); buildInfo(); if (LYR) renderLyrics(); render(true); tabNote();
     if (was) setPlaying(true);
   } catch (e) { toast("키 변경 실패: " + e.message); }
   done();
@@ -974,6 +993,56 @@ $$("[data-l]").forEach(b => b.onclick = () => {
 $("#lNowA").onclick = () => { const k = barAt(cur()); setLoop(k, Math.max(k, P.loop?.b ?? k + 3), false); };
 $("#lNowB").onclick = () => { const k = barAt(cur()); setLoop(Math.min(k, P.loop?.a ?? k), k, false); };
 
+/* ---------------- lyrics ---------------- */
+// 서버: LRCLIB(시간 붙은 가사) → 없으면 보컬 받아쓰기(Whisper) 초안 → 붙여넣은 가사는 받아쓰기 시간에 맞춰 정렬
+let LYR = null, lyrTimer = null, lastLyr = -2;
+const LYR_SRC = { lrclib: "인터넷 가사", whisper: "보컬에서 받아 적은 초안 · 틀린 곳이 있을 수 있어요", user: "붙여넣은 가사 (시간은 자동으로 맞춤)" };
+async function loadLyrics() {
+  const s = P.song; if (!s) return; clearTimeout(lyrTimer);
+  try { LYR = await api(`/api/songs/${s.id}/lyrics`); } catch (e) { LYR = { lines: [], err: e.message }; }
+  if (P.song !== s) return;
+  renderLyrics();
+  if (LYR.busy) lyrTimer = setTimeout(() => { if (P.song === s && VIEW === "lyrics") loadLyrics(); }, 8000);
+}
+function renderLyrics() {
+  const L = LYR?.lines || [], src = LYR?.source;
+  $("#lyrBar").innerHTML = `<span class="small mute" style="flex:1">${LYR?.busy ? "가사 찾는 중… (인터넷 가사 → 없으면 보컬에서 받아 적기, 30초~1분)" : esc(LYR_SRC[src] || "")}</span>` +
+    `<button class="btn xs" id="lyrPaste">가사 붙여넣기</button>` + (src === "user" ? `<button class="btn xs" id="lyrUndo">자동 가사로</button>` : "");
+  $("#lyrPaste").onclick = () => { $("#lyrText").value = L.map(l => l.text).join("\n"); $("#lyrDlg").showModal(); };
+  if ($("#lyrUndo")) $("#lyrUndo").onclick = async () => { await api(`/api/songs/${P.song.id}/lyrics`, jsonOpt("PUT", { clear: true })); loadLyrics(); };
+  if (!L.length) { $("#lyrBox").innerHTML = `<div class="empty" style="padding:18px">${LYR?.busy ? "잠시만요…" : "가사를 찾지 못했어요. 위의 <b>가사 붙여넣기</b>로 넣어 주세요."}</div>`; return; }
+  const C = P.song.chords.filter(c => c.chord !== "N");
+  let html = "";
+  L.forEach((l, i) => {
+    const prevEnd = i ? L[i - 1].e : 0;
+    if (l.t != null && l.t - prevEnd > 8) html += `<div class="gap">· · · ${fmt(prevEnd)}–${fmt(l.t)} 연주 · · ·</div>`;
+    let ch = "";
+    if (l.t != null) { // 줄 시간 안에서 코드가 시작되는 자리에 코드 이름 (줄 시작에 이미 울리는 코드는 맨 앞)
+      const span = Math.max(0.5, l.e - l.t); let lastPos = -99;
+      C.forEach(c => { if (c.end <= l.t + 0.1 || c.start >= l.e - 0.1) return;
+        const pos = Math.max(0, (c.start - l.t) / span * 100); if (pos - lastPos < 9) return; lastPos = pos;
+        ch += `<span style="left:${Math.min(pos, 92)}%">${esc(tChord(c.chord))}</span>`; });
+    }
+    html += `<div class="ln" data-i="${i}">${ch ? `<div class="ch">${ch}</div>` : ""}<div class="tx">${esc(l.text)}</div></div>`;
+  });
+  $("#lyrBox").innerHTML = html; lastLyr = -2;
+  $$("#lyrBox .ln").forEach(el => el.onclick = () => { const l = L[+el.dataset.i]; if (l.t != null) goTo(Math.max(0, l.t - 0.3)); });
+}
+function highlightLyrics(t) {
+  if (!LYR?.lines?.length || $("#pLyrics").hidden) return;
+  const L = LYR.lines; let k = -1; for (let i = 0; i < L.length; i++) { if (L[i].t != null && L[i].t <= t + 0.15) k = i; }
+  if (k >= 0 && t > L[k].e + 4) k = -1;
+  if (k === lastLyr) return; lastLyr = k;
+  $$("#lyrBox .ln").forEach(el => el.classList.toggle("cur", +el.dataset.i === k));
+  const el = document.querySelector(`#lyrBox .ln[data-i="${k}"]`), box = $("#lyrBox");
+  if (el && P.playing) box.scrollTo({ top: el.offsetTop - box.offsetTop - box.clientHeight / 3, behavior: "smooth" });
+}
+$("#lyrCancel").onclick = () => $("#lyrDlg").close();
+$("#lyrSave").onclick = async () => {
+  try { LYR = await api(`/api/songs/${P.song.id}/lyrics`, jsonOpt("PUT", { text: $("#lyrText").value })); $("#lyrDlg").close(); renderLyrics(); toast("가사를 저장했어요 · 밴드 모두에게 보여요"); }
+  catch (e) { toast("저장 실패: " + e.message); }
+};
+
 /* ---------------- tab / score ---------------- */
 let tabLoaded = false, atApi = null, tabBars = [], tabMode = "auto";
 let VIEW = null; // 한 번에 하나만 열림, 연 탭을 다시 누르면 닫힘, 곡을 열면 다 닫힌 채로 시작 (2026-10-18 Benny)
@@ -982,6 +1051,7 @@ function applyViews() {
   $$("#tabs [data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === VIEW));
   for (const [k, el] of Object.entries(VIEW_EL())) el.hidden = k !== VIEW;
   if (VIEW === "tab" && !tabLoaded && P.song) loadTab();
+  if (VIEW === "lyrics" && P.song && (!LYR || LYR.busy)) loadLyrics();
   lastIdx = -2; lastBar = -2; if (P.song) render(true);
 }
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
@@ -1082,7 +1152,7 @@ function render(force) {
     const db = s.downbeats; let pos = -1; if (bi >= 0) { let dj = -1; for (let j = 0; j < db.length && db[j] <= bt[bi] + .02; j++) dj = j; if (dj >= 0) pos = bt.findIndex(x => Math.abs(x - db[dj]) < .03); }
     const inBar = bi >= 0 && pos >= 0 ? (bi - pos) % 4 : -1;
     $$("#beatDots i").forEach((el, i) => { el.classList.toggle("on", i === inBar); el.classList.toggle("d", i === 0); }); }
-  highlightTabBar(t);
+  highlightTabBar(t); highlightLyrics(t);
 }
 function core() { // sync, loop — runs on a timer so it keeps working even when frames are throttled
   if (!P.song || !P.master || !P.playing) return;
