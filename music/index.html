@@ -342,7 +342,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18p";
+const BUILD = "2026-10-18q";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -508,15 +508,39 @@ function diagram(ch, w = 92) {
 const P = { song: null, audios: {}, master: null, playing: false, rate: 1, semi: 0, loop: null, loopPick: null, mixer: {}, ac: null,
             clicks: [], clickIdx: 0, counting: false, secEdit: false, bars: [] };
 const MET = Object.assign({ on: false, vol: 0.9, sub: "1", acc: true, count: false, snd: "wood" }, LS.get("metro3", {}));
+// 재생기 풀: 카카오톡 등 앱 안 브라우저(안드로이드 WebView)는 "사람이 누른 순간"에 한 번 재생된 재생기만 나중에 스스로 재생할 수 있음.
+// 그래서 재생기를 새로 만들지 않고 미리 만든 것을 돌려 쓰고, 화면을 누를 때마다 안 쓰는 재생기를 무음으로 한 번 재생해 허락받아 둠.
+// (트랙 받은 뒤 악기별로 넘어갈 때 새 재생기가 재생을 거부당해 "폰에서 악기별 재생이 안 됨" 2026-10-18)
+const SILENT_URL = (() => { const n = 4410, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 44100, true); v.setUint32(28, 88200, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([b], { type: "audio/wav" })); })();
+const POOL = Array.from({ length: 10 }, () => new Audio());
+function takeEl() {
+  let a = POOL.find(x => !x._busy && x._unlocked) || POOL.find(x => !x._busy);
+  if (!a) { a = new Audio(); POOL.push(a); }
+  a._busy = true; a._off = 0; a.pause(); a.onended = null; a.preload = "auto"; a.preservesPitch = true; a.playbackRate = P.rate; a.volume = 1;
+  return a;
+}
+function freeEl(a) { if (!a) return; a.pause(); a.onended = null; a.removeAttribute("src"); a.load(); a._busy = false; if (a._url) { URL.revokeObjectURL(a._url); a._url = null; } }
+function unlockPool() {
+  if (P.pending && P.song) useStems(P.pending); // 막혀서 기다리던 트랙: 지금(사람이 누른 순간) 바꿔 끼움
+  for (const a of POOL) if (!a._busy && !a._unlocked) {
+    a.src = SILENT_URL; a.volume = 0;
+    const p = a.play(); if (p) p.then(() => { a._unlocked = true; if (!a._busy) a.pause(); }).catch(() => {});
+  }
+}
+["click", "touchend", "keydown"].forEach(ev => document.addEventListener(ev, unlockPool, true));
 function stopAll() {
-  P.abort?.abort(); P.ready = false; P.stems = false; P.pos = 0;
-  allEls().forEach(a => { a.pause(); a.removeAttribute("src"); a.load(); }); P.metroEl = null; P.mixEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶";
+  P.abort?.abort(); P.ready = false; P.stems = false; P.pos = 0; P.pending = null;
+  allEls().forEach(freeEl); P.metroEl = null; P.mixEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶";
   Object.values(P.blobs || {}).forEach(u => URL.revokeObjectURL(u)); P.blobs = {};
 }
 // 폰(공개 주소)에서는 트랙 6개를 스트리밍하며 맞추면 버퍼링 때문에 끊기고 메트로놈이 밀렸다 → 트랙은 통째로 받아 둔 뒤 재생.
 // 기다리지 않게: 곡을 열면 섞인 파일(mix) 하나로 바로 재생하고, 트랙을 다 받으면 재생 중에 트랙별로 넘어감 (2026-10-18)
 function startMix(s) {
-  const m = new Audio(); m.preload = "auto"; m.src = fileUrl(s.id, P.mixFile); m.preservesPitch = true; m.playbackRate = P.rate; m.volume = 0.85;
+  const m = takeEl(); m.src = fileUrl(s.id, P.mixFile); m.volume = 0.85;
+  $(".mixer .wnote").textContent = "준비 중 · 지금은 전체 소리로 재생돼요";
   P.mixEl = m;
   m.addEventListener("loadedmetadata", () => {
     if (P.mixEl !== m || P.stems) return;
@@ -527,22 +551,33 @@ function startMix(s) {
 }
 async function switchToStems(s, urls) {
   const els = {}, wait = (a, ev, ms) => new Promise(r => { a.addEventListener(ev, r, { once: true }); setTimeout(r, ms); });
-  for (const n of s.stems) { const a = new Audio(); a.preload = "auto"; a.src = urls[n]; a.preservesPitch = true; a.playbackRate = P.rate; a.volume = 0; els[n] = a; }
+  for (const n of s.stems) { const a = takeEl(); a.src = urls[n]; a.volume = 0; els[n] = a; }
+  const drop = () => Object.values(els).forEach(freeEl);
   await Promise.all(Object.values(els).map(a => a.readyState >= 3 ? 0 : wait(a, "canplaythrough", 3000)));
-  if (P.song !== s) return Object.values(els).forEach(a => a.removeAttribute("src"));
+  if (P.song !== s) return drop();
+  P.blobs = urls;
   if (P.playing) { // 소리 0으로 먼저 같이 돌려 두고 위치를 맞춘 뒤 한 번에 바꿔 끼움 → 끊김 없음
-    Object.values(els).forEach(a => { try { a.currentTime = cur(); } catch {} a.play().catch(() => {}); });
+    Object.values(els).forEach(a => { try { a.currentTime = cur(); } catch {} });
+    const ok = await Promise.all(Object.values(els).map(a => a.play().then(() => true, () => false)));
+    if (P.song !== s) return drop();
+    if (ok.includes(false) || !P.playing) { // 브라우저가 재생을 막음 → 다음에 ▶/❚❚ 누를 때(사람이 누른 순간) 바꿔 끼움
+      Object.values(els).forEach(a => a.pause()); P.pending = els; $(".mixer .wnote").textContent = "준비 끝 · 화면을 한 번 누르면 악기별로 바뀌어요"; return;
+    }
     await Promise.all(Object.values(els).map(a => wait(a, "playing", 1500)));
     const t = cur(); Object.values(els).forEach(a => { if (Math.abs(a.currentTime - t) > 0.03) try { a.currentTime = t; } catch {} });
     await new Promise(r => setTimeout(r, 200));
-    if (P.song !== s) return Object.values(els).forEach(a => { a.pause(); a.removeAttribute("src"); });
-  } else { const t = cur(); Object.values(els).forEach(a => { try { a.currentTime = t; } catch {} }); }
-  const mix = P.mixEl;
-  P.audios = els; P.blobs = urls; P.stems = true; P.ready = true; P.mixEl = null;
+    if (P.song !== s) return drop();
+  }
+  useStems(els);
+}
+function useStems(els) {
+  const s = P.song, mix = P.mixEl, t = cur();
+  if (!P.playing) Object.values(els).forEach(a => { a.pause(); try { a.currentTime = t; } catch {} });
+  else if (P.pending === els) Object.values(els).forEach(a => { try { a.currentTime = t; } catch {} a.play().catch(() => {}); }); // 화면을 누른 순간에만 여기로 옴
+  P.audios = els; P.stems = true; P.ready = true; P.mixEl = null; P.pending = null;
   P.master = els[s.stems.includes("drums") ? "drums" : s.stems[0]]; P.master.onended = () => setPlaying(false);
-  if (!P.playing) Object.values(els).forEach(a => a.pause());
   applyMix(); $("#play").disabled = false;
-  if (mix) { mix.pause(); mix.removeAttribute("src"); mix.load(); }
+  freeEl(mix);
 }
 async function fetchBlob(url, onp, signal) {
   const r = await fetch(url, { signal }); if (!r.ok) throw new Error("파일 " + r.status);
@@ -656,11 +691,11 @@ function renderClickTrack() {
   w(0, "RIFF"); v.setUint32(4, 36 + N * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
   v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, N * 2, true);
   const url = URL.createObjectURL(new Blob([hdr, pcm.buffer], { type: "audio/wav" }));
-  const old = P.metroEl, playing = P.playing;
-  const a = new Audio(); a.preload = "auto"; a.src = url; a.preservesPitch = true; a.playbackRate = P.rate; a.volume = MET.on ? MET.vol : 0;
-  a.addEventListener("loadedmetadata", () => { try { a.currentTime = cur(); } catch {} if (playing && P.playing) a.play().catch(() => {}); }, { once: true });
-  P.metroEl = a;
-  if (old) { old.pause(); URL.revokeObjectURL(old.src); old.removeAttribute("src"); }
+  // 같은 재생기를 계속 씀 (새로 만들면 폰 앱 안 브라우저에서 재생이 막힘)
+  const a = P.metroEl || (P.metroEl = takeEl()), oldUrl = a._url;
+  a.src = url; a._url = url; a.playbackRate = P.rate; a.volume = MET.on ? MET.vol : 0;
+  if (oldUrl) URL.revokeObjectURL(oldUrl);
+  a.addEventListener("loadedmetadata", () => { if (P.metroEl !== a) return; try { a.currentTime = cur(); } catch {} if (P.playing) a.play().catch(() => {}); }, { once: true });
 }
 function metroVol() { if (P.metroEl) P.metroEl.volume = MET.on ? MET.vol : 0; }
 function resetClicks() {}
@@ -1056,9 +1091,11 @@ function core() { // sync, loop — runs on a timer so it keeps working even whe
   // 트랙은 재생·이동 때 한꺼번에 맞춰 시작하면 그대로 붙어 감(실측 0~12ms). 재생 중 위치를 다시 잡으면 그 트랙이 끊김.
   // 폰은 currentTime 이 거칠게 갱신돼 80ms 기준으로도 자주 다시 잡아 "악기로 재생하면 끊김"(2026-10-18 Benny) →
   // 0.25초 넘게 벌어진 상태가 1초 내내 이어질 때(백그라운드 갔다 온 경우 등)만 다시 잡음. 속도 미세조정은 쓰지 말 것(클릭 밀림 실측)
+  // 메트로놈 트랙은 거의 무음이라 다시 잡아도 들리는 끊김이 없음 → 30ms 넘게 0.2초 이어지면 바로 맞춤(설정 바꾼 뒤 70ms 밀림 실측)
   for (const a of allEls()) {
     if (a === P.master) continue;
-    if (Math.abs(a.currentTime - t) > 0.25) { a._off = (a._off || 0) + 1; if (a._off >= 40) { a._off = 0; P.resyncs = (P.resyncs || 0) + 1; try { a.currentTime = cur(); } catch {} } }
+    const click = a === P.metroEl, lim = click ? 0.03 : 0.25, need = click ? 8 : 40;
+    if (Math.abs(a.currentTime - t) > lim) { a._off = (a._off || 0) + 1; if (a._off >= need) { a._off = 0; P.resyncs = (P.resyncs || 0) + 1; try { a.currentTime = cur(); } catch {} } }
     else a._off = 0;
   }
 }
