@@ -122,6 +122,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .opg img{width:100%;height:auto;display:block;user-select:none} /* width/height 속성으로 받기 전에도 자리 잡음(지연 로딩 때 위치 계산이 0 이던 문제) */
 #tabbox.zoom{overflow-x:auto} #tabbox.zoom .opg{width:210%} /* 폰: 4마디 한 줄을 2배로 키우고 가로로 따라감 */
 .obar{position:absolute;top:22%;bottom:10%;background:rgba(25,211,181,.16);border:2px solid rgba(25,211,181,.85);border-radius:5px;pointer-events:none}
+.upmenu{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+#tabSrc{height:34px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);padding:0 8px;max-width:62%}
 .tablyr{font-size:15px;padding:6px 10px;margin-bottom:6px;border-radius:9px;background:var(--panel2);min-height:34px}
 .tablyr .nx{color:var(--mute);font-size:12px;margin-left:8px}
 #trackBtns .btn.on{background:var(--accent);border-color:var(--accent);color:#04241f}
@@ -314,7 +316,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
     <div class="grid2">
       <div class="card mixer">
-        <h2>트랙<span class="wnote">준비 중 · 지금은 전체 소리로 재생돼요</span></h2>
+        <h2 style="display:flex;align-items:center">트랙<span class="wnote">준비 중 · 지금은 전체 소리로 재생돼요</span><span style="flex:1"></span><button class="btn xs" id="mixReset" hidden>↺ 초기화</button></h2>
         <div id="mixer"></div>
       </div>
       <div class="card">
@@ -338,7 +340,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
           <div class="tablyr" id="tabLyric" hidden></div>
           <div id="tabbox"><div class="mute" style="padding:20px">타브 불러오는 중…</div></div>
           <div class="note" id="tabNote"></div>
-          <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
+          <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl,.pdf" hidden>
         </div>
         <div id="pLyrics" hidden>
           <div class="tabbar" id="lyrBar"></div>
@@ -379,7 +381,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19c";
+const BUILD = "2026-10-19d";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -664,6 +666,7 @@ function applyMix() {
     if (row) { row.classList.toggle("dim", !audible); row.querySelector(".m").classList.toggle("on", m.mute); row.querySelector(".s").classList.toggle("on", m.solo); }
   }
   $(".mixer").classList.toggle("wait", !P.stems);
+  $("#mixReset").hidden = !Object.values(P.mixer).some(m => m.mute || m.solo || Math.abs(m.vol - 0.85) > 0.01); // 바꾼 게 있을 때만 보임
   LS.set("mix:" + P.song.id, P.mixer);
 }
 
@@ -805,7 +808,7 @@ async function openSong(id) {
   startMix(s);
   P.bars = bars();
   buildKey(); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
-  tabLoaded = false; tabMode = defaultTabMode(s); VIEW = null; LYR = null; LESSON = null; applyViews();
+  tabLoaded = false; tabbarMenu = false; tabMode = defaultTabMode(s); VIEW = null; LYR = null; LESSON = null; applyViews();
   render(true);
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
@@ -831,6 +834,10 @@ function buildMixer() {
     r.querySelector(".s").onclick = () => { const m = P.mixer[n]; m.solo = !m.solo; if (m.solo) m.mute = false; applyMix(); };
     r.querySelector("input").oninput = e => { P.mixer[n].vol = +e.target.value; applyMix(); };
   });
+  $("#mixReset").onclick = () => { // M·S 다 풀고 볼륨 기본으로 (S 를 다 누르면 전부 들려서 그대로인 게 맞지만, 하나씩 풀기 번거로움)
+    for (const [n, m] of Object.entries(P.mixer)) { Object.assign(m, { vol: 0.85, mute: false, solo: false }); const r = document.querySelector(`#mixer .row[data-stem="${n}"] input`); if (r) r.value = 0.85; }
+    applyMix();
+  };
 }
 
 /* key change */
@@ -1104,7 +1111,7 @@ $("#lyrSave").onclick = async () => {
 };
 
 /* ---------------- tab / score ---------------- */
-let tabLoaded = false, atApi = null, tabBars = [], tabMode = "auto";
+let tabLoaded = false, atApi = null, tabBars = [], tabMode = "auto", tabbarMenu = false;
 let VIEW = null; // 한 번에 하나만 열림, 연 탭을 다시 누르면 닫힘, 곡을 열면 다 닫힌 채로 시작 (2026-10-18 Benny)
 const VIEW_EL = () => ({ chords: $("#pChords"), lyrics: $("#pLyrics"), tab: $("#pTab"), info: $("#pInfo") });
 function applyViews() {
@@ -1118,29 +1125,40 @@ function applyViews() {
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
 // 타브 출처: score(올린 악보) > ss(Songsterr, 우리 마디에 맞춰 서버가 만든 score_ss.gp5) > auto(자동 채보)
 const ssOk = s => !!s.songsterr?.found, vidOk = s => !!s.videotab?.found, origOk = s => !!s.videotab?.pages?.length;
-// 기본 출처: 올린 악보 > 원본 악보(영상 악보 그림 그대로) > 다시 그린 영상 악보 > Songsterr > 자동 채보
-function defaultTabMode(s) { return s.score ? "score" : origOk(s) ? "orig" : vidOk(s) ? "vid" : ssOk(s) ? "ss" : "auto"; }
+// 기본 출처: 올린 악보 > 원본 악보(영상 악보 그림 그대로) > 올린 PDF > 다시 그린 영상 악보 > Songsterr > 자동 채보
+const TAB_MODE_NAME = { score: "올린 악보", orig: "원본 악보 (영상)", pdf: "올린 PDF", vid: "다시 그린 악보 (영상)", ss: "Songsterr", auto: "자동 채보" };
+function tabModes(s) { return [s.score && "score", origOk(s) && "orig", s.pdfscore?.pages?.length && "pdf", vidOk(s) && "vid", ssOk(s) && "ss", "auto"].filter(Boolean); }
+function defaultTabMode(s) { return tabModes(s)[0]; }
 function activeScore() { const s = P.song; return tabMode === "score" ? s.score : tabMode === "ss" && ssOk(s) ? s.songsterr : (tabMode === "vid" || tabMode === "orig") && vidOk(s) ? s.videotab : null; }
 function tabNote() {
   const ss = P.song.songsterr;
   $("#tabNote").innerHTML = (tabMode === "auto" ? "자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요."
     : tabMode === "ss" ? `Songsterr 타브 <b>${esc(ss.ref || "")}</b>${ss.ai ? " (AI가 만든 타브라 틀린 곳이 있을 수 있어요)" : " (사람이 만든 타브)"}를 이 음원 마디에 맞췄어요 · ${ss.mapped}/${ss.bars}마디. 위에서 트랙(리드·리듬·베이스)을 고르세요.`
     : tabMode === "orig" ? `타브 영상의 <b>원본 악보 그림</b>이에요. 재생하면 지금 마디에 표시되고 자동으로 넘어가요. 마디를 누르면 그 위치로 가요. 개인 연습용이에요. <a href="https://youtu.be/${esc(P.song.videotab.video)}" target="_blank">원본 영상 ↗</a>`
+    : tabMode === "pdf" ? `올린 PDF <b>${esc(P.song.pdfscore.original || "")}</b> 그대로예요. 마디 표시·자동 넘김은 없어요 (손으로 넘겨 보세요).`
     : tabMode === "vid" ? `타브 영상을 읽어 이 음원 마디에 맞춘 악보예요 (${P.song.videotab.tracks.map((t, i) => `${esc(t)} ${P.song.videotab.mapped[i]}마디`).join(" · ")}). 운지 숫자는 정확도가 높고, 박 위치는 영상 간격으로 맞춘 근사예요. <a href="https://youtu.be/${esc(P.song.videotab.video)}" target="_blank">원본 영상 ↗</a>`
     : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
     (P.semi ? ` <b style="color:var(--warn)">악보는 원키(${esc(P.song.key)}) 기준이에요.</b>` : "");
 }
 function buildTabBar() {
-  const s = P.song; const sc = s.score, ss = ssOk(s), vd = vidOk(s);
-  const btn = (m, label) => `<button class="btn xs ${tabMode === m ? "on" : ""}" data-m="${m}">${label}</button>`;
-  $("#tabbar").innerHTML = (sc || ss || vd ? (origOk(s) ? btn("orig", "원본 악보") : "") + (vd ? btn("vid", "다시 그린 악보") : "") + (ss ? btn("ss", "Songsterr") : "") + btn("auto", "자동 채보") + (sc ? btn("score", `올린 악보 (${esc(sc.original || "")})`) : "") : "") +
-    (tabMode === "score" ? `<button class="btn xs admin" id="bar1">지금 위치를 1마디로</button><button class="btn xs admin" id="scoreDel">악보 지우기</button>` : "") +
-    (!ss ? `<button class="btn xs" id="ssFind">Songsterr에서 찾기</button>` : "") +
-    (s.videotab?.state === "working" ? `<span class="small" style="color:var(--warn)">영상 악보: ${esc(s.videotab.detail || "")}</span>`
-      : `<button class="btn xs" id="vidAdd">🎬 타브 영상 넣기</button>`) +
-    (s.videotab?.state === "error" ? `<span class="small" style="color:var(--err)">영상 악보 실패: ${esc(s.videotab.detail || "")}</span>` : "") +
-    `<button class="btn xs admin" id="scoreUp">📄 전문가 악보 올리기 (.gp · .gpx · MusicXML)</button><a class="btn xs" href="${fileUrl(s.id, "guitar.mid")}" download style="text-decoration:none">기타 MIDI 받기</a>`;
-  $$("#tabbar [data-m]").forEach(b => b.onclick = () => { tabMode = b.dataset.m; loadTab(); });
+  // 한 줄: [악보 종류 고르기] … [⬆ 올리기]. 올리기·찾기·맞추기 같은 가끔 쓰는 버튼은 올리기 메뉴 안으로 (2026-10-19 Benny "버튼이 섞여 불편")
+  const s = P.song, ss = ssOk(s), modes = tabModes(s);
+  const status = s.videotab?.state === "working" ? `<span class="small" style="color:var(--warn)">영상 읽는 중: ${esc(s.videotab.detail || "")}</span>`
+    : s.videotab?.state === "error" ? `<span class="small" style="color:var(--err)">영상 실패: ${esc(s.videotab.detail || "")}</span>` : "";
+  const mi = (id, label) => `<button class="btn xs" id="${id}">${label}</button>`;
+  $("#tabbar").innerHTML = (modes.length > 1 ? `<select id="tabSrc">${modes.map(m => `<option value="${m}" ${m === tabMode ? "selected" : ""}>${TAB_MODE_NAME[m]}</option>`).join("")}</select>`
+      : `<span class="small mute">${TAB_MODE_NAME[tabMode]}</span>`) +
+    `<span style="flex:1"></span>${status}<button class="btn xs ${$("#upMenu") && !$("#upMenu").hidden ? "on" : ""}" id="tabUp">⬆ 올리기</button>` +
+    `<div class="upmenu" id="upMenu" ${tabbarMenu ? "" : "hidden"}>
+      ${s.videotab?.state === "working" ? "" : mi("vidAdd", "🎬 타브 영상 링크 (유튜브)")}
+      ${mi("scoreUp", "📄 악보 파일 (Guitar Pro · MusicXML · PDF)")}
+      ${!ss ? mi("ssFind", "🔎 Songsterr에서 찾기") : ""}
+      ${tabMode === "score" ? mi("bar1", "지금 위치를 1마디로") + mi("scoreDel", "올린 악보 지우기") : ""}
+      ${tabMode === "pdf" ? mi("pdfDel", "올린 PDF 지우기") : ""}
+      <a class="btn xs" href="${fileUrl(s.id, "guitar.mid")}" download style="text-decoration:none">기타 MIDI 받기</a></div>`;
+  if ($("#tabSrc")) $("#tabSrc").onchange = e => { tabMode = e.target.value; tabbarMenu = false; loadTab(); };
+  $("#tabUp").onclick = () => { tabbarMenu = !tabbarMenu; $("#upMenu").hidden = !tabbarMenu; $("#tabUp").classList.toggle("on", tabbarMenu); };
+  if ($("#pdfDel")) $("#pdfDel").onclick = async () => { if (!confirm("올린 PDF를 지울까요?")) return; await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove_pdf: true })); delete s.pdfscore; tabbarMenu = false; tabMode = defaultTabMode(s); loadTab(); };
   if ($("#ssFind")) $("#ssFind").onclick = async () => {
     const done = busy("Songsterr에서 같은 곡을 찾아 마디를 맞추는 중… (몇 초)");
     try { const r = await api(`/api/songs/${s.id}/songsterr`, jsonOpt("POST", {}));
@@ -1168,9 +1186,12 @@ async function pollVideoTab(s) { // 영상 악보 진행 상황 (10초마다, �
 }
 $("#scoreFile").onchange = async () => {
   const f = $("#scoreFile").files[0]; if (!f) return; const fd = new FormData(); fd.append("file", f);
-  try { P.song.score = await api(`/api/songs/${P.song.id}/score`, { method: "POST", body: fd }); tabMode = "score"; loadTab(); toast("악보를 올렸어요"); }
+  const done = busy("악보를 올리는 중…");
+  try { const r = await api(`/api/songs/${P.song.id}/score`, { method: "POST", body: fd });
+    if (r.pages) { P.song.pdfscore = r; tabMode = "pdf"; } else { P.song.score = r; tabMode = "score"; }
+    tabbarMenu = false; loadTab(); toast("악보를 올렸어요"); }
   catch (e) { toast("실패: " + e.message); }
-  $("#scoreFile").value = "";
+  done(); $("#scoreFile").value = "";
 };
 function trackLabel(name, i) { // 트랙 이름을 짧게: Gt.1 (영상) → 기타 1, Lead Guitar (D.on) → 리드 기타 (D.on)
   const n = String(name || "");
@@ -1228,6 +1249,14 @@ function highlightOrig(t) {
   }
   if (scroll.top != null || scroll.left != null) box.scrollTo(Object.assign({ behavior: P.playing ? "smooth" : "auto" }, scroll));
 }
+function loadPdf() { // 올린 PDF 페이지 그림 (마디 싱크 없음)
+  const s = P.song, pf = s.pdfscore; atApi = null; hlEl = null; P.origPages = null;
+  const tb = $("#trackBtns"); tb.hidden = false;
+  tb.innerHTML = `<button class="btn xs" id="origZoom">${LS.get("origZoom", isMobile) ? "🔍 작게" : "🔍 크게"}</button><a class="btn xs" href="${fileUrl(s.id, pf.file)}" target="_blank" style="text-decoration:none">PDF 받기</a>`;
+  $("#tabbox").classList.toggle("zoom", !!LS.get("origZoom", isMobile));
+  $("#origZoom").onclick = () => { LS.set("origZoom", !LS.get("origZoom", isMobile)); loadPdf(); };
+  $("#tabbox").innerHTML = pf.pages.map(p => `<div class="opg"><img src="${fileUrl(s.id, p.img)}&v=${pf.v || ""}" width="${p.w}" height="${p.h}" loading="lazy" draggable="false"></div>`).join("");
+}
 function computeScoreBars() {
   const sc = activeScore();
   const start = sc && sc.bar1 != null ? nearestBar(sc.bar1) : P.bars.findIndex(b => b.n >= 1); // Songsterr 판은 bar1 = 우리 1마디, 이후 1:1
@@ -1243,13 +1272,15 @@ function makeApi() {
   $("#tabbox").innerHTML = `<div id="at"></div>`; hlEl = null; lastTabBar = -2;
   atApi = new alphaTab.AlphaTabApi($("#at"), {
     core: { fontDirectory: "https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/font/", enableLazyLoading: false },
-    display: { staveProfile: "Tab", scale: 0.9, layoutMode: "page" }, player: { enablePlayer: false }
+    display: { staveProfile: "Tab", scale: 0.9, layoutMode: "page" }, player: { enablePlayer: false },
+    notation: { elements: { chordDiagrams: false } } // 위쪽 코드 운지 그림 줄 끔 (2026-10-19 Benny "불편") — 코드 이름은 악보 안에 그대로
   });
 }
 async function loadTab() {
   tabLoaded = true; const s = P.song; const box = $("#tabbox"); $("#trackBtns").hidden = true;
   buildTabBar(); tabNote();
   if (tabMode === "orig" && origOk(s)) return loadOrig();
+  if (tabMode === "pdf" && s.pdfscore) return loadPdf();
   P.origPages = null;
   if (!window.alphaTab) { box.innerHTML = `<div class="mute" style="padding:20px">악보 표시 도구를 불러오는 중… 잠시 뒤 다시 눌러 주세요.</div>`; tabLoaded = false; return; }
   const sc = activeScore();
