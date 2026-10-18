@@ -118,6 +118,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .note{font-size:13px;color:var(--mute);margin-top:8px}
 .tabbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
 .teach{line-height:1.7} .teach li{margin:4px 0}
+.opg{position:relative;background:#fff;margin-bottom:4px;cursor:pointer}
+.opg img{width:100%;height:auto;display:block;user-select:none} /* width/height 속성으로 받기 전에도 자리 잡음(지연 로딩 때 위치 계산이 0 이던 문제) */
+#tabbox.zoom{overflow-x:auto} #tabbox.zoom .opg{width:210%} /* 폰: 4마디 한 줄을 2배로 키우고 가로로 따라감 */
+.obar{position:absolute;top:22%;bottom:10%;background:rgba(25,211,181,.16);border:2px solid rgba(25,211,181,.85);border-radius:5px;pointer-events:none}
 .tablyr{font-size:15px;padding:6px 10px;margin-bottom:6px;border-radius:9px;background:var(--panel2);min-height:34px}
 .tablyr .nx{color:var(--mute);font-size:12px;margin-left:8px}
 #trackBtns .btn.on{background:var(--accent);border-color:var(--accent);color:#04241f}
@@ -366,7 +370,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18v";
+const BUILD = "2026-10-19a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -1066,14 +1070,15 @@ function applyViews() {
 }
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
 // 타브 출처: score(올린 악보) > ss(Songsterr, 우리 마디에 맞춰 서버가 만든 score_ss.gp5) > auto(자동 채보)
-const ssOk = s => !!s.songsterr?.found, vidOk = s => !!s.videotab?.found;
-// 기본 출처: 올린 악보 > 영상 악보(보며 연습하는 타브) > Songsterr > 자동 채보
-function defaultTabMode(s) { return s.score ? "score" : vidOk(s) ? "vid" : ssOk(s) ? "ss" : "auto"; }
-function activeScore() { const s = P.song; return tabMode === "score" ? s.score : tabMode === "ss" && ssOk(s) ? s.songsterr : tabMode === "vid" && vidOk(s) ? s.videotab : null; }
+const ssOk = s => !!s.songsterr?.found, vidOk = s => !!s.videotab?.found, origOk = s => !!s.videotab?.pages?.length;
+// 기본 출처: 올린 악보 > 원본 악보(영상 악보 그림 그대로) > 다시 그린 영상 악보 > Songsterr > 자동 채보
+function defaultTabMode(s) { return s.score ? "score" : origOk(s) ? "orig" : vidOk(s) ? "vid" : ssOk(s) ? "ss" : "auto"; }
+function activeScore() { const s = P.song; return tabMode === "score" ? s.score : tabMode === "ss" && ssOk(s) ? s.songsterr : (tabMode === "vid" || tabMode === "orig") && vidOk(s) ? s.videotab : null; }
 function tabNote() {
   const ss = P.song.songsterr;
   $("#tabNote").innerHTML = (tabMode === "auto" ? "자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요."
     : tabMode === "ss" ? `Songsterr 타브 <b>${esc(ss.ref || "")}</b>${ss.ai ? " (AI가 만든 타브라 틀린 곳이 있을 수 있어요)" : " (사람이 만든 타브)"}를 이 음원 마디에 맞췄어요 · ${ss.mapped}/${ss.bars}마디. 위에서 트랙(리드·리듬·베이스)을 고르세요.`
+    : tabMode === "orig" ? `타브 영상의 <b>원본 악보 그림</b>이에요. 재생하면 지금 마디에 표시되고 자동으로 넘어가요. 마디를 누르면 그 위치로 가요. 개인 연습용이에요. <a href="https://youtu.be/${esc(P.song.videotab.video)}" target="_blank">원본 영상 ↗</a>`
     : tabMode === "vid" ? `타브 영상을 읽어 이 음원 마디에 맞춘 악보예요 (${P.song.videotab.tracks.map((t, i) => `${esc(t)} ${P.song.videotab.mapped[i]}마디`).join(" · ")}). 운지 숫자는 정확도가 높고, 박 위치는 영상 간격으로 맞춘 근사예요. <a href="https://youtu.be/${esc(P.song.videotab.video)}" target="_blank">원본 영상 ↗</a>`
     : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
     (P.semi ? ` <b style="color:var(--warn)">악보는 원키(${esc(P.song.key)}) 기준이에요.</b>` : "");
@@ -1081,7 +1086,7 @@ function tabNote() {
 function buildTabBar() {
   const s = P.song; const sc = s.score, ss = ssOk(s), vd = vidOk(s);
   const btn = (m, label) => `<button class="btn xs ${tabMode === m ? "on" : ""}" data-m="${m}">${label}</button>`;
-  $("#tabbar").innerHTML = (sc || ss || vd ? btn("auto", "자동 채보") + (vd ? btn("vid", "영상 악보") : "") + (ss ? btn("ss", "Songsterr") : "") + (sc ? btn("score", `올린 악보 (${esc(sc.original || "")})`) : "") : "") +
+  $("#tabbar").innerHTML = (sc || ss || vd ? (origOk(s) ? btn("orig", "원본 악보") : "") + (vd ? btn("vid", "다시 그린 악보") : "") + (ss ? btn("ss", "Songsterr") : "") + btn("auto", "자동 채보") + (sc ? btn("score", `올린 악보 (${esc(sc.original || "")})`) : "") : "") +
     (tabMode === "score" ? `<button class="btn xs admin" id="bar1">지금 위치를 1마디로</button><button class="btn xs admin" id="scoreDel">악보 지우기</button>` : "") +
     (!ss ? `<button class="btn xs" id="ssFind">Songsterr에서 찾기</button>` : "") +
     (s.videotab?.state === "working" ? `<span class="small" style="color:var(--warn)">영상 악보: ${esc(s.videotab.detail || "")}</span>`
@@ -1135,6 +1140,47 @@ function tabLyricLine(t) {
   if (el._h !== html) { el._h = html; el.innerHTML = html; }
   el.hidden = false;
 }
+// ---- 원본 악보 그림 (영상에서 오린 페이지 그대로) — 다시 그린 악보는 리듬이 근사라 품질 한계 (2026-10-19 Benny "원본 그림")
+let origPart = 1, lastOrig = "";
+function loadOrig() {
+  const s = P.song, vt = s.videotab; atApi = null; hlEl = null;
+  origPart = LS.get(`part:${s.id}`, 1);
+  const parts = [...new Set(vt.pages.map(p => p.part))];
+  if (!parts.includes(origPart)) origPart = parts[0];
+  const tb = $("#trackBtns"); tb.hidden = false;
+  tb.innerHTML = `<span class="small mute">트랙</span>` + parts.map(p => `<button class="btn xs ${p === origPart ? "on" : ""}" data-p="${p}">기타 ${p}</button>`).join("") +
+    `<button class="btn xs" id="origZoom">${LS.get("origZoom", isMobile) ? "🔍 작게" : "🔍 크게"}</button>` +
+    (vt.pdfs?.[origPart] ? `<a class="btn xs" href="${fileUrl(s.id, vt.pdfs[origPart])}" target="_blank" style="text-decoration:none">PDF 받기 (기타 ${origPart})</a>` : "");
+  $$("#trackBtns [data-p]").forEach(b => b.onclick = () => { LS.set(`part:${s.id}`, +b.dataset.p); loadOrig(); });
+  $("#tabbox").classList.toggle("zoom", !!LS.get("origZoom", isMobile));
+  $("#origZoom").onclick = () => { LS.set("origZoom", !LS.get("origZoom", isMobile)); loadOrig(); };
+  const pages = vt.pages.filter(p => p.part === origPart);
+  $("#tabbox").innerHTML = pages.map((p, i) => `<div class="opg" data-i="${i}" data-b0="${p.bar0}"><img src="${fileUrl(s.id, p.img)}&v=${vt.v || ""}" alt="${p.bar0}마디~" width="${p.w}" height="${p.h}" loading="lazy" draggable="false"><div class="obar" hidden></div></div>`).join("");
+  $$("#tabbox .opg").forEach(el => el.onclick = e => { // 마디를 누르면 그 위치로
+    const p = pages[+el.dataset.i], r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+    const j = p.bars.findIndex(([a, b]) => x >= a && x < b); if (j < 0 || scoreStart == null) return;
+    const bk = scoreStart + p.bar0 - 1 + j; if (P.bars[bk]) goTo(P.bars[bk].start + 0.01);
+  });
+  P.origPages = pages; lastOrig = ""; computeScoreBars();
+}
+function highlightOrig(t) {
+  if (tabMode !== "orig" || $("#pTab").hidden || !P.origPages || scoreStart == null) return;
+  const n = barAt(t) - scoreStart + 1; // 영상 악보 마디 번호
+  const i = P.origPages.findIndex(p => n >= p.bar0 && n < p.bar0 + p.bars.length);
+  const key = i + ":" + n; if (key === lastOrig) return; lastOrig = key;
+  $$("#tabbox .obar").forEach(el => el.hidden = true);
+  if (i < 0) return;
+  const pg = document.querySelector(`#tabbox .opg[data-i="${i}"]`), bar = pg.querySelector(".obar"), [a, b] = P.origPages[i].bars[n - P.origPages[i].bar0];
+  Object.assign(bar.style, { left: a * 100 + "%", width: (b - a) * 100 + "%" }); bar.hidden = false;
+  const box = $("#tabbox"); // 지금 페이지가 위쪽 1/4 쯤에 오게 (재생 중 자동 넘김)
+  const scroll = {};
+  if (pg.offsetTop < box.scrollTop || pg.offsetTop + pg.offsetHeight > box.scrollTop + box.clientHeight) scroll.top = pg.offsetTop - box.clientHeight * 0.15; // 멈춘 채 위치를 옮겨도 그 페이지로
+  if (box.classList.contains("zoom")) { // 크게 보기: 지금 마디가 화면 가운데쯤 오게 가로로
+    const x = (a + b) / 2 * pg.offsetWidth - box.clientWidth / 2;
+    if (Math.abs(box.scrollLeft - x) > box.clientWidth * 0.3) scroll.left = Math.max(0, x);
+  }
+  if (scroll.top != null || scroll.left != null) box.scrollTo(Object.assign({ behavior: P.playing ? "smooth" : "auto" }, scroll));
+}
 function computeScoreBars() {
   const sc = activeScore();
   const start = sc && sc.bar1 != null ? nearestBar(sc.bar1) : P.bars.findIndex(b => b.n >= 1); // Songsterr 판은 bar1 = 우리 1마디, 이후 1:1
@@ -1156,6 +1202,8 @@ function makeApi() {
 async function loadTab() {
   tabLoaded = true; const s = P.song; const box = $("#tabbox"); $("#trackBtns").hidden = true;
   buildTabBar(); tabNote();
+  if (tabMode === "orig" && origOk(s)) return loadOrig();
+  P.origPages = null;
   if (!window.alphaTab) { box.innerHTML = `<div class="mute" style="padding:20px">악보 표시 도구를 불러오는 중… 잠시 뒤 다시 눌러 주세요.</div>`; tabLoaded = false; return; }
   const sc = activeScore();
   if (sc) {
@@ -1185,7 +1233,7 @@ function highlightTabBar(t) {
     const lk = atApi.renderer.boundsLookup; if (!lk) return;
     let mb = null; for (const sys of lk.staffSystems) for (const b of sys.bars) if (b.index === k) mb = b;
     if (!mb) return; const r = mb.visualBounds || mb.realBounds;
-    if (!hlEl) { hlEl = document.createElement("div"); hlEl.className = "hl"; $("#tabbox").append(hlEl); }
+    if (!hlEl) { $$("#tabbox .hl").forEach(x => x.remove()); hlEl = document.createElement("div"); hlEl.className = "hl"; $("#tabbox").append(hlEl); } // 트랙 바꾼 뒤 예전 표시가 남아 두 군데 보이던 것
     Object.assign(hlEl.style, { left: r.x + "px", top: r.y + "px", width: r.w + "px", height: r.h + "px" });
     const box = $("#tabbox"); if (P.playing && (r.y < box.scrollTop || r.y + r.h > box.scrollTop + box.clientHeight)) box.scrollTo({ top: r.y - 40, behavior: "smooth" });
   } catch {}
@@ -1222,7 +1270,7 @@ function render(force) {
     const db = s.downbeats; let pos = -1; if (bi >= 0) { let dj = -1; for (let j = 0; j < db.length && db[j] <= bt[bi] + .02; j++) dj = j; if (dj >= 0) pos = bt.findIndex(x => Math.abs(x - db[dj]) < .03); }
     const inBar = bi >= 0 && pos >= 0 ? (bi - pos) % 4 : -1;
     $$("#beatDots i").forEach((el, i) => { el.classList.toggle("on", i === inBar); el.classList.toggle("d", i === 0); }); }
-  highlightTabBar(t); highlightLyrics(t); tabLyricLine(t);
+  highlightTabBar(t); highlightOrig(t); highlightLyrics(t); tabLyricLine(t);
 }
 function core() { // sync, loop — runs on a timer so it keeps working even when frames are throttled
   if (!P.song || !P.master || !P.playing) return;
