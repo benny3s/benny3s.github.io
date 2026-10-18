@@ -381,7 +381,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19d";
+const BUILD = "2026-10-19e";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -436,6 +436,12 @@ async function ping() {
     $("#ctext").textContent = "PC 연결됨";
     $("#offline").hidden = true;
     if (!AUTH) showLogin();
+    // 화면이 서버보다 옛 버전이면(폰·브라우저 캐시) 재생 중이 아닐 때 새로 받음. 같은 버전으로 한 번만 시도(배포 직후 CDN 지연 때 무한 새로고침 방지)
+    if (h.version && h.version > BUILD && !P.playing) {
+      let tried = null; try { tried = sessionStorage.getItem("upd"); } catch {}
+      if (tried !== h.version) { try { sessionStorage.setItem("upd", h.version); } catch {}
+        const u = new URL(location.href); u.searchParams.set("v", h.version); location.replace(u.toString()); }
+    }
   } catch (e) {
     online = false; $("#cdot").classList.remove("on"); $("#ctext").textContent = "PC 연결 안 됨";
     $("#offline").hidden = false;
