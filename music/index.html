@@ -168,6 +168,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .more a{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:6px 14px;color:var(--mute);text-decoration:none;font-size:13px}
 .more a:hover{border-color:var(--accent);color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);background:#222a31;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:50;font-size:14px;max-width:90vw}
+body.band .admin{display:none !important}
 .busy{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center;font-weight:700}
 </style>
 </head>
@@ -175,6 +176,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 <header class="top"><div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%">
   <div class="logo" id="home">🎸 Music <b>Lab</b></div>
   <div class="pill" id="conn" title="PC 분석 서버 연결 상태"><span class="dot" id="cdot"></span><span id="ctext">PC 확인 중…</span></div>
+  <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span> · 로그아웃</button>
 </div></header>
 
 <main class="wrap">
@@ -183,11 +185,11 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
     <div class="hero">
       <h1>링크 하나로 분리 · 코드 · 타브</h1>
       <div class="mute">유튜브 링크를 넣으면 PC가 악기별로 나누고, 코드·템포·키·곡 구조를 찾고, 기타 타브 초안을 만들어요.</div>
-      <form class="addrow" id="addForm">
+      <form class="addrow admin" id="addForm">
         <input id="url" type="url" placeholder="유튜브 링크 붙여넣기" autocomplete="off">
         <button class="btn pri" id="addBtn">분석 시작</button>
       </form>
-      <div class="alt">또는 <label for="file">내 음원 파일 올리기</label> (mp3 · wav · m4a)<input id="file" type="file" accept="audio/*,video/*" hidden></div>
+      <div class="alt admin">또는 <label for="file">내 음원 파일 올리기</label> (mp3 · wav · m4a)<input id="file" type="file" accept="audio/*,video/*" hidden></div>
     </div>
     <div class="card offline" id="offline" hidden style="margin-top:14px">
       <b>PC 분석 서버에 연결되지 않았어요</b>
@@ -262,7 +264,8 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
             <h4>🎼 키 바꾸기 <span class="mute small" style="font-weight:400" id="keyOrig"></span></h4>
             <div class="r" style="justify-content:center"><button class="btn" id="keyDn">−</button><span class="bigkey" id="keyBig"></span><button class="btn" id="keyUp">+</button></div>
             <div class="semis" id="semis"></div>
-            <div class="hint">드럼은 음정이 없어서 그대로예요. ±1, ±2는 미리 만들어 둬서 바로 바뀌고, 나머지는 처음 한 번 10~20초 걸려요.</div>
+            <div class="r" style="margin-top:10px"><button class="btn xs admin" id="bandKey">⭐ 이 키를 우리 밴드 키로 저장</button><span class="mute small" id="bandKeyT"></span></div>
+            <div class="hint">드럼은 음정이 없어서 그대로예요. 초록 테두리 키는 미리 만들어져 있어서 바로 바뀌어요(새 곡은 분석 후 2~3분이면 전부 준비돼요). 밴드 키로 저장하면 곡을 열 때 그 키로 바로 열려요.</div>
           </div></span>
         <span class="tbtn"><button class="btn sm" data-pop="popLoop" id="loopBtn">🔁 구간</button>
           <div class="pop" id="popLoop" hidden>
@@ -302,6 +305,15 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
     <button class="btn" id="dlgReset">기본값</button><button class="btn pri" id="dlgOk">저장</button>
   </div>
 </dialog>
+<dialog id="loginDlg">
+  <form id="loginForm">
+    <h3 style="margin-top:0">🎸 Music Lab</h3>
+    <p class="small mute">밴드 비밀번호를 넣어 주세요.</p>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    <div class="small" id="loginErr" style="color:var(--err);min-height:20px;margin-top:6px"></div>
+    <div style="display:flex;justify-content:flex-end"><button class="btn pri">들어가기</button></div>
+  </form>
+</dialog>
 <dialog id="secDlg">
   <h3 style="margin:0" id="secDlgTitle">섹션</h3>
   <div class="labgrid" id="secLabels"></div>
@@ -313,7 +325,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18f";
+const BUILD = "2026-10-18h";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -331,12 +343,25 @@ function toast(msg, ms = 2800) { const t = document.createElement("div"); t.clas
 function busy(msg) { const b = document.createElement("div"); b.className = "busy"; b.textContent = msg; document.body.append(b); return () => b.remove(); }
 function fmt(t) { t = Math.max(0, t || 0); const m = Math.floor(t / 60), s = Math.floor(t % 60); return m + ":" + String(s).padStart(2, "0"); }
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+const jsonOpt = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+let AUTH = LS.get("auth", null); // {role, token}
+const isAdmin = () => AUTH?.role === "admin";
+function fileUrl(id, name) { return `${SRV}/files/${id}/${name}?t=${encodeURIComponent(AUTH?.token || "")}`; }
 async function api(path, opt = {}) {
+  opt.headers = Object.assign({}, opt.headers || {}, AUTH ? { Authorization: "Bearer " + AUTH.token } : {});
   const r = await fetch(SRV + path, opt);
+  if (r.status === 401 && path !== "/api/login") { AUTH = null; LS.set("auth", null); showLogin(); throw new Error("로그인이 필요해요"); }
   if (!r.ok) { let m = r.status + ""; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
   return r.json();
 }
-const jsonOpt = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+function applyRole() { document.body.classList.toggle("band", !isAdmin()); $("#who").textContent = AUTH ? (isAdmin() ? "관리자" : "밴드") : ""; }
+function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; if (!$("#loginDlg").open) $("#loginDlg").showModal(); setTimeout(() => $("#pw").focus(), 50); }
+$("#loginForm").onsubmit = async e => {
+  e.preventDefault();
+  try { AUTH = await api("/api/login", jsonOpt("POST", { password: $("#pw").value })); LS.set("auth", AUTH); $("#loginDlg").close(); applyRole(); boot(); }
+  catch (err) { $("#loginErr").textContent = err.message; }
+};
+$("#logout").onclick = () => { AUTH = null; LS.set("auth", null); location.hash = ""; location.reload(); };
 
 /* ---------------- connection ---------------- */
 async function ping() {
@@ -345,6 +370,7 @@ async function ping() {
     online = true; $("#cdot").classList.add("on");
     $("#ctext").textContent = "PC 연결됨" + (h.gpu ? " · GPU" : "");
     $("#offline").hidden = true;
+    if (!AUTH) showLogin();
   } catch (e) {
     online = false; $("#cdot").classList.remove("on"); $("#ctext").textContent = "PC 연결 안 됨";
     $("#offline").hidden = false;
@@ -579,7 +605,7 @@ async function openSong(id) {
   buildMixer();
   P.files = Object.fromEntries(s.stems.map(n => [n, n + ".mp3"]));
   for (const n of s.stems) {
-    const a = new Audio(); a.preload = "auto"; a.crossOrigin = "anonymous"; a.src = `${SRV}/files/${id}/${P.files[n]}`;
+    const a = new Audio(); a.preload = "auto"; a.crossOrigin = "anonymous"; a.src = fileUrl(id, P.files[n]);
     a.preservesPitch = true; a.playbackRate = P.rate; P.audios[n] = a;
   }
   P.master = P.audios[s.stems.includes("drums") ? "drums" : s.stems[0]];
@@ -587,9 +613,10 @@ async function openSong(id) {
   applyMix();
   loopOff(); closePops(); setRate(P.rate); pitchReady = {};
   P.bars = bars();
-  buildKey(true); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
+  await buildKey(true); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
   tabLoaded = false; switchTab(LS.get("tab", "chords"));
   render(true);
+  if (s.band_semi) changeKey(s.band_semi);
 }
 function buildMixer() {
   const s = P.song, id = s.id; const saved = LS.get("mix:" + id, null); P.mixer = {};
@@ -626,7 +653,13 @@ async function buildKey(fetchReady) {
     return `<button data-n="${n}" class="${n === P.semi ? "on" : ""} ${pitchReady[n] ? "ready" : ""}" title="${n > 0 ? "+" : ""}${n}반음${pitchReady[n] || n === 0 ? " · 바로 바뀜" : ""}">${nm}<br><span style="font-size:10px;opacity:.7">${n > 0 ? "+" : ""}${n}</span></button>`;
   }).join("");
   $$("#semis button").forEach(b => b.onclick = () => changeKey(+b.dataset.n - P.semi));
+  const bs = P.song.band_semi || 0;
+  $("#bandKeyT").textContent = bs ? `밴드 키: ${k ? keyName((k.pc + bs + 120) % 12, k.minor) : ""} (${bs > 0 ? "+" : ""}${bs})` : "";
 }
+$("#bandKey").onclick = async () => {
+  try { await api(`/api/songs/${P.song.id}/prefs`, jsonOpt("PUT", { band_semi: P.semi })); P.song.band_semi = P.semi; buildKey(); toast(P.semi ? `${tKey()} 키를 밴드 키로 저장했어요` : "밴드 키를 원키로 되돌렸어요"); }
+  catch (e) { toast("저장 실패: " + e.message); }
+};
 async function changeKey(d) {
   const n = P.semi + d; if (n < -6 || n > 6) return toast("±6반음까지 바꿀 수 있어요");
   const quick = n === 0 || pitchReady[n];
@@ -636,7 +669,7 @@ async function changeKey(d) {
     const t = cur(), was = P.playing; setPlaying(false);
     await Promise.all(Object.entries(r.files).map(([k, f]) => new Promise(res => {
       const a = P.audios[k]; if (!a || P.files[k] === f) return res();
-      P.files[k] = f; a.src = `${SRV}/files/${P.song.id}/${f}`; a.preservesPitch = true; a.playbackRate = P.rate;
+      P.files[k] = f; a.src = fileUrl(P.song.id, f); a.preservesPitch = true; a.playbackRate = P.rate;
       a.addEventListener("canplay", res, { once: true }); setTimeout(res, 8000);
     })));
     P.semi = n; pitchReady[n] = true; seek(t); applyMix(); buildKey(); buildChords(); buildInfo(); render(true); tabNote();
@@ -675,7 +708,7 @@ function buildSections() {
   $("#secs").classList.toggle("edit", P.secEdit);
   $("#secs").innerHTML = (S.length ? S.map((s, i) => `<button class="sec" data-i="${i}">${esc(s.name)}</button>`).join('<span class="dotsep">·</span>')
     : `<span class="small mute">곡 구조를 찾지 못했어요.</span>`) +
-    `<button class="edit" id="secEditBtn">${P.secEdit ? "✓ 편집 끝" : "구조 고치기"}</button>`;
+    `<button class="edit admin" id="secEditBtn">${P.secEdit ? "✓ 편집 끝" : "구조 고치기"}</button>`;
   $$("#secs .sec").forEach(el => { const i = +el.dataset.i; el.onclick = () => P.secEdit ? openSecDlg(i) : goTo(S[i].start + 0.01); });
   $("#secEditBtn").onclick = () => { P.secEdit = !P.secEdit; buildSections(); buildChords(); $("#gridHint").textContent = P.secEdit ? "편집 중: 코드표에서 마디를 누르면 그 마디부터 새 섹션이 시작돼요. 위 섹션 이름을 누르면 종류를 바꾸거나 앞과 합칠 수 있어요." : "마디를 누르면 그 위치로 이동해요."; };
   const sel = $("#lSec"); if (sel) sel.innerHTML = `<option value="">섹션 골라서 반복…</option>` + S.map((s, i) => `<option value="${i}">${esc(s.name)} (${fmt(s.start)})</option>`).join("");
@@ -784,8 +817,8 @@ function tabNote() {
 function buildTabBar() {
   const s = P.song; const sc = s.score;
   $("#tabbar").innerHTML = (sc ? `<button class="btn xs ${tabMode === "auto" ? "on" : ""}" data-m="auto">자동 채보</button><button class="btn xs ${tabMode === "score" ? "on" : ""}" data-m="score">올린 악보 (${esc(sc.original || "")})</button>` : "") +
-    (tabMode === "score" ? `<select id="trackSel"></select><button class="btn xs" id="bar1">지금 위치를 1마디로</button><button class="btn xs" id="scoreDel">악보 지우기</button>` : "") +
-    `<button class="btn xs" id="scoreUp">📄 전문가 악보 올리기 (.gp · .gpx · MusicXML)</button><a class="btn xs" href="${SRV}/files/${s.id}/guitar.mid" download style="text-decoration:none">기타 MIDI 받기</a>`;
+    (tabMode === "score" ? `<select id="trackSel"></select><button class="btn xs admin" id="bar1">지금 위치를 1마디로</button><button class="btn xs admin" id="scoreDel">악보 지우기</button>` : "") +
+    `<button class="btn xs admin" id="scoreUp">📄 전문가 악보 올리기 (.gp · .gpx · MusicXML)</button><a class="btn xs" href="${fileUrl(s.id, "guitar.mid")}" download style="text-decoration:none">기타 MIDI 받기</a>`;
   $$("#tabbar [data-m]").forEach(b => b.onclick = () => { tabMode = b.dataset.m; loadTab(); });
   $("#scoreUp").onclick = () => $("#scoreFile").click();
   if ($("#bar1")) $("#bar1").onclick = async () => { const t = cur(); await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { bar1: t })); s.score.bar1 = t; computeScoreBars(); toast("지금 위치를 1마디로 맞췄어요"); };
@@ -820,11 +853,11 @@ async function loadTab() {
       const g = score.tracks.findIndex(t => /guitar|기타|gtr/i.test(t.name)); if (g >= 0) { sel.value = g; atApi.renderTracks([score.tracks[g]]); }
       sel.onchange = () => atApi.renderTracks([score.tracks[+sel.value]]);
     });
-    atApi.load(`${SRV}/files/${s.id}/${s.score.file}`);
+    atApi.load(fileUrl(s.id, s.score.file));
     return;
   }
   if (!s.tab) { box.innerHTML = `<div class="mute" style="padding:20px">기타 소리를 충분히 찾지 못해 타브를 만들지 못했어요.</div>`; return; }
-  const tex = await (await fetch(`${SRV}/files/${s.id}/guitar.atex`)).text();
+  const tex = await (await fetch(fileUrl(s.id, "guitar.atex"))).text();
   tabBars = s.tab_bar_times || [];
   try { makeApi(); atApi.tex(tex); } catch (e) { box.innerHTML = `<pre style="padding:12px;white-space:pre-wrap">${esc(tex)}</pre>`; }
 }
@@ -917,7 +950,8 @@ function goHome() { stopAll(); P.song = null; location.hash = ""; $("#vSong").hi
 $("#back").onclick = goHome; $("#home").onclick = goHome;
 async function boot() {
   $("#foot").textContent = "Music Lab · BUILD " + BUILD;
-  await ping();
+  await ping(); applyRole();
+  if (!AUTH) return;
   const m = location.hash.match(/song=([a-z0-9]+)/);
   if (online && m) { try { await openSong(m[1]); return; } catch {} }
   loadLib(); loadJobs();
