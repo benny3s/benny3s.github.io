@@ -361,7 +361,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18s";
+const BUILD = "2026-10-18t";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -784,7 +784,7 @@ async function openSong(id) {
   startMix(s);
   P.bars = bars();
   buildKey(); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
-  tabLoaded = false; VIEW = null; LYR = null; applyViews();
+  tabLoaded = false; tabMode = defaultTabMode(s); VIEW = null; LYR = null; applyViews();
   render(true);
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
@@ -1057,16 +1057,33 @@ function applyViews() {
   lastIdx = -2; lastBar = -2; if (P.song) render(true);
 }
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
+// 타브 출처: score(올린 악보) > ss(Songsterr, 우리 마디에 맞춰 서버가 만든 score_ss.gp5) > auto(자동 채보)
+const ssOk = s => !!s.songsterr?.found;
+function defaultTabMode(s) { return s.score ? "score" : ssOk(s) ? "ss" : "auto"; }
+function activeScore() { const s = P.song; return tabMode === "score" ? s.score : tabMode === "ss" && ssOk(s) ? s.songsterr : null; }
 function tabNote() {
-  $("#tabNote").innerHTML = (tabMode === "auto" ? "자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요." : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
+  const ss = P.song.songsterr;
+  $("#tabNote").innerHTML = (tabMode === "auto" ? "자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요."
+    : tabMode === "ss" ? `Songsterr 타브 <b>${esc(ss.ref || "")}</b>${ss.ai ? " (AI가 만든 타브라 틀린 곳이 있을 수 있어요)" : " (사람이 만든 타브)"}를 이 음원 마디에 맞췄어요 · ${ss.mapped}/${ss.bars}마디. 위에서 트랙(리드·리듬·베이스)을 고르세요.`
+    : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
     (P.semi ? ` <b style="color:var(--warn)">악보는 원키(${esc(P.song.key)}) 기준이에요.</b>` : "");
 }
 function buildTabBar() {
-  const s = P.song; const sc = s.score;
-  $("#tabbar").innerHTML = (sc ? `<button class="btn xs ${tabMode === "auto" ? "on" : ""}" data-m="auto">자동 채보</button><button class="btn xs ${tabMode === "score" ? "on" : ""}" data-m="score">올린 악보 (${esc(sc.original || "")})</button>` : "") +
-    (tabMode === "score" ? `<select id="trackSel"></select><button class="btn xs admin" id="bar1">지금 위치를 1마디로</button><button class="btn xs admin" id="scoreDel">악보 지우기</button>` : "") +
+  const s = P.song; const sc = s.score, ss = ssOk(s);
+  const btn = (m, label) => `<button class="btn xs ${tabMode === m ? "on" : ""}" data-m="${m}">${label}</button>`;
+  $("#tabbar").innerHTML = (sc || ss ? btn("auto", "자동 채보") + (ss ? btn("ss", "Songsterr") : "") + (sc ? btn("score", `올린 악보 (${esc(sc.original || "")})`) : "") : "") +
+    (activeScore() ? `<select id="trackSel"></select>` : "") +
+    (tabMode === "score" ? `<button class="btn xs admin" id="bar1">지금 위치를 1마디로</button><button class="btn xs admin" id="scoreDel">악보 지우기</button>` : "") +
+    (!ss ? `<button class="btn xs" id="ssFind">Songsterr에서 찾기</button>` : "") +
     `<button class="btn xs admin" id="scoreUp">📄 전문가 악보 올리기 (.gp · .gpx · MusicXML)</button><a class="btn xs" href="${fileUrl(s.id, "guitar.mid")}" download style="text-decoration:none">기타 MIDI 받기</a>`;
   $$("#tabbar [data-m]").forEach(b => b.onclick = () => { tabMode = b.dataset.m; loadTab(); });
+  if ($("#ssFind")) $("#ssFind").onclick = async () => {
+    const done = busy("Songsterr에서 같은 곡을 찾아 마디를 맞추는 중… (몇 초)");
+    try { const r = await api(`/api/songs/${s.id}/songsterr`, jsonOpt("POST", {}));
+      if (r.found) { s.songsterr = r; tabMode = "ss"; loadTab(); toast(`찾았어요: ${r.ref} · 트랙 ${r.tracks.length}개`); } else toast("Songsterr에 이 곡이 없어요"); }
+    catch (e) { toast("실패: " + e.message); }
+    done();
+  };
   $("#scoreUp").onclick = () => $("#scoreFile").click();
   if ($("#bar1")) $("#bar1").onclick = async () => { const t = cur(); await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { bar1: t })); s.score.bar1 = t; computeScoreBars(); toast("지금 위치를 1마디로 맞췄어요"); };
   if ($("#scoreDel")) $("#scoreDel").onclick = async () => { if (!confirm("올린 악보를 지울까요?")) return; await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove: true })); delete s.score; tabMode = "auto"; loadTab(); };
@@ -1078,7 +1095,8 @@ $("#scoreFile").onchange = async () => {
   $("#scoreFile").value = "";
 };
 function computeScoreBars() {
-  const sc = P.song.score; const start = sc && sc.bar1 != null ? nearestBar(sc.bar1) : P.bars.findIndex(b => b.n >= 1);
+  const sc = activeScore();
+  const start = sc && sc.bar1 != null ? nearestBar(sc.bar1) : P.bars.findIndex(b => b.n >= 1); // Songsterr 판은 bar1 = 우리 1마디, 이후 1:1
   tabBars = P.bars.slice(Math.max(0, start)).map(b => b.start);
 }
 function makeApi() {
@@ -1092,19 +1110,22 @@ async function loadTab() {
   tabLoaded = true; const s = P.song; const box = $("#tabbox");
   buildTabBar(); tabNote();
   if (!window.alphaTab) { box.innerHTML = `<div class="mute" style="padding:20px">악보 표시 도구를 불러오는 중… 잠시 뒤 다시 눌러 주세요.</div>`; tabLoaded = false; return; }
-  if (tabMode === "score" && s.score) {
+  const sc = activeScore();
+  if (sc) {
     makeApi(); computeScoreBars();
+    const key = `trk:${s.id}:${tabMode}`;
     atApi.scoreLoaded.on(score => {
       const sel = $("#trackSel"); if (!sel) return;
       sel.innerHTML = score.tracks.map((t, i) => `<option value="${i}">${esc(t.name || "트랙 " + (i + 1))}</option>`).join("");
-      const g = score.tracks.findIndex(t => /guitar|기타|gtr/i.test(t.name)); if (g >= 0) { sel.value = g; atApi.renderTracks([score.tracks[g]]); }
-      sel.onchange = () => atApi.renderTracks([score.tracks[+sel.value]]);
+      let g = LS.get(key, -1); if (!(g >= 0 && g < score.tracks.length)) g = score.tracks.findIndex(t => /guitar|기타|gtr/i.test(t.name));
+      if (g >= 0) { sel.value = g; atApi.renderTracks([score.tracks[g]]); }
+      sel.onchange = () => { LS.set(key, +sel.value); hlEl = null; lastTabBar = -2; atApi.renderTracks([score.tracks[+sel.value]]); };
     });
-    atApi.load(fileUrl(s.id, s.score.file));
+    atApi.load(fileUrl(s.id, sc.file) + "&v=" + (sc.v || "")); // 파일은 30일 캐시 → 다시 만들면 v 가 바뀌어 새로 받음
     return;
   }
   if (!s.tab) { box.innerHTML = `<div class="mute" style="padding:20px">기타 소리를 충분히 찾지 못해 타브를 만들지 못했어요.</div>`; return; }
-  const tex = await (await fetch(fileUrl(s.id, "guitar.atex"))).text();
+  const tex = await (await fetch(fileUrl(s.id, "guitar.atex"), { cache: "no-cache" })).text(); // 다시 분석하면 바뀜
   tabBars = s.tab_bar_times || [];
   try { makeApi(); atApi.tex(tex); } catch (e) { box.innerHTML = `<pre style="padding:12px;white-space:pre-wrap">${esc(tex)}</pre>`; }
 }
