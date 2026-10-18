@@ -138,6 +138,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .lsn h4{margin:16px 0 6px;font-size:14px;color:var(--mute)}
 .lsn .sec{padding:4px 0;border-bottom:1px solid var(--line);font-size:14px} .lsn .sec b{margin-right:6px}
 .lsn .foot{font-size:12px;color:#4b535b;margin-top:10px}
+.lsn .row{cursor:pointer;display:flex;gap:8px;align-items:flex-start} .lsn .row .tx{flex:1}
+.lsn .row .ttl{font-weight:600;font-size:14.5px} .lsn .row .sh{font-size:13.5px;color:var(--mute);margin-top:2px}
+.lsn .row .go{flex:none;min-width:38px} .lsn .more{display:none;margin-top:8px;font-size:14px;border-top:1px dashed var(--line);padding-top:8px}
+.lsn .kp.open .more{display:block} .lsn .kp.open .sh{display:none} .lsn .kp .chev{color:var(--mute);font-size:12px;margin-left:4px}
 .lyr{max-height:62vh;overflow:auto;padding:2px}
 .lyr .ln{padding:6px 10px;border-radius:9px;cursor:pointer;color:var(--mute)}
 .lyr .ln:hover{background:var(--panel2)}
@@ -386,7 +390,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19i";
+const BUILD = "2026-10-19j";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -720,7 +724,7 @@ function buildClicks() {
   // 크롬에서 드럼·클릭 출력 소리를 같은 시계로 녹음해 잰 값(Alive, 2026-10-18): 보정 없으면 클릭이 약 15ms 일찍 → 그만큼 늦춤
   P.clicks = out.map(c => ({ t: Math.max(0, c.t + CLICK_SHIFT + (MET.adj || 0) / 1000), l: c.l })); renderClickTrack(); // MET.adj = 사람이 맞춘 기기별 보정(ms)
 }
-const CLICK_SHIFT = 0.012;
+const CLICK_SHIFT = 0; // 10-18 엔 +12ms(드럼 정점에 맞춤). 10-19 실측: 드럼 어택은 정점보다 ~29ms 먼저 → 귀에 늦게 들려 0 으로(어택과 정점 사이). 기기별은 MET.adj
 // 클릭을 음악과 같은 길이의 오디오 트랙(WAV)으로 만들어 다른 트랙과 함께 재생 → 지연 보정 불필요
 function clickSample(level, sr) {
   const strong = level === 2 && MET.acc, n = Math.floor(sr * (MET.snd === "hat" ? .035 : .045)), buf = new Float32Array(n);
@@ -1070,31 +1074,34 @@ async function loadLesson() {
   renderLesson();
   if (LESSON.busy) lessonTimer = setTimeout(() => { if (P.song === s && VIEW === "info") loadLesson(); }, 5000);
 }
-function practiceLoop(t0, t1, speed, label) { // 해설·연습 계획의 '이 구간 반복' (포인트는 서버가 8마디까지로 자름, 연습 계획은 구간 그대로)
+function lessonGo(t0) { // 해설에서 그 위치로 가기만 (구간 반복은 켜지 않음 — 포인트 구간이 너무 짧을 때가 있어서, 2026-10-19 Benny)
   if (t0 == null) return toast("이 구간은 위치를 찾지 못했어요");
-  const a = nearestBar(t0), b = Math.max(a, barAt(Math.max(t0, t1 - 0.1)));
-  setLoop(a, b, !label); if (speed) setRate(Math.max(0.5, Math.min(1.25, speed / 100)));
-  seek(P.bars[a].start); if (label) toast(label + "마디 반복" + (speed ? ` · ${speed}%` : "")); // 해설과 같은 마디 번호로 알림
+  goTo(Math.max(0, t0 - 0.05)); toast("그 위치로 옮겼어요");
 }
+const shortOf = x => x.short || String(x.text || "").split(/(?<=[.!?다요])\s/)[0]; // 예전 해설(short 없음)은 첫 문장
 function renderLesson() {
   const L = LESSON || {}, box = $("#lessonBox");
   const head = `<div class="tabbar"><span class="small mute" style="flex:1">${L.busy ? "AI 선생님이 해설을 쓰는 중… (30초쯤)" : L.none ? "아직 해설이 없어요" : `AI 해설 · 근거: ${esc(L.chord_source || "")} 코드 · 마디 번호는 ${L.bar_basis === "score" ? "원본 악보" : "코드표"} 기준`}</span>` +
     (L.busy ? "" : `<button class="btn xs" id="lessonMake">${L.none ? "🎓 해설 만들기" : "다시 만들기"}</button>`) + `</div>` +
     (L.error ? `<div class="small" style="color:var(--err)">실패: ${esc(L.error)}</div>` : "");
   if (L.none || !L.summary) { box.innerHTML = head; bindLesson(); return; }
-  const loopBtn = (x, label) => x.t0 != null ? `<button class="btn xs" data-t0="${x.t0}" data-t1="${x.t1}" data-sp="${x.speed || ""}" data-lb="${x.bar_from}~${x.bar_to}">${label}</button>` : "";
+  const go = x => x.t0 != null ? `<button class="btn xs go" data-t0="${x.t0}" title="그 위치로">▶</button>` : "";
+  const bars = x => `${x.bar_from}${x.bar_to !== x.bar_from ? "~" + x.bar_to : ""}마디`;
+  // 한 줄(제목 + 짧은 요약)만 보이고, 누르면 자세히 (2026-10-19 Benny "글자가 너무 많아")
+  const item = (ttl, sh, more, x) => `<div class="kp"><div class="row"><div class="tx"><div class="ttl">${ttl}<span class="chev">▾</span></div><div class="sh">${esc(sh)}</div></div>${x ? go(x) : ""}</div><div class="more">${more}</div></div>`;
   box.innerHTML = head + `<div class="lsn">
     <div class="sum">${esc(L.summary)}</div>
-    ${(L.key_points || []).map(k => `<div class="kp"><h5>${esc(k.title)} <span class="bars">${k.bar_from}${k.bar_to !== k.bar_from ? "~" + k.bar_to : ""}마디</span>${loopBtn(k, "🔁 이 구간 반복")}</h5>
-      <div>${esc(k.text)}</div>${k.practice ? `<div class="pr">연습: ${esc(k.practice)}</div>` : ""}</div>`).join("")}
-    ${(L.practice_plan || []).length ? `<h4>연습 순서</h4>` + L.practice_plan.map((p, i) => `<div class="kp"><h5>${i + 1}. ${p.bar_from}~${p.bar_to}마디 · ${p.speed}% ${loopBtn(p, "▶ 이 설정으로")}</h5><div>${esc(p.tip)}</div></div>`).join("") : ""}
-    ${(L.sections || []).length ? `<h4>구간별</h4>` + L.sections.map(x => `<div class="sec"><b>${esc(x.name)}</b>${esc(x.text)}</div>`).join("") : ""}
+    ${(L.key_points || []).map(k => item(`${esc(k.title)} <span class="bars">${bars(k)}</span>`, shortOf(k),
+      `<div>${esc(k.text)}</div>${k.practice ? `<div class="pr">이론 포인트: ${esc(k.practice)}</div>` : ""}`, k)).join("")}
+    ${(L.sections || []).length ? `<h4>구간별</h4>` + L.sections.map(x => item(`${esc(x.name)}`, shortOf(x), `<div>${esc(x.text)}</div>`, null)).join("") : ""}
+    ${(L.practice_plan || []).length ? `<h4>연습 순서</h4>` + L.practice_plan.map((p, i) => item(`${i + 1}. ${bars(p)} · ${p.speed}%`, shortOf({ text: p.tip }), `<div>${esc(p.tip)}</div>`, p)).join("") : ""}
     <div class="foot">코드·화성 분석은 계산으로, 문장은 AI(${esc(L.model || "")})가 썼어요. 틀린 설명이 있으면 알려 주세요.</div></div>`;
   bindLesson();
 }
 function bindLesson() {
   if ($("#lessonMake")) $("#lessonMake").onclick = async () => { try { await api(`/api/songs/${P.song.id}/lesson`, { method: "POST" }); LESSON = { busy: true, none: !LESSON?.summary }; renderLesson(); setTimeout(loadLesson, 4000); } catch (e) { toast("실패: " + e.message); } };
-  $$("#lessonBox [data-t0]").forEach(b => b.onclick = () => practiceLoop(+b.dataset.t0, +b.dataset.t1, +b.dataset.sp || 0, b.dataset.lb));
+  $$("#lessonBox .kp .row").forEach(r => r.onclick = e => { if (e.target.closest(".go")) return; r.parentElement.classList.toggle("open"); });
+  $$("#lessonBox .go").forEach(b => b.onclick = e => { e.stopPropagation(); lessonGo(+b.dataset.t0); });
 }
 
 /* ---------------- lyrics ---------------- */
@@ -1413,16 +1420,24 @@ requestAnimationFrame(tick);
 /* ---------------- transport ---------------- */
 $("#play").onclick = () => { if (P.counting) return; setPlaying(!P.playing); };
 $("#rew").onclick = () => goTo(cur() - 5); $("#fwd").onclick = () => goTo(cur() + 5);
-(() => { // timeline: click = seek, drag = loop
-  const el = $("#seek"); let x0 = null, t0 = 0, dragging = false;
+(() => { // timeline: 누르기 = 그 위치로, 드래그 = 구간 팝업이 열려 있을 때만 구간 잡기 / 닫혀 있으면 위치 옮기기 (2026-10-19 Benny "맨 앞으로 가려는데 자꾸 구간반복 켜짐")
+  const el = $("#seek"); let x0 = null, t0 = 0, dragging = false, loopMode = false;
   const at = e => { const r = el.getBoundingClientRect(); return (Math.min(Math.max(e.clientX - r.left, 0), r.width) / r.width) * (P.song?.duration || 0); };
-  el.onpointerdown = e => { x0 = e.clientX; t0 = at(e); dragging = false; el.setPointerCapture(e.pointerId); };
+  el.onpointerdown = e => { x0 = e.clientX; t0 = at(e); dragging = false; loopMode = !$("#popLoop").hidden; el.setPointerCapture(e.pointerId); };
   el.onpointermove = e => {
     if (x0 == null) return;
     if (!dragging && Math.abs(e.clientX - x0) > 8) dragging = true;
-    if (dragging) { const t1 = at(e); const a = barAt(Math.min(t0, t1)), b = barAt(Math.max(t0, t1)); P.loop = { a, b }; loopUI(); render(true); }
+    if (!dragging) return;
+    const t1 = at(e);
+    if (loopMode) { const a = barAt(Math.min(t0, t1)), b = barAt(Math.max(t0, t1)); P.loop = { a, b }; loopUI(); render(true); }
+    else { const p = t1 / (P.song?.duration || 1) * 100 + "%"; $("#fill").style.width = p; $("#phead").style.left = p; } // 손 뗄 때 이동
   };
-  el.onpointerup = e => { if (x0 == null) return; if (dragging && P.loop) setLoop(P.loop.a, P.loop.b, true); else goTo(at(e)); x0 = null; dragging = false; };
+  el.onpointerup = e => {
+    if (x0 == null) return;
+    if (dragging && loopMode && P.loop) setLoop(P.loop.a, P.loop.b, true);
+    else { const t = at(e); const lr = loopRange(); if (!loopMode && lr && (t < lr.a || t >= lr.b)) { loopOff(); toast("구간 반복을 껐어요"); } goTo(t); } // 반복 구간 밖을 누르면 반복 끄고 그리로
+    x0 = null; dragging = false;
+  };
 })();
 document.addEventListener("keydown", e => {
   if ($("#vSong").hidden || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) || document.querySelector("dialog[open]")) return;
