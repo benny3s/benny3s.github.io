@@ -330,6 +330,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
         <div id="pInfo" hidden><div id="lessonBox"></div><div id="infoBox" class="teach"></div></div>
         <div id="pChords" hidden>
           <div id="shapes" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px"></div>
+          <div class="tabbar" id="chSrc" hidden></div>
           <div class="now" id="now"></div>
           <div class="cgrid" id="cgrid"></div>
           <div class="note" id="gridHint">마디를 누르면 그 위치로 이동해요.</div>
@@ -381,7 +382,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19e";
+const BUILD = "2026-10-19f";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -514,8 +515,8 @@ function tChord(ch, t) {
   if (ch === "N") return ch;
   const m = ch.match(/^([A-G][#b]?)(.*)$/); if (!m) return ch;
   const pc = (NOTE_PC[m[1]] + P.semi + 120) % 12;
-  const flats = FLAT_KEYS.has(t != null ? keyAt(t) : tKey());
-  return (flats ? FLAT : SHARP)[pc] + m[2];
+  const flats = FLAT_KEYS.has(t != null ? keyAt(t) : tKey()), N = flats ? FLAT : SHARP;
+  return N[pc] + m[2].replace(/\/([A-G][#b]?)$/, (_, b) => "/" + N[(NOTE_PC[b] + P.semi + 120) % 12]); // AM7/G# 의 베이스도
 }
 
 /* ---------------- chord diagrams ---------------- */
@@ -529,6 +530,7 @@ const OPEN = {
 const ESH = { "": [0,2,2,1,0,0], m: [0,2,2,0,0,0], "7": [0,2,0,1,0,0], m7: [0,2,0,0,0,0], maj7: [0,-1,1,1,0,-1], sus4: [0,2,2,2,0,0], dim: [0,1,2,0,-1,-1] };
 const ASH = { "": [-1,0,2,2,2,0], m: [-1,0,2,2,1,0], "7": [-1,0,2,0,2,0], m7: [-1,0,2,0,1,0], maj7: [-1,0,2,1,2,0], sus4: [-1,0,2,2,3,0], dim: [-1,0,1,2,1,-1] };
 function shape(ch) {
+  ch = ch.replace(/\/.*$/, "").replace(/M7/, "maj7"); // 운지표는 슬래시 앞 코드로 (AM7/G# → Amaj7)
   if (OPEN[ch]) return OPEN[ch];
   const m = ch.match(/^([A-G][#b]?)(.*)$/); if (!m) return null;
   const pc = NOTE_PC[m[1]], q = m[2]; if (pc == null || !ESH[q]) return null;
@@ -795,6 +797,7 @@ $("#speedR").oninput = e => setRate(+e.target.value / 100);
 async function openSong(id) {
   stopAll(); await pickServer();
   const s = await api("/api/songs/" + id);
+  s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, LS.get("chsrc:" + id, "score"));
   P.song = s; P.semi = 0; location.hash = "song=" + id;
   $("#vHome").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
   $("#sTitle").textContent = s.title;
@@ -941,21 +944,31 @@ function splitAtBar(k) {
 }
 
 /* chord grid */
+// 코드 출처: 악보(영상 악보 위 사람이 쓴 코드 이름 — 텐션·자리 정확, 서버 chords_score) / 자동 분석(음원에서 계산 — 단순화, 곳에 따라 2박 일찍)
+function useChordSrc(s, src) {
+  const ok = src === "score" && s.chords_score?.length;
+  s.chordSrc = ok ? "score" : "auto"; s.chords = ok ? s.chords_score : s.chords_auto; s.keys = ok && s.keys_score ? s.keys_score : s.keys_auto;
+}
 function buildChords() {
+  const cs = $("#chSrc"); cs.hidden = !P.song.chords_score?.length;
+  if (!cs.hidden) {
+    cs.innerHTML = `<span class="small mute">코드</span><button class="btn xs ${P.song.chordSrc === "score" ? "on" : ""}" data-c="score">악보 기준</button><button class="btn xs ${P.song.chordSrc === "auto" ? "on" : ""}" data-c="auto">자동 분석</button>`;
+    $$("#chSrc [data-c]").forEach(b => b.onclick = () => { LS.set("chsrc:" + P.song.id, b.dataset.c); useChordSrc(P.song, b.dataset.c); buildChords(); buildInfo(); loopUI(); render(true); });
+  }
   const B = P.bars; const S = secs(); let html = "";
   const heads = new Map(S.map((s, i) => [nearestBar(s.start), s]));
   B.forEach((b, k) => {
     if (heads.has(k)) { const s = heads.get(k); html += `<div class="shd">${esc(s.name)}</div>`; }
     const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push(tChord(c.chord, c.start)); });
     const uniq = names.filter((n, i) => names[i - 1] !== n);
-    html += `<div class="bar" data-k="${k}"><small>${b.n || ""}</small>${uniq.map(n => `<span>${esc(n)}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
+    html += `<div class="bar" data-k="${k}"><small>${barLabel(k) || ""}</small>${uniq.map(n => `<span>${esc(n)}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
   });
   $("#cgrid").innerHTML = html;
   $$("#cgrid .bar").forEach(el => el.onclick = () => {
     const k = +el.dataset.k;
     if (P.secEdit) return splitAtBar(k);
     if (!$("#popLoop").hidden) {
-      if (P.loopPick == null) { P.loopPick = k; setLoop(k, k, false); toast(`${P.bars[k].n}마디부터 — 끝 마디를 누르세요`); }
+      if (P.loopPick == null) { P.loopPick = k; setLoop(k, k, false); toast(`${barLabel(k)}마디부터 — 끝 마디를 누르세요`); }
       else { const a = Math.min(P.loopPick, k), b = Math.max(P.loopPick, k); P.loopPick = null; setLoop(a, b, true); }
       return;
     }
@@ -985,14 +998,14 @@ function buildInfo() {
 function loopUI() { // 구간 버튼·팝업 스위치·숫자를 한곳에서 (메트로놈과 같은 모양: 버튼 "구간 5~8" + 초록 테두리)
   const L = P.loop, on = !!L;
   setSw($("#lOn"), on); $("#loopBtn").classList.toggle("live", on);
-  $("#loopV").textContent = on ? `${P.bars[L.a].n}~${P.bars[L.b].n}` : "꺼짐";
-  $("#la").textContent = on ? P.bars[L.a].n : "-"; $("#lb").textContent = on ? P.bars[L.b].n : "-";
-  $("#loopNow").innerHTML = on ? `🔁 <b>${P.bars[L.a].n}~${P.bars[L.b].n}마디</b> 반복 중` : "";
+  $("#loopV").textContent = on ? `${barLabel(L.a)}~${barLabel(L.b)}` : "꺼짐";
+  $("#la").textContent = on ? barLabel(L.a) : "-"; $("#lb").textContent = on ? barLabel(L.b) : "-";
+  $("#loopNow").innerHTML = on ? `🔁 <b>${barLabel(L.a)}~${barLabel(L.b)}마디</b> 반복 중` : "";
 }
 function setLoop(a, b, announce) {
   P.loop = { a, b }; LS.set("loopact:" + P.song.id, P.loop); loopUI();
   const t = cur(); if (t < P.bars[a].start || t >= P.bars[b].end) seek(P.bars[a].start);
-  if (announce) toast(`${P.bars[a].n}~${P.bars[b].n}마디 반복`);
+  if (announce) toast(`${barLabel(a)}~${barLabel(b)}마디 반복`);
   lastBar = -2; render(true);
 }
 function loopOff() {
@@ -1001,7 +1014,7 @@ function loopOff() {
 }
 function loopRange() { return P.loop ? { a: P.bars[P.loop.a].start, b: P.bars[P.loop.b].end } : null; }
 function openLoopPop() { loopUI(); $("#lSec").value = ""; buildSaved(); }
-function loopName(a, b) { const si = secAt(P.bars[a].start + 0.01); const sec = si >= 0 ? secs()[si].name : ""; return `${P.bars[a].n}~${P.bars[b].n}마디${sec ? " · " + sec : ""}`; }
+function loopName(a, b) { const si = secAt(P.bars[a].start + 0.01); const sec = si >= 0 ? secs()[si].name : ""; return `${barLabel(a)}~${barLabel(b)}마디${sec ? " · " + sec : ""}`; }
 async function saveLoops(L) { P.song.loops = L; try { await api(`/api/songs/${P.song.id}/prefs`, jsonOpt("PUT", { loops: L })); } catch (e) { toast("저장 실패: " + e.message); } buildSaved(); }
 function buildSaved() {
   const L = P.song.loops || [];
@@ -1272,6 +1285,8 @@ function computeScoreBars() {
 let scoreStart = null;
 function barLabel(bk) { // 악보를 보는 중이면 악보 마디 번호로 (영상·악보와 같은 번호)
   if (VIEW === "tab" && activeScore() && scoreStart != null) { const n = bk - scoreStart + 1; return n >= 1 ? n : 0; }
+  const vb = P.song?.chordSrc === "score" && P.song.videotab?.bar1 != null ? nearestBar(P.song.videotab.bar1) : null; // 코드표가 악보 기준이면 악보 번호로
+  if (vb != null) { const n = bk - vb + 1; return n >= 1 ? n : 0; }
   return P.bars[bk]?.n || 0;
 }
 function makeApi() {
