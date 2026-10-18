@@ -21,7 +21,7 @@ a{color:var(--accent)}
 header.top{height:56px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,13,15,.92);backdrop-filter:blur(8px);z-index:20;display:flex}
 .logo{font-weight:800;letter-spacing:-.02em;font-size:18px;display:flex;align-items:center;gap:8px;cursor:pointer}
 .logo b{color:var(--accent)}
-.pill{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);background:var(--chip);border:1px solid var(--line);padding:5px 10px;border-radius:99px;cursor:pointer}
+.pill{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);background:var(--chip);border:1px solid var(--line);padding:5px 10px;border-radius:99px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--err)} .dot.on{background:var(--accent)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-weight:600}
 .btn:hover{border-color:#3a424b}
@@ -117,7 +117,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .teach{line-height:1.7} .teach li{margin:4px 0}
 
 /* transport */
-.transport{position:sticky;bottom:0;background:rgba(11,13,15,.97);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:8px 0 calc(10px + env(safe-area-inset-bottom));z-index:15;margin-top:14px}
+.transport{position:sticky;top:56px;background:rgba(11,13,15,.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:6px 0 10px;z-index:15;margin-bottom:12px}
+.ctrls.main{display:grid;grid-template-columns:1fr auto 1fr;gap:10px}
+.ctrls.main .time{justify-self:end;text-align:right}
+.ctrls.main .mid{display:flex;align-items:center;gap:10px}
+.ctrls.main .beats{justify-self:start;margin:0}
+.ctrls.tools{justify-content:center;margin-top:8px;gap:6px}
+.ctrls.tools .btn{padding:0 9px}
+.transport .tbtn{position:static}
+.transport .pop{right:auto;left:50%;transform:translateX(-50%);top:calc(100% + 6px);bottom:auto;max-height:calc(100vh - 250px);overflow:auto}
 .seekrow{display:flex;justify-content:space-between;font-size:12px;color:var(--mute);margin-bottom:4px;min-height:16px}
 .seekrow b{color:var(--text)}
 .seek{position:relative;height:30px;cursor:pointer;margin-bottom:8px;user-select:none;touch-action:none}
@@ -138,6 +146,11 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .pop h4{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
 .pop .r{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}
 .pop .r>label:first-child,.pop .lbl{color:var(--mute);min-width:62px}
+.pop .r .grow{flex:1}
+.loadmsg{font-size:12px;color:var(--mute);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.loadmsg .lb{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.loadmsg .lb i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.play:disabled{opacity:.45}
 .pop select{height:34px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);padding:0 8px}
 .pop .hint{color:var(--mute);font-size:12px;line-height:1.5;margin-top:6px}
 .pop input[type=range]{flex:1}
@@ -155,6 +168,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .sw2 .tr::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#cfd6dc;transition:.15s}
 .sw2.on .tr{background:var(--accent)} .sw2.on .tr::after{left:23px;background:#fff}
 .sw2 .st{color:var(--mute)} .sw2.on .st{color:var(--accent)}
+.sw2.sm .tr{width:38px;height:22px} .sw2.sm .tr::after{width:16px;height:16px} .sw2.sm.on .tr::after{left:19px}
 .btn.live{background:#10302b;border-color:var(--accent);color:var(--accent)}
 .beats{display:inline-flex;gap:4px;margin-left:4px}
 .beats i{width:9px;height:9px;border-radius:50%;background:#2a3138}
@@ -183,7 +197,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 <body>
 <header class="top"><div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%">
   <div class="logo" id="home">🎸 Music <b>Lab</b></div>
-  <div class="pill" id="conn" title="PC 분석 서버 연결 상태"><span class="dot" id="cdot"></span><span id="ctext">PC 확인 중…</span></div>
+  <div class="pill" id="conn"><span class="dot" id="cdot"></span><span id="ctext">PC 연결 중…</span></div>
   <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span> · 로그아웃</button>
 </div></header>
 
@@ -218,51 +232,18 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
         <div class="chips" id="sChips"></div>
       </div>
     </div>
-    <div class="grid2">
-      <div class="card mixer">
-        <h2>트랙</h2>
-        <div id="mixer"></div>
-        <button class="linkbtn" id="showQuiet" hidden></button>
-        <div class="presets">
-          <button class="btn sm" data-preset="noguitar">기타 빼고 (내가 연주)</button>
-          <button class="btn sm" data-preset="guitar">기타만</button>
-          <button class="btn sm" data-preset="all">전체</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="secs" id="secs"></div>
-        <div id="pInfo" class="teach"></div>
-        <div class="tabs" id="tabs" style="margin-top:12px">
-          <span class="small mute" style="align-self:center;margin-right:4px">보기</span>
-          <button data-v="chords">☐ 코드</button>
-          <button data-v="lyrics">☐ 가사</button>
-          <button data-v="tab">☐ 기타 타브</button>
-        </div>
-        <div id="pChords" hidden>
-          <div class="now" id="now"></div>
-          <div class="cgrid" id="cgrid"></div>
-          <div class="note" id="gridHint">마디를 누르면 그 위치로 이동해요.</div>
-        </div>
-        <div id="pTab" hidden>
-          <div class="tabbar" id="tabbar"></div>
-          <div id="tabbox"><div class="mute" style="padding:20px">타브 불러오는 중…</div></div>
-          <div class="note" id="tabNote"></div>
-          <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
-        </div>
-        <div id="pLyrics" hidden><div class="empty" style="padding:18px">가사는 다음 업데이트에서 붙어요 (인터넷 가사 + 노래에 맞춰 흘러가기).</div></div>
-      </div>
-    </div>
-
     <div class="transport">
+      <div class="loadmsg" id="loadMsg" hidden><span id="loadT">트랙 불러오는 중…</span><span class="lb"><i id="loadBar"></i></span></div>
       <div class="seekrow"><span id="secNow"></span><span id="loopNow"></span></div>
       <div class="seek" id="seek"><div class="strip" id="strip"></div><div class="track"></div><div class="fill" id="fill"></div><div class="lpz" id="lpz" hidden></div><div class="head" id="phead"></div></div>
-      <div class="ctrls">
-        <button class="btn sm" id="rew" title="5초 뒤로">−5s</button>
-        <button class="play" id="play" title="재생 (스페이스)">▶</button>
-        <button class="btn sm" id="fwd" title="5초 앞으로">+5s</button>
+      <div class="ctrls main">
         <span class="time" id="time">0:00 / 0:00</span>
+        <span class="mid"><button class="btn sm" id="rew" title="5초 뒤로">−5s</button>
+        <button class="play" id="play" title="재생 (스페이스)">▶</button>
+        <button class="btn sm" id="fwd" title="5초 앞으로">+5s</button></span>
         <span class="beats" id="beatDots" hidden><i></i><i></i><i></i><i></i></span>
-        <span class="sp"></span>
+      </div>
+      <div class="ctrls tools">
         <span class="tbtn"><button class="btn sm" data-pop="popSpeed">속도 <span class="v" id="speedV">100%</span></button>
           <div class="pop" id="popSpeed" hidden>
             <h4>⏱ 속도 <span class="mute small" style="font-weight:400">음정은 그대로</span></h4>
@@ -277,30 +258,60 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
             <div class="r" style="margin-top:10px"><button class="btn xs admin" id="bandKey">⭐ 이 키를 우리 밴드 키로 저장</button><span class="mute small" id="bandKeyT"></span></div>
             <div class="hint">드럼은 음정이 없어서 그대로예요. 처음 고르는 키는 만드는 데 10~20초 걸리고, 한 번 만든 키(초록 테두리)는 바로 바뀌어요. <b>밴드 키로 저장</b>하면 그 키만 남고 나머지 키는 바로 지워져요(용량 절약). 저장 안 하고 시험만 해 본 키는 다음 날 새벽에 정리돼요.</div>
           </div></span>
-        <span class="tbtn"><button class="btn sm" data-pop="popLoop" id="loopBtn">🔁 구간</button>
+        <span class="tbtn"><button class="btn sm" data-pop="popLoop" id="loopBtn">구간 <span class="v" id="loopV">꺼짐</span></button>
           <div class="pop" id="popLoop" hidden>
-            <h4>🔁 구간 반복 <button class="btn xs toggle" id="lToggle">켜기</button></h4>
-            <div class="r"><span class="lbl">시작</span><span class="stepper"><button data-l="a-">−</button><b id="la" style="min-width:34px;text-align:center">-</b><button data-l="a+">+</button></span>마디
+            <h4 style="justify-content:space-between">🔁 구간 반복 <span class="sw2" id="lOn"><span class="st">꺼짐</span><span class="tr"></span></span></h4>
+            <div class="r"><span class="lbl">시작</span><span class="stepper"><button data-l="a-">−</button><b id="la" style="min-width:34px;text-align:center">-</b><button data-l="a+">+</button></span><span class="grow">마디</span>
               <button class="btn xs" id="lNowA">지금 위치</button></div>
-            <div class="r"><span class="lbl">끝</span><span class="stepper"><button data-l="b-">−</button><b id="lb" style="min-width:34px;text-align:center">-</b><button data-l="b+">+</button></span>마디
+            <div class="r"><span class="lbl">끝</span><span class="stepper"><button data-l="b-">−</button><b id="lb" style="min-width:34px;text-align:center">-</b><button data-l="b+">+</button></span><span class="grow">마디</span>
               <button class="btn xs" id="lNowB">지금 위치</button></div>
-            <div class="r"><span class="lbl">섹션</span><select id="lSec" style="flex:1"></select></div>
-            <div class="r"><button class="btn xs" id="lSave">💾 이 구간 저장</button></div>
+            <div class="r"><span class="lbl">섹션</span><select id="lSec" class="grow"></select></div>
+            <div class="r"><span class="lbl">저장</span><button class="btn xs" id="lSave">이 구간 저장 (밴드 공유)</button></div>
             <div id="lSaved"></div>
-            <div class="hint">타임라인을 <b>드래그</b>하거나, 이 창이 열린 채로 코드표에서 시작 → 끝 마디를 누르세요. 반복 중에는 구간 밖으로 넘어가지 않아요. 저장한 구간은 <b>밴드 모두가 같이</b> 봐요.</div>
+            <div class="hint">타임라인을 드래그하거나, 이 창을 연 채 코드표에서 시작 → 끝 마디를 누르세요.</div>
           </div></span>
-        <span class="tbtn"><button class="btn sm" data-pop="popMetro" id="metroBtn">🥁 <span id="metroLbl">메트로놈</span></button>
+        <span class="tbtn"><button class="btn sm" data-pop="popMetro" id="metroBtn">메트로놈 <span class="v" id="metroV">꺼짐</span></button>
           <div class="pop" id="popMetro" hidden>
             <h4 style="justify-content:space-between">🥁 메트로놈 <span class="sw2" id="mOn"><span class="st">꺼짐</span><span class="tr"></span></span></h4>
-            <div class="r"><label>볼륨</label><input type="range" id="mVol" min="0" max="1" step="0.05"><b id="mVolT" style="min-width:40px;text-align:right"></b></div>
-            <div class="r"><label>박</label><select id="mSub" style="flex:1">
+            <div class="r"><span class="lbl">볼륨</span><input type="range" id="mVol" min="0" max="1" step="0.05"><b id="mVolT" style="min-width:40px;text-align:right"></b></div>
+            <div class="r"><span class="lbl">박</span><select id="mSub" class="grow">
               <option value="bar">마디마다 1번</option><option value="half">2박마다</option><option value="1">매 박 (4분)</option>
               <option value="2">8분 (박 쪼개기 ×2)</option><option value="3">셋잇단 (×3)</option><option value="4">16분 (×4)</option></select></div>
-            <div class="r"><label>소리</label><select id="mSnd" style="flex:1"><option value="wood">우드블록</option><option value="beep">삑</option><option value="hat">하이햇</option></select></div>
-            <div class="r"><label><input type="checkbox" id="mAcc"> 첫 박 강조</label><label style="margin-left:12px"><input type="checkbox" id="mCount"> 재생 전 1마디 카운트</label></div>
-            <div class="hint">클릭은 음악 트랙과 한 몸으로 같이 재생돼서 따로 맞출 필요가 없어요. 곡에서 찾은 박 위치를 따라가니 템포가 조금씩 변해도 같이 움직여요.
-              재생 중 시간 옆 <b>점 4개</b>가 박마다 켜져요 (노란 점 = 마디 첫 박).</div>
+            <div class="r"><span class="lbl">소리</span><select id="mSnd" class="grow"><option value="wood">우드블록</option><option value="beep">삑</option><option value="hat">하이햇</option></select></div>
+            <div class="r"><span class="lbl grow">첫 박 강조</span><span class="sw2 sm" id="mAcc"><span class="st">꺼짐</span><span class="tr"></span></span></div>
+            <div class="r"><span class="lbl grow">재생 전 1마디 카운트</span><span class="sw2 sm" id="mCount"><span class="st">꺼짐</span><span class="tr"></span></span></div>
+            <div class="hint">곡에서 찾은 박을 따라가요. 켜면 시간 옆 점 4개가 박마다 켜져요 (노란 점 = 첫 박).</div>
           </div></span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card mixer">
+        <h2>트랙</h2>
+        <div id="mixer"></div>
+      </div>
+      <div class="card">
+        <div class="secs" id="secs"></div>
+        <div class="tabs" id="tabs">
+          <button data-v="chords">코드</button>
+          <button data-v="lyrics">가사</button>
+          <button data-v="tab">기타 타브</button>
+          <button data-v="info">정보</button>
+        </div>
+        <div id="pInfo" class="teach" hidden></div>
+        <div id="pChords" hidden>
+          <div id="shapes" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px"></div>
+          <div class="now" id="now"></div>
+          <div class="cgrid" id="cgrid"></div>
+          <div class="note" id="gridHint">마디를 누르면 그 위치로 이동해요.</div>
+        </div>
+        <div id="pTab" hidden>
+          <div class="tabbar" id="tabbar"></div>
+          <div id="tabbox"><div class="mute" style="padding:20px">타브 불러오는 중…</div></div>
+          <div class="note" id="tabNote"></div>
+          <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
+        </div>
+        <div id="pLyrics" hidden><div class="empty" style="padding:18px">가사는 다음 업데이트에서 붙어요 (인터넷 가사 + 노래에 맞춰 흘러가기).</div></div>
       </div>
     </div>
   </section>
@@ -308,14 +319,6 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 <footer id="foot"></footer>
 <p class="more"><a href="https://benny3s.github.io/" target="_blank">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
 
-<dialog id="dlg">
-  <h3 style="margin-top:0">PC 서버 주소</h3>
-  <p class="small mute">기본은 PC의 공개 주소(Tailscale Funnel)예요. PC에서만 쓸 때는 <code>http://127.0.0.1:8765</code> 도 돼요.</p>
-  <input id="srvInput">
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-    <button class="btn" id="dlgReset">기본값</button><button class="btn pri" id="dlgOk">저장</button>
-  </div>
-</dialog>
 <dialog id="loginDlg">
   <form id="loginForm">
     <h3 style="margin-top:0">🎸 Music Lab</h3>
@@ -336,19 +339,22 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18n";
+const BUILD = "2026-10-18o";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 const DEFAULT_SRV = "https://desktop-ijcbddr.tail4df4c9.ts.net";
 const sameOrigin = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === "8765") || location.hostname.endsWith(".ts.net");
-let SRV = sameOrigin ? "" : LS.get("srv", null);
+const srvParam = new URLSearchParams(location.search).get("srv"); // 비상용: ?srv=주소 (화면에는 주소 창 없음)
+let SRV = sameOrigin ? "" : srvParam ? srvParam.replace(/\/$/, "") : null;
+const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 async function pickServer() { // 이 PC면 127.0.0.1(가장 빠름), 아니면 공개 주소
   if (SRV !== null) return;
+  if (isMobile) { SRV = DEFAULT_SRV; return; }
   try { const c = new AbortController(); setTimeout(() => c.abort(), 900); const r = await fetch("http://127.0.0.1:8765/api/health", { signal: c.signal }); if (r.ok) { SRV = "http://127.0.0.1:8765"; return; } } catch {}
   SRV = DEFAULT_SRV;
 }
-const STEM_LABEL = { vocals: "보컬", drums: "드럼", bass: "베이스", guitar: "기타", piano: "피아노", other: "그 외 악기" };
+const STEM_LABEL = { vocals: "보컬", drums: "드럼", bass: "베이스", guitar: "기타", piano: "피아노", other: "그 외" };
 const STEP_ORDER = ["download", "convert", "separate", "analyze", "encode", "done"];
 const SEC_LABELS = ["인트로", "벌스", "프리코러스", "코러스", "브릿지", "기타 솔로", "간주", "아웃트로"];
 const SEC_COLOR = { "인트로": "--s-intro", "벌스": "--s-verse", "프리코러스": "--s-pre", "코러스": "--s-chorus", "브릿지": "--s-bridge", "기타 솔로": "--s-solo", "간주": "--s-inst", "아웃트로": "--s-outro" };
@@ -384,7 +390,7 @@ async function ping() {
   try {
     const h = await api("/api/health");
     online = true; $("#cdot").classList.add("on");
-    $("#ctext").textContent = "PC 연결됨" + (h.gpu ? " · GPU" : "");
+    $("#ctext").textContent = "PC 연결됨";
     $("#offline").hidden = true;
     if (!AUTH) showLogin();
   } catch (e) {
@@ -393,9 +399,6 @@ async function ping() {
   }
   return online;
 }
-$("#conn").onclick = () => { $("#srvInput").value = SRV || DEFAULT_SRV; $("#dlg").showModal(); };
-$("#dlgOk").onclick = () => { SRV = $("#srvInput").value.trim().replace(/\/$/, ""); LS.set("srv", SRV === DEFAULT_SRV ? null : SRV); $("#dlg").close(); boot(); };
-$("#dlgReset").onclick = () => { $("#srvInput").value = DEFAULT_SRV; LS.set("srv", null); };
 
 /* ---------------- home ---------------- */
 let jobsTimer = null;
@@ -498,18 +501,43 @@ function diagram(ch, w = 92) {
 const P = { song: null, audios: {}, master: null, playing: false, rate: 1, semi: 0, loop: null, loopPick: null, mixer: {}, ac: null,
             clicks: [], clickIdx: 0, counting: false, secEdit: false, bars: [] };
 const MET = Object.assign({ on: false, vol: 0.9, sub: "1", acc: true, count: false, snd: "wood" }, LS.get("metro3", {}));
-function stopAll() { allEls().forEach(a => { a.pause(); a.removeAttribute("src"); a.load(); }); P.metroEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶"; }
-function cur() { return P.master ? P.master.currentTime : 0; }
+function stopAll() {
+  P.abort?.abort(); P.ready = false; P.pos = 0;
+  allEls().forEach(a => { a.pause(); a.removeAttribute("src"); a.load(); }); P.metroEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶";
+  Object.values(P.blobs || {}).forEach(u => URL.revokeObjectURL(u)); P.blobs = {};
+}
+// 폰(공개 주소)에서는 스트리밍 중 위치를 맞출 때마다 버퍼링이 생겨 소리가 끊기고 메트로놈이 밀렸다 → 트랙을 통째로 받아 둔 뒤 재생
+async function fetchBlob(url, onp, signal) {
+  const r = await fetch(url, { signal }); if (!r.ok) throw new Error("파일 " + r.status);
+  const total = +r.headers.get("content-length") || 0;
+  if (!r.body) return URL.createObjectURL(await r.blob());
+  const rd = r.body.getReader(), parts = []; let got = 0;
+  for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onp?.(got, total); }
+  return URL.createObjectURL(new Blob(parts, { type: "audio/mpeg" }));
+}
+async function loadFiles(files, msg) { // files: {stem: name} → {stem: blob url}
+  const ctl = P.abort = new AbortController(), got = {}, tot = {}, names = Object.keys(files);
+  const show = () => { const g = names.reduce((s, n) => s + (got[n] || 0), 0), t = names.reduce((s, n) => s + (tot[n] || 0), 0);
+    $("#loadBar").style.width = (t ? g / t * 100 : 0) + "%"; $("#loadT").textContent = `${msg} ${t ? Math.round(g / t * 100) : 0}%` + (t ? ` · ${(g / 1048576).toFixed(0)}/${(t / 1048576).toFixed(0)}MB` : ""); };
+  $("#loadMsg").hidden = false; show();
+  try {
+    const urls = await Promise.all(names.map(n => fetchBlob(fileUrl(P.song.id, files[n]), (g, t) => { got[n] = g; tot[n] = t; show(); }, ctl.signal)));
+    return Object.fromEntries(names.map((n, i) => [n, urls[i]]));
+  } finally { if (P.abort === ctl) $("#loadMsg").hidden = true; }
+}
+function cur() { return P.master ? P.master.currentTime : P.pos || 0; }
 function allEls() { return Object.values(P.audios).concat(P.metroEl ? [P.metroEl] : []); }
-function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); allEls().forEach(a => { try { a.currentTime = t; } catch {} }); render(true); }
+function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); P.pos = t; allEls().forEach(a => { try { a.currentTime = t; } catch {} }); render(true); }
 function goTo(t) { // 사용자가 직접 이동: 반복 중이면 구간 안에서만 움직인다
   const lr = loopRange();
   if (lr && (t < lr.a - 0.05 || t >= lr.b)) { t = Math.min(Math.max(t, lr.a), lr.b - 0.1); toast("구간 반복 중이에요 · 끄려면 🔁 구간에서 끄기", 1800); }
   seek(t);
 }
 function setPlaying(on) {
+  if (on && !P.ready) return toast("트랙을 다 받으면 재생할 수 있어요");
   if (on && !P.playing && MET.count && !P.counting) return countIn();
   P.playing = on; $("#play").textContent = on ? "❚❚" : "▶";
+  if (on) { const t = cur(); allEls().forEach(a => { if (Math.abs(a.currentTime - t) > 0.01) try { a.currentTime = t; } catch {} }); }
   allEls().forEach(a => on ? a.play().catch(() => {}) : a.pause());
 }
 function applyMix() {
@@ -555,8 +583,11 @@ function buildClicks() {
     const k = +MET.sub; out.push({ t, l: down ? 2 : 1 });
     for (let j = 1; j < k; j++) out.push({ t: t + (next - t) * j / k, l: 0 });
   }
-  P.clicks = out; renderClickTrack();
+  // 브라우저가 mp3 를 재생할 때 실제 드럼 소리는 분석 박 시각보다 조금 늦게 나옴(mp3 앞부분 지연).
+  // 크롬에서 드럼·클릭 출력 소리를 같은 시계로 녹음해 잰 값(Alive, 2026-10-18): 보정 없으면 클릭이 약 15ms 일찍 → 그만큼 늦춤
+  P.clicks = out.map(c => ({ t: Math.max(0, c.t + CLICK_SHIFT), l: c.l })); renderClickTrack();
 }
+const CLICK_SHIFT = 0.012;
 // 클릭을 음악과 같은 길이의 오디오 트랙(WAV)으로 만들어 다른 트랙과 함께 재생 → 지연 보정 불필요
 function clickSample(level, sr) {
   const strong = level === 2 && MET.acc, n = Math.floor(sr * (MET.snd === "hat" ? .035 : .045)), buf = new Float32Array(n);
@@ -574,7 +605,7 @@ function clickSample(level, sr) {
   return buf;
 }
 function renderClickTrack() {
-  const s = P.song; if (!s) return; const sr = 22050, N = Math.ceil((s.duration + 1) * sr), pcm = new Int16Array(N);
+  const s = P.song; if (!s) return; const sr = 44100, N = Math.ceil((s.duration + 1) * sr), pcm = new Int16Array(N);
   const cache = {};
   for (const c of P.clicks) {
     const smp = cache[c.l] || (cache[c.l] = clickSample(c.l, sr)); const i0 = Math.round(c.t * sr);
@@ -584,9 +615,9 @@ function renderClickTrack() {
   w(0, "RIFF"); v.setUint32(4, 36 + N * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
   v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, N * 2, true);
   const url = URL.createObjectURL(new Blob([hdr, pcm.buffer], { type: "audio/wav" }));
-  const old = P.metroEl; const t = cur(), playing = P.playing;
+  const old = P.metroEl, playing = P.playing;
   const a = new Audio(); a.preload = "auto"; a.src = url; a.preservesPitch = true; a.playbackRate = P.rate; a.volume = MET.on ? MET.vol : 0;
-  a.addEventListener("loadedmetadata", () => { try { a.currentTime = t; } catch {} if (playing && P.playing) a.play().catch(() => {}); }, { once: true });
+  a.addEventListener("loadedmetadata", () => { try { a.currentTime = cur(); } catch {} if (playing && P.playing) a.play().catch(() => {}); }, { once: true });
   P.metroEl = a;
   if (old) { old.pause(); URL.revokeObjectURL(old.src); old.removeAttribute("src"); }
 }
@@ -598,19 +629,20 @@ function countIn() {
   $("#play").textContent = "4…";
   setTimeout(() => { P.counting = false; if (P.song) { P.playing = false; setPlaying(true); } }, (0.05 + 4 * spb) * 1000);
 }
+function setSw(el, on) { el.classList.toggle("on", on); el.querySelector(".st").textContent = on ? "켜짐" : "꺼짐"; }
 function syncMetroUI() {
-  $("#mOn").classList.toggle("on", MET.on); $("#mOn").querySelector(".st").textContent = MET.on ? "켜짐" : "꺼짐";
-  $("#metroBtn").classList.toggle("live", MET.on); $("#metroLbl").textContent = MET.on ? "메트로놈 켜짐" : "메트로놈";
+  setSw($("#mOn"), MET.on); setSw($("#mAcc"), MET.acc); setSw($("#mCount"), MET.count);
+  $("#metroBtn").classList.toggle("live", MET.on); $("#metroV").textContent = MET.on ? "켜짐" : "꺼짐";
   $("#mVol").value = MET.vol; $("#mVolT").textContent = Math.round(MET.vol * 100) + "%";
-  $("#mSub").value = MET.sub; $("#mAcc").checked = MET.acc; $("#mCount").checked = MET.count; $("#mSnd").value = MET.snd;
+  $("#mSub").value = MET.sub; $("#mSnd").value = MET.snd;
   $("#beatDots").hidden = !MET.on; metroVol();
   LS.set("metro3", MET);
 }
 $("#mOn").onclick = () => { MET.on = !MET.on; syncMetroUI(); };
 $("#mVol").oninput = e => { MET.vol = +e.target.value; syncMetroUI(); };
 $("#mSub").onchange = e => { MET.sub = e.target.value; buildClicks(); syncMetroUI(); };
-$("#mAcc").onchange = e => { MET.acc = e.target.checked; buildClicks(); syncMetroUI(); };
-$("#mCount").onchange = e => { MET.count = e.target.checked; syncMetroUI(); };
+$("#mAcc").onclick = () => { MET.acc = !MET.acc; buildClicks(); syncMetroUI(); };
+$("#mCount").onclick = () => { MET.count = !MET.count; syncMetroUI(); };
 $("#mSnd").onchange = e => { MET.snd = e.target.value; buildClicks(); syncMetroUI(); clickAt(P.ac ? P.ac.currentTime + .02 : 0, 2); };
 
 /* ---------------- popovers ---------------- */
@@ -645,44 +677,50 @@ async function openSong(id) {
     (s.source && s.source.startsWith("http") ? `<a class="chip" href="${esc(s.source)}" target="_blank" style="text-decoration:none">원본 ↗</a>` : "");
   buildMixer();
   P.files = Object.fromEntries(s.stems.map(n => [n, n + ".mp3"]));
-  for (const n of s.stems) {
-    const a = new Audio(); a.preload = "auto"; a.crossOrigin = "anonymous"; a.src = fileUrl(id, P.files[n]);
-    a.preservesPitch = true; a.playbackRate = P.rate; P.audios[n] = a;
+  P.loop = null; loopUI(); closePops(); setRate(P.rate); pitchReady = {};
+  $("#play").disabled = true;
+  await buildKey(true);
+  if (s.band_semi && P.song === s) { // 밴드 키가 있으면 처음부터 그 키 파일을 받음 (원키 받고 또 받지 않게)
+    try { const r = await api(`/api/songs/${id}/pitch`, jsonOpt("POST", { semi: s.band_semi })); Object.assign(P.files, r.files); P.semi = s.band_semi; pitchReady[P.semi] = true; } catch {}
   }
-  P.master = P.audios[s.stems.includes("drums") ? "drums" : s.stems[0]];
-  P.master.onended = () => setPlaying(false);
-  applyMix();
-  P.loop = null; $("#loopBtn").classList.remove("on"); $("#loopNow").textContent = ""; closePops(); setRate(P.rate); pitchReady = {};
   P.bars = bars();
-  await buildKey(true); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
-  tabLoaded = false; applyViews();
+  buildKey(); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
+  tabLoaded = false; VIEW = null; applyViews();
   render(true);
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
-  if (s.band_semi) changeKey(s.band_semi);
+  let urls;
+  try { urls = await loadFiles(P.files, "트랙 불러오는 중"); } catch (e) { if (P.song === s && e.name !== "AbortError") toast("트랙을 받지 못했어요: " + e.message); return; }
+  if (P.song !== s) return Object.values(urls).forEach(u => URL.revokeObjectURL(u));
+  P.blobs = urls;
+  const t = cur();
+  for (const n of s.stems) {
+    const a = new Audio(); a.preload = "auto"; a.src = urls[n];
+    a.preservesPitch = true; a.playbackRate = P.rate; P.audios[n] = a;
+    a.addEventListener("loadedmetadata", () => { try { a.currentTime = t; } catch {} }, { once: true });
+  }
+  P.master = P.audios[s.stems.includes("drums") ? "drums" : s.stems[0]];
+  P.master.onended = () => setPlaying(false);
+  applyMix(); P.ready = true; $("#play").disabled = false;
 }
 function buildMixer() {
   const s = P.song, id = s.id; const saved = LS.get("mix:" + id, null); P.mixer = {};
   const maxLv = Math.max(...Object.values(s.levels || { a: 1 }));
   const quiet = n => s.levels && s.levels[n] < maxLv * 0.06;
-  const showQuiet = LS.get("showQuiet", false);
-  const nq = s.stems.filter(quiet).length;
   $("#mixer").innerHTML = s.stems.map(n => {
-    P.mixer[n] = saved?.[n] || { vol: 0.85, mute: quiet(n), solo: false };
-    return `<div class="row" data-stem="${n}" ${quiet(n) && !showQuiet ? "hidden" : ""}><span class="sw" style="background:var(--${n})"></span>
+    P.mixer[n] = saved?.[n] || { vol: 0.85, mute: false, solo: false };
+    return `<div class="row" data-stem="${n}"><span class="sw" style="background:var(--${n})"></span>
       <span class="nm">${STEM_LABEL[n]}${quiet(n) ? '<div class="small mute" style="font-weight:400">거의 없음</div>' : ""}</span>
       <button class="ms m">M</button><button class="ms s">S</button>
       <input type="range" min="0" max="1" step="0.01" value="${P.mixer[n].vol}"></div>`;
   }).join("");
-  $("#showQuiet").hidden = !nq;
-  $("#showQuiet").textContent = showQuiet ? "소리가 거의 없는 트랙 숨기기" : `이 곡에 거의 없는 트랙 ${nq}개 보기 (${s.stems.filter(quiet).map(n => STEM_LABEL[n]).join(", ")})`;
   $$("#mixer .row").forEach(r => { const n = r.dataset.stem;
-    r.querySelector(".m").onclick = () => { P.mixer[n].mute = !P.mixer[n].mute; applyMix(); };
-    r.querySelector(".s").onclick = () => { P.mixer[n].solo = !P.mixer[n].solo; applyMix(); };
+    // 한 트랙에서 M 과 S 는 같이 켜지지 않음 (Moises 처럼: 하나 켜면 다른 하나 꺼짐)
+    r.querySelector(".m").onclick = () => { const m = P.mixer[n]; m.mute = !m.mute; if (m.mute) m.solo = false; applyMix(); };
+    r.querySelector(".s").onclick = () => { const m = P.mixer[n]; m.solo = !m.solo; if (m.solo) m.mute = false; applyMix(); };
     r.querySelector("input").oninput = e => { P.mixer[n].vol = +e.target.value; applyMix(); };
   });
 }
-$("#showQuiet").onclick = () => { LS.set("showQuiet", !LS.get("showQuiet", false)); buildMixer(); applyMix(); };
 
 /* key change */
 let pitchReady = {};
@@ -704,16 +742,20 @@ $("#bandKey").onclick = async () => {
   catch (e) { toast("저장 실패: " + e.message); }
 };
 async function changeKey(d) {
+  if (!P.ready) return toast("트랙을 다 받은 뒤에 바꿀 수 있어요");
   const n = P.semi + d; if (n < -6 || n > 6) return toast("±6반음까지 바꿀 수 있어요");
   const quick = n === 0 || pitchReady[n];
   const done = quick ? () => {} : busy(`키를 ${n > 0 ? "+" : ""}${n} 바꾸는 중… (처음 한 번 10~20초)`);
   try {
     const r = await api(`/api/songs/${P.song.id}/pitch`, jsonOpt("POST", { semi: n }));
+    const need = Object.fromEntries(Object.entries(r.files).filter(([k, f]) => P.audios[k] && P.files[k] !== f));
+    const urls = await loadFiles(need, "바꾼 키 받는 중");
     const t = cur(), was = P.playing; setPlaying(false);
-    await Promise.all(Object.entries(r.files).map(([k, f]) => new Promise(res => {
-      const a = P.audios[k]; if (!a || P.files[k] === f) return res();
-      P.files[k] = f; a.src = fileUrl(P.song.id, f); a.preservesPitch = true; a.playbackRate = P.rate;
-      a.addEventListener("canplay", res, { once: true }); setTimeout(res, 8000);
+    await Promise.all(Object.entries(urls).map(([k, u]) => new Promise(res => {
+      const a = P.audios[k]; P.files[k] = need[k];
+      if (P.blobs[k]) URL.revokeObjectURL(P.blobs[k]); P.blobs[k] = u;
+      a.src = u; a.preservesPitch = true; a.playbackRate = P.rate;
+      a.addEventListener("canplay", res, { once: true }); setTimeout(res, 4000);
     })));
     P.semi = n; pitchReady[n] = true; seek(t); applyMix(); buildKey(); buildChords(); buildInfo(); render(true); tabNote();
     if (was) setPlaying(true);
@@ -810,27 +852,31 @@ function buildInfo() {
       <li><b>구조</b>: ${secs().map(x => esc(x.name)).join(" → ") || "-"}</li>
       <li><b>많이 나오는 코드</b>: ${top.map(esc).join(", ") || "-"}</li>
       <li><b>기타에서 찾은 음</b>: ${s.guitar_notes || 0}개 ${s.tab ? "→ 타브 초안 있음" : "→ 기타 소리가 작아 타브를 만들지 못했어요"}</li>
-    </ul>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">${top.slice(0, 6).map(n => `<div style="text-align:center"><div style="font-weight:700">${esc(n)}</div>${diagram(n, 64)}</div>`).join("")}</div>`;
+    </ul>`;
+  $("#shapes").innerHTML = `<div class="small mute" style="width:100%">이 곡에 많이 나오는 코드</div>` +
+    top.slice(0, 6).map(n => `<div style="text-align:center"><div style="font-weight:700">${esc(n)}</div>${diagram(n, 64)}</div>`).join("");
 }
 
 /* ---------------- loop ---------------- */
+function loopUI() { // 구간 버튼·팝업 스위치·숫자를 한곳에서 (메트로놈과 같은 모양: 버튼 "구간 5~8" + 초록 테두리)
+  const L = P.loop, on = !!L;
+  setSw($("#lOn"), on); $("#loopBtn").classList.toggle("live", on);
+  $("#loopV").textContent = on ? `${P.bars[L.a].n}~${P.bars[L.b].n}` : "꺼짐";
+  $("#la").textContent = on ? P.bars[L.a].n : "-"; $("#lb").textContent = on ? P.bars[L.b].n : "-";
+  $("#loopNow").innerHTML = on ? `🔁 <b>${P.bars[L.a].n}~${P.bars[L.b].n}마디</b> 반복 중` : "";
+}
 function setLoop(a, b, announce) {
-  P.loop = { a, b }; $("#loopBtn").classList.add("on"); LS.set("loopact:" + P.song.id, P.loop);
-  $("#la").textContent = P.bars[a].n || "0"; $("#lb").textContent = P.bars[b].n || "0";
-  $("#lToggle").textContent = "끄기"; $("#lToggle").classList.add("on");
-  $("#loopNow").innerHTML = `🔁 <b>${P.bars[a].n}~${P.bars[b].n}마디</b> 반복 중`;
+  P.loop = { a, b }; LS.set("loopact:" + P.song.id, P.loop); loopUI();
   const t = cur(); if (t < P.bars[a].start || t >= P.bars[b].end) seek(P.bars[a].start);
   if (announce) toast(`${P.bars[a].n}~${P.bars[b].n}마디 반복`);
   lastBar = -2; render(true);
 }
 function loopOff() {
-  P.loop = null; P.loopPick = null; $("#loopBtn").classList.remove("on"); if (P.song) LS.set("loopact:" + P.song.id, null);
-  $("#lToggle").textContent = "켜기"; $("#lToggle").classList.remove("on"); $("#loopNow").textContent = "";
-  $("#la").textContent = $("#lb").textContent = "-"; lastBar = -2; render(true);
+  P.loop = null; P.loopPick = null; if (P.song) LS.set("loopact:" + P.song.id, null);
+  loopUI(); lastBar = -2; render(true);
 }
 function loopRange() { return P.loop ? { a: P.bars[P.loop.a].start, b: P.bars[P.loop.b].end } : null; }
-function openLoopPop() { if (!P.loop) { $("#la").textContent = $("#lb").textContent = "-"; } $("#lSec").value = ""; buildSaved(); }
+function openLoopPop() { loopUI(); $("#lSec").value = ""; buildSaved(); }
 function loopName(a, b) { const si = secAt(P.bars[a].start + 0.01); const sec = si >= 0 ? secs()[si].name : ""; return `${P.bars[a].n}~${P.bars[b].n}마디${sec ? " · " + sec : ""}`; }
 async function saveLoops(L) { P.song.loops = L; try { await api(`/api/songs/${P.song.id}/prefs`, jsonOpt("PUT", { loops: L })); } catch (e) { toast("저장 실패: " + e.message); } buildSaved(); }
 function buildSaved() {
@@ -845,7 +891,7 @@ $("#lSave").onclick = () => {
   if (L.some(x => x.a === P.loop.a && x.b === P.loop.b)) return toast("이미 저장된 구간이에요");
   L.push({ a: P.loop.a, b: P.loop.b, name }); saveLoops(L); toast("구간을 저장했어요 · 밴드 모두에게 보여요");
 };
-$("#lToggle").onclick = () => { if (P.loop) return loopOff(); const k = barAt(cur()); const si = secAt(cur());
+$("#lOn").onclick = () => { if (P.loop) return loopOff(); const k = barAt(cur()); const si = secAt(cur());
   if (si >= 0) { const s = secs()[si]; setLoop(nearestBar(s.start), Math.max(nearestBar(s.start), nearestBar(s.end) - 1), true); }
   else setLoop(k, Math.min(P.bars.length - 1, k + 3), true); };
 $("#lSec").onchange = e => { if (e.target.value === "") return; const s = secs()[+e.target.value]; setLoop(nearestBar(s.start), Math.max(nearestBar(s.start), nearestBar(s.end) - 1), true); };
@@ -859,14 +905,15 @@ $("#lNowB").onclick = () => { const k = barAt(cur()); setLoop(Math.min(k, P.loop
 
 /* ---------------- tab / score ---------------- */
 let tabLoaded = false, atApi = null, tabBars = [], tabMode = "auto";
-let VIEWS = LS.get("views", { chords: false, lyrics: false, tab: false });
+let VIEW = null; // 한 번에 하나만 열림, 연 탭을 다시 누르면 닫힘, 곡을 열면 다 닫힌 채로 시작 (2026-10-18 Benny)
+const VIEW_EL = () => ({ chords: $("#pChords"), lyrics: $("#pLyrics"), tab: $("#pTab"), info: $("#pInfo") });
 function applyViews() {
-  $$("#tabs [data-v]").forEach(b => { const on = !!VIEWS[b.dataset.v]; b.classList.toggle("on", on); b.textContent = (on ? "☑ " : "☐ ") + b.textContent.replace(/^[☐☑] /, ""); });
-  $("#pChords").hidden = !VIEWS.chords; $("#pLyrics").hidden = !VIEWS.lyrics; $("#pTab").hidden = !VIEWS.tab;
-  if (VIEWS.tab && !tabLoaded && P.song) loadTab();
-  LS.set("views", VIEWS); lastIdx = -2; lastBar = -2; if (P.song) render(true);
+  $$("#tabs [data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === VIEW));
+  for (const [k, el] of Object.entries(VIEW_EL())) el.hidden = k !== VIEW;
+  if (VIEW === "tab" && !tabLoaded && P.song) loadTab();
+  lastIdx = -2; lastBar = -2; if (P.song) render(true);
 }
-$$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEWS[b.dataset.v] = !VIEWS[b.dataset.v]; applyViews(); });
+$$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
 function tabNote() {
   $("#tabNote").innerHTML = (tabMode === "auto" ? "자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요." : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
     (P.semi ? ` <b style="color:var(--warn)">악보는 원키(${esc(P.song.key)}) 기준이에요.</b>` : "");
@@ -966,11 +1013,17 @@ function render(force) {
     $$("#beatDots i").forEach((el, i) => { el.classList.toggle("on", i === inBar); el.classList.toggle("d", i === 0); }); }
   highlightTabBar(t);
 }
-function core() { // sync, loop, metronome — runs on a timer so it keeps working even when frames are throttled
+function core() { // sync, loop — runs on a timer so it keeps working even when frames are throttled
   if (!P.song || !P.master || !P.playing) return;
   const t = cur();
-  for (const a of allEls()) if (a !== P.master && Math.abs(a.currentTime - t) > 0.05) a.currentTime = t;
   const lr = loopRange(); if (lr && t >= lr.b - 0.03) { seek(lr.a); return; }
+  // 트랙은 재생·이동 때 한꺼번에 맞춰 시작하면 그대로 붙어 감(실측 0~12ms). 자잘한 보정은 오히려 밀림·끊김을 만듦
+  // (속도 살짝 바꾸기 → 클릭이 20~50ms 계속 뒤처짐 실측) → 80ms 넘게 벌어진 상태가 0.1초 이어질 때만 위치 다시 잡기
+  for (const a of allEls()) {
+    if (a === P.master) continue;
+    if (Math.abs(a.currentTime - t) > 0.08) { a._off = (a._off || 0) + 1; if (a._off >= 4) { a._off = 0; try { a.currentTime = cur(); } catch {} } }
+    else a._off = 0;
+  }
 }
 setInterval(core, 25);
 function tick() { if (P.song && P.master) render(false); requestAnimationFrame(tick); }
@@ -986,7 +1039,7 @@ $("#rew").onclick = () => goTo(cur() - 5); $("#fwd").onclick = () => goTo(cur() 
   el.onpointermove = e => {
     if (x0 == null) return;
     if (!dragging && Math.abs(e.clientX - x0) > 8) dragging = true;
-    if (dragging) { const t1 = at(e); const a = barAt(Math.min(t0, t1)), b = barAt(Math.max(t0, t1)); P.loop = { a, b }; $("#loopBtn").classList.add("on"); render(true); }
+    if (dragging) { const t1 = at(e); const a = barAt(Math.min(t0, t1)), b = barAt(Math.max(t0, t1)); P.loop = { a, b }; loopUI(); render(true); }
   };
   el.onpointerup = e => { if (x0 == null) return; if (dragging && P.loop) setLoop(P.loop.a, P.loop.b, true); else goTo(at(e)); x0 = null; dragging = false; };
 })();
@@ -995,19 +1048,16 @@ document.addEventListener("keydown", e => {
   if (e.code === "Space") { e.preventDefault(); $("#play").click(); }
   if (e.code === "ArrowLeft") goTo(cur() - 5); if (e.code === "ArrowRight") goTo(cur() + 5);
 });
-$$("[data-preset]").forEach(b => b.onclick = () => {
-  const p = b.dataset.preset;
-  for (const n in P.mixer) { P.mixer[n].solo = p === "guitar" && n === "guitar"; P.mixer[n].mute = p === "noguitar" && n === "guitar"; }
-  applyMix();
-});
 
 /* ---------------- routing ---------------- */
 function goHome() { stopAll(); P.song = null; location.hash = ""; $("#vSong").hidden = true; $("#vHome").hidden = false; loadLib(); loadJobs(); }
 $("#back").onclick = goHome; $("#home").onclick = goHome;
 async function boot() {
   $("#foot").textContent = "Music Lab · BUILD " + BUILD;
+  if (!$("#lib").children.length) $("#lib").innerHTML = `<div class="empty">PC에 연결해서 곡 목록을 불러오는 중…</div>`;
   await pickServer();
   await ping(); applyRole();
+  if (!online || !AUTH) $("#lib").innerHTML = "";
   if (!AUTH) return;
   const m = location.hash.match(/song=([a-z0-9]+)/);
   if (online && m) { try { await openSong(m[1]); return; } catch {} }
