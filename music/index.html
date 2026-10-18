@@ -390,7 +390,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19j";
+const BUILD = "2026-10-19k";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -724,7 +724,7 @@ function buildClicks() {
   // 크롬에서 드럼·클릭 출력 소리를 같은 시계로 녹음해 잰 값(Alive, 2026-10-18): 보정 없으면 클릭이 약 15ms 일찍 → 그만큼 늦춤
   P.clicks = out.map(c => ({ t: Math.max(0, c.t + CLICK_SHIFT + (MET.adj || 0) / 1000), l: c.l })); renderClickTrack(); // MET.adj = 사람이 맞춘 기기별 보정(ms)
 }
-const CLICK_SHIFT = 0; // 10-18 엔 +12ms(드럼 정점에 맞춤). 10-19 실측: 드럼 어택은 정점보다 ~29ms 먼저 → 귀에 늦게 들려 0 으로(어택과 정점 사이). 기기별은 MET.adj
+const CLICK_SHIFT = -0.008; // Moises 스마트 메트로놈 실측(10-19, Alive): 클릭이 드럼 정점보다 7.9ms 앞·어택 시작보다 20ms 뒤. 우리 박 = 드럼 정점이라 −8ms. 기기별은 MET.adj
 // 클릭을 음악과 같은 길이의 오디오 트랙(WAV)으로 만들어 다른 트랙과 함께 재생 → 지연 보정 불필요
 function clickSample(level, sr) {
   const strong = level === 2 && MET.acc, n = Math.floor(sr * (MET.snd === "hat" ? .035 : .045)), buf = new Float32Array(n);
