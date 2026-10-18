@@ -177,7 +177,6 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .more a{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:6px 14px;color:var(--mute);text-decoration:none;font-size:13px}
 .more a:hover{border-color:var(--accent);color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);background:#222a31;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:50;font-size:14px;max-width:90vw}
-body.band .admin{display:none !important}
 .busy{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center;font-weight:700}
 </style>
 </head>
@@ -276,7 +275,7 @@ body.band .admin{display:none !important}
             <div class="r" style="justify-content:center"><button class="btn" id="keyDn">−</button><span class="bigkey" id="keyBig"></span><button class="btn" id="keyUp">+</button></div>
             <div class="semis" id="semis"></div>
             <div class="r" style="margin-top:10px"><button class="btn xs admin" id="bandKey">⭐ 이 키를 우리 밴드 키로 저장</button><span class="mute small" id="bandKeyT"></span></div>
-            <div class="hint">드럼은 음정이 없어서 그대로예요. 초록 테두리 키는 미리 만들어져 있어서 바로 바뀌어요(새 곡은 분석 후 2~3분이면 전부 준비돼요). 밴드 키로 저장하면 곡을 열 때 그 키로 바로 열려요.</div>
+            <div class="hint">드럼은 음정이 없어서 그대로예요. 처음 고르는 키는 만드는 데 10~20초 걸리고, 한 번 만든 키(초록 테두리)는 바로 바뀌어요. 2주 동안 안 쓰면 자리 차지 안 하게 지워져요. <b>밴드 키로 저장</b>하면 그 키는 계속 남고, 곡을 열 때 그 키로 바로 열려요.</div>
           </div></span>
         <span class="tbtn"><button class="btn sm" data-pop="popLoop" id="loopBtn">🔁 구간</button>
           <div class="pop" id="popLoop" hidden>
@@ -288,7 +287,7 @@ body.band .admin{display:none !important}
             <div class="r"><span class="lbl">섹션</span><select id="lSec" style="flex:1"></select></div>
             <div class="r"><button class="btn xs" id="lSave">💾 이 구간 저장</button></div>
             <div id="lSaved"></div>
-            <div class="hint">타임라인을 <b>드래그</b>하거나, 이 창이 열린 채로 코드표에서 시작 → 끝 마디를 누르세요. 반복 중에는 구간 밖으로 넘어가지 않아요. 저장한 구간은 이 기기에 남아요.</div>
+            <div class="hint">타임라인을 <b>드래그</b>하거나, 이 창이 열린 채로 코드표에서 시작 → 끝 마디를 누르세요. 반복 중에는 구간 밖으로 넘어가지 않아요. 저장한 구간은 <b>밴드 모두가 같이</b> 봐요.</div>
           </div></span>
         <span class="tbtn"><button class="btn sm" data-pop="popMetro" id="metroBtn">🥁 <span id="metroLbl">메트로놈</span></button>
           <div class="pop" id="popMetro" hidden>
@@ -320,7 +319,7 @@ body.band .admin{display:none !important}
 <dialog id="loginDlg">
   <form id="loginForm">
     <h3 style="margin-top:0">🎸 Music Lab</h3>
-    <p class="small mute">밴드 비밀번호를 넣어 주세요.</p>
+    <p class="small mute">밴드 PIN 또는 Benny 관리자 비밀번호를 넣어 주세요. 한 번 들어오면 이 기기에서는 기억돼요.</p>
     <input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호">
     <div class="small" id="loginErr" style="color:var(--err);min-height:20px;margin-top:6px"></div>
     <div style="display:flex;justify-content:flex-end"><button class="btn pri">들어가기</button></div>
@@ -337,7 +336,7 @@ body.band .admin{display:none !important}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18l";
+const BUILD = "2026-10-18m";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -371,10 +370,10 @@ async function api(path, opt = {}) {
   if (!r.ok) { let m = r.status + ""; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
   return r.json();
 }
-function applyRole() { document.body.classList.toggle("band", !isAdmin()); $("#who").textContent = AUTH ? (isAdmin() ? "관리자" : "밴드") : ""; }
+function applyRole() { $("#who").textContent = AUTH ? (isAdmin() ? "Benny" : "밴드") : ""; }
 function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; if (!$("#loginDlg").open) $("#loginDlg").showModal(); setTimeout(() => $("#pw").focus(), 50); }
 $("#loginForm").onsubmit = async e => {
-  e.preventDefault();
+  e.preventDefault(); $("#loginErr").textContent = "확인 중…";
   try { AUTH = await api("/api/login", jsonOpt("POST", { password: $("#pw").value })); LS.set("auth", AUTH); $("#loginDlg").close(); applyRole(); boot(); }
   catch (err) { $("#loginErr").textContent = err.message; }
 };
@@ -833,17 +832,18 @@ function loopOff() {
 function loopRange() { return P.loop ? { a: P.bars[P.loop.a].start, b: P.bars[P.loop.b].end } : null; }
 function openLoopPop() { if (!P.loop) { $("#la").textContent = $("#lb").textContent = "-"; } $("#lSec").value = ""; buildSaved(); }
 function loopName(a, b) { const si = secAt(P.bars[a].start + 0.01); const sec = si >= 0 ? secs()[si].name : ""; return `${P.bars[a].n}~${P.bars[b].n}마디${sec ? " · " + sec : ""}`; }
+async function saveLoops(L) { P.song.loops = L; try { await api(`/api/songs/${P.song.id}/prefs`, jsonOpt("PUT", { loops: L })); } catch (e) { toast("저장 실패: " + e.message); } buildSaved(); }
 function buildSaved() {
-  const L = LS.get("loops:" + P.song.id, []);
+  const L = P.song.loops || [];
   $("#lSaved").innerHTML = L.map((x, i) => `<div class="saved"><button class="go" data-i="${i}">▶ ${esc(x.name)}</button><button class="x" data-i="${i}" title="지우기">×</button></div>`).join("");
   $$("#lSaved .go").forEach(b => b.onclick = () => { const x = L[+b.dataset.i]; setLoop(Math.min(x.a, P.bars.length - 1), Math.min(x.b, P.bars.length - 1), true); });
-  $$("#lSaved .x").forEach(b => b.onclick = () => { L.splice(+b.dataset.i, 1); LS.set("loops:" + P.song.id, L); buildSaved(); });
+  $$("#lSaved .x").forEach(b => b.onclick = () => { if (!confirm(`'${L[+b.dataset.i].name}' 구간을 지울까요? (밴드 모두에게서 지워져요)`)) return; L.splice(+b.dataset.i, 1); saveLoops(L); });
 }
 $("#lSave").onclick = () => {
   if (!P.loop) return toast("먼저 구간을 잡아 주세요");
-  const L = LS.get("loops:" + P.song.id, []); const name = loopName(P.loop.a, P.loop.b);
-  if (!L.some(x => x.a === P.loop.a && x.b === P.loop.b)) L.push({ a: P.loop.a, b: P.loop.b, name });
-  LS.set("loops:" + P.song.id, L); buildSaved(); toast("구간을 저장했어요");
+  const L = (P.song.loops || []).slice(); const name = loopName(P.loop.a, P.loop.b);
+  if (L.some(x => x.a === P.loop.a && x.b === P.loop.b)) return toast("이미 저장된 구간이에요");
+  L.push({ a: P.loop.a, b: P.loop.b, name }); saveLoops(L); toast("구간을 저장했어요 · 밴드 모두에게 보여요");
 };
 $("#lToggle").onclick = () => { if (P.loop) return loopOff(); const k = barAt(cur()); const si = secAt(cur());
   if (si >= 0) { const s = secs()[si]; setLoop(nearestBar(s.start), Math.max(nearestBar(s.start), nearestBar(s.end) - 1), true); }
