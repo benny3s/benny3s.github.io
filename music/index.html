@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Music Lab</title>
+<meta name="description" content="유튜브 링크로 음원 분리 · 코드 · 기타 타브 · 연습 플레이어">
+<style>
+:root{
+  --bg:#0b0d0f; --panel:#14171b; --panel2:#1b1f24; --line:#262b31; --text:#e9edf1; --mute:#8b949e;
+  --accent:#19d3b5; --accent2:#0fa58c; --warn:#f2b84b; --err:#ff6b6b; --chip:#20262c;
+  --vocals:#7aa2ff; --drums:#ff8f6b; --bass:#c08bff; --guitar:#19d3b5; --piano:#f2b84b; --other:#9aa4ad;
+}
+*{box-sizing:border-box} [hidden]{display:none !important}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+a{color:var(--accent)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header.top{display:flex;align-items:center;gap:12px;height:56px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,13,15,.92);backdrop-filter:blur(8px);z-index:20}
+.logo{font-weight:800;letter-spacing:-.02em;font-size:18px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.logo b{color:var(--accent)}
+.pill{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);background:var(--chip);border:1px solid var(--line);padding:5px 10px;border-radius:99px;cursor:pointer}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--err)} .dot.on{background:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-weight:600}
+.btn:hover{border-color:#3a424b}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#04241f}
+.btn.pri:disabled{opacity:.5;cursor:default}
+.btn.sm{min-height:34px;padding:0 10px;font-size:13px;border-radius:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
+.mute{color:var(--mute)} .small{font-size:13px}
+
+/* home */
+.hero{padding:28px 0 8px}
+.hero h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em}
+.addrow{display:flex;gap:8px;margin-top:14px}
+.addrow input{flex:1;min-width:0;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);padding:0 14px;outline:none}
+.addrow input:focus{border-color:var(--accent)}
+.alt{margin-top:10px;font-size:13px;color:var(--mute)} .alt label{color:var(--accent);cursor:pointer;text-decoration:underline}
+.jobs{display:grid;gap:8px;margin-top:14px}
+.job{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.job .t{flex:1;min-width:0} .job .t div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.steps{display:flex;gap:4px;margin-top:6px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--line)} .steps i.on{background:var(--accent)} .steps i.cur{background:var(--accent);animation:pulse 1s infinite alternate}
+@keyframes pulse{from{opacity:.35}to{opacity:1}}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:12px 0 40px}
+.song{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.song:hover{border-color:var(--accent)}
+.song .th{aspect-ratio:16/8;background:#101317 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:30px}
+.song .meta{padding:10px 12px}
+.song .ttl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{font-size:12px;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--mute)}
+.chip b{color:var(--text);font-weight:600}
+.empty{padding:30px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:12px}
+.offline{border-color:#4a2d2d;background:#1a1314}
+.offline code{background:#000;padding:2px 6px;border-radius:4px}
+
+/* song view */
+.shead{display:flex;align-items:center;gap:12px;padding:14px 0}
+.shead .ttl{font-size:19px;font-weight:700;line-height:1.25}
+.shead .back{width:42px;height:42px;padding:0}
+.grid2{display:grid;grid-template-columns:330px 1fr;gap:12px;align-items:start}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.mixer .row{display:grid;grid-template-columns:20px 72px 34px 34px 1fr;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--line)}
+.mixer .row:last-child{border:0}
+.mixer .sw{width:10px;height:28px;border-radius:3px}
+.mixer .nm{font-weight:600;font-size:14px}
+.ms{height:30px;width:34px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);font-size:12px;font-weight:700;color:var(--mute)}
+.ms.m.on{background:#4a2d2d;color:#ffb3b3;border-color:#6b3a3a}
+.ms.s.on{background:var(--warn);color:#2a1e00;border-color:var(--warn)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.row.dim{opacity:.45}
+.presets{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{min-height:38px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);font-weight:600;color:var(--mute)}
+.tabs button.on{background:var(--text);color:#0b0d0f;border-color:var(--text)}
+
+/* chord view */
+.now{display:flex;gap:14px;align-items:stretch;overflow:hidden}
+.cc{flex:0 0 auto;width:132px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;position:relative;opacity:.55}
+.cc.cur{opacity:1;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.cc .nm{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.cc .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);border-radius:0 0 0 12px}
+.cc svg{display:block;margin:4px auto 0}
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:14px;max-height:340px;overflow:auto;padding-right:2px}
+.cgrid .bar{background:var(--panel2);border:1px solid var(--line);border-radius:7px;min-height:44px;padding:4px 6px;cursor:pointer;display:flex;flex-wrap:wrap;gap:2px 8px;align-content:center;position:relative}
+.cgrid .bar small{position:absolute;top:2px;right:5px;font-size:10px;color:#555d66}
+.cgrid .bar span{font-weight:700;font-size:15px}
+.cgrid .bar.cur{border-color:var(--accent);background:#10302b}
+.cgrid .bar.loop{box-shadow:0 0 0 2px var(--warn) inset}
+.cgrid .sec{grid-column:1/-1;font-size:12px;color:var(--mute);padding:6px 2px 0}
+#tabbox{background:#f6f4ef;border-radius:10px;min-height:200px;overflow:auto;max-height:62vh;color:#111;position:relative}
+#tabbox .at-cursor-bar{background:rgba(25,211,181,.18)}
+.hl{position:absolute;background:rgba(25,211,181,.22);border:1px solid rgba(25,211,181,.6);pointer-events:none;border-radius:3px;z-index:3}
+.note{font-size:13px;color:var(--mute);margin-top:8px}
+.teach{line-height:1.7}
+.teach li{margin:4px 0}
+
+/* transport */
+.transport{position:sticky;bottom:0;background:rgba(11,13,15,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:15;margin-top:14px}
+.seek{position:relative;height:34px;cursor:pointer;margin-bottom:8px;user-select:none;touch-action:none}
+.seek .strip{position:absolute;inset:0 0 10px 0;display:flex;border-radius:6px;overflow:hidden;background:var(--panel2)}
+.seek .strip div{border-right:1px solid #0b0d0f;font-size:10px;color:#bfc6cc;padding:2px 3px;overflow:hidden;white-space:nowrap}
+.seek .track{position:absolute;left:0;right:0;bottom:2px;height:4px;background:var(--line);border-radius:2px}
+.seek .fill{position:absolute;left:0;bottom:2px;height:4px;background:var(--accent);border-radius:2px}
+.seek .head{position:absolute;top:-2px;bottom:0;width:2px;background:#fff}
+.seek .lp{position:absolute;top:0;bottom:10px;background:rgba(242,184,75,.25);border-left:2px solid var(--warn);border-right:2px solid var(--warn)}
+.ctrls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.play{width:52px;height:52px;border-radius:50%;background:var(--accent);border:0;color:#04241f;font-size:20px;display:flex;align-items:center;justify-content:center}
+.time{font-variant-numeric:tabular-nums;color:var(--mute);font-size:13px;min-width:96px}
+.ctrls select{height:38px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);padding:0 8px}
+.tg.on{background:var(--warn);color:#2a1e00;border-color:var(--warn)}
+.sp{flex:1}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;max-width:min(520px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog input{width:100%;height:42px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);padding:0 12px}
+footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
+.more{text-align:center;margin:-40px 0 50px}
+.more a{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:6px 14px;color:var(--mute);text-decoration:none;font-size:13px}
+.more a:hover{border-color:var(--accent);color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#222a31;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:50;font-size:14px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%">
+  <div class="logo" id="home">🎸 Music <b>Lab</b></div>
+  <div class="pill" id="conn" title="PC 분석 서버 연결 상태"><span class="dot" id="cdot"></span><span id="ctext">PC 확인 중…</span></div>
+</div></header>
+
+<main class="wrap">
+  <!-- ============ HOME ============ -->
+  <section id="vHome">
+    <div class="hero">
+      <h1>링크 하나로 분리 · 코드 · 타브</h1>
+      <div class="mute">유튜브 링크를 넣으면 PC가 악기별로 나누고, 코드·템포·키를 찾고, 기타 타브 초안을 만들어요.</div>
+      <form class="addrow" id="addForm">
+        <input id="url" type="url" placeholder="유튜브 링크 붙여넣기" autocomplete="off">
+        <button class="btn pri" id="addBtn">분석 시작</button>
+      </form>
+      <div class="alt">또는 <label for="file">내 음원 파일 올리기</label> (mp3 · wav · m4a)<input id="file" type="file" accept="audio/*,video/*" hidden></div>
+    </div>
+    <div class="card offline" id="offline" hidden style="margin-top:14px">
+      <b>PC 분석 서버에 연결되지 않았어요</b>
+      <div class="small mute" style="margin-top:6px">분석과 재생은 Benny PC에서 돌아가요. PC가 켜져 있는지 확인하고, 바탕화면의 <code>Music Lab Server</code> 아이콘을 실행해 주세요 (PC를 켜면 자동으로 켜져요).
+      크롬에서 "로컬 네트워크 접근" 허용을 물으면 <b>허용</b>을 눌러 주세요. 그래도 안 되면 PC에서 <a href="http://127.0.0.1:8765/" target="_blank">127.0.0.1:8765</a> 로 바로 열 수 있어요.</div>
+    </div>
+    <div class="jobs" id="jobs"></div>
+    <h2 style="margin-top:26px">내 곡</h2>
+    <div class="lib" id="lib"></div>
+  </section>
+
+  <!-- ============ SONG ============ -->
+  <section id="vSong" hidden>
+    <div class="shead">
+      <button class="btn back" id="back" title="목록">←</button>
+      <div style="flex:1;min-width:0">
+        <div class="ttl" id="sTitle"></div>
+        <div class="chips" id="sChips"></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card mixer">
+        <h2>트랙</h2>
+        <div id="mixer"></div>
+        <div class="presets">
+          <button class="btn sm" data-preset="noguitar">기타 빼고 (내가 연주)</button>
+          <button class="btn sm" data-preset="guitar">기타만</button>
+          <button class="btn sm" data-preset="all">전체</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tabs" id="tabs">
+          <button data-tab="chords" class="on">코드</button>
+          <button data-tab="tab">기타 타브</button>
+          <button data-tab="info">곡 정보</button>
+        </div>
+        <div id="pChords">
+          <div class="now" id="now"></div>
+          <div class="cgrid" id="cgrid"></div>
+          <div class="note">마디를 누르면 그 위치로 이동해요. 길게 누르거나 Shift+클릭하면 구간 반복이 잡혀요.</div>
+        </div>
+        <div id="pTab" hidden>
+          <div id="tabbox"><div class="mute" style="padding:20px">타브 불러오는 중…</div></div>
+          <div class="note">자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요.
+            <span id="tabLinks"></span></div>
+        </div>
+        <div id="pInfo" hidden class="teach" ></div>
+      </div>
+    </div>
+
+    <div class="transport">
+      <div class="seek" id="seek"><div class="strip" id="strip"></div><div class="track"></div><div class="fill" id="fill"></div><div class="lp" id="lp" hidden></div><div class="head" id="phead"></div></div>
+      <div class="ctrls">
+        <button class="btn sm" id="rew" title="5초 뒤로">−5s</button>
+        <button class="play" id="play" title="재생 (스페이스)">▶</button>
+        <button class="btn sm" id="fwd" title="5초 앞으로">+5s</button>
+        <span class="time" id="time">0:00 / 0:00</span>
+        <span class="sp"></span>
+        <label class="small mute">속도</label>
+        <select id="speed">
+          <option value="0.5">50%</option><option value="0.6">60%</option><option value="0.7">70%</option><option value="0.75">75%</option>
+          <option value="0.8">80%</option><option value="0.9">90%</option><option value="1" selected>100%</option><option value="1.1">110%</option><option value="1.25">125%</option>
+        </select>
+        <button class="btn sm tg" id="loopBtn" title="A-B 구간 반복">🔁 구간</button>
+        <button class="btn sm tg" id="metro" title="메트로놈">🥁 클릭</button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer id="foot"></footer>
+<p class="more"><a href="https://benny3s.github.io/" target="_blank">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
+
+<dialog id="dlg">
+  <h3 style="margin-top:0">PC 서버 주소</h3>
+  <p class="small mute">기본은 이 PC(<code>http://127.0.0.1:8765</code>)예요. 나중에 폰에서 쓰려면 터널 주소를 넣으면 돼요.</p>
+  <input id="srvInput">
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+    <button class="btn" id="dlgReset">기본값</button><button class="btn pri" id="dlgOk">저장</button>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
+<script>
+const BUILD = "2026-10-18b";
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+             set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+const DEFAULT_SRV = "http://127.0.0.1:8765";
+const sameOrigin = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === "8765";
+let SRV = sameOrigin ? "" : LS.get("srv", DEFAULT_SRV);
+const STEM_LABEL = { vocals: "보컬", drums: "드럼", bass: "베이스", guitar: "기타", piano: "피아노", other: "그 외" };
+const STEP_ORDER = ["download", "convert", "separate", "analyze", "encode", "done"];
+let online = false;
+
+function toast(msg, ms = 2600) { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), ms); }
+function fmt(t) { t = Math.max(0, t || 0); const m = Math.floor(t / 60), s = Math.floor(t % 60); return m + ":" + String(s).padStart(2, "0"); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+async function api(path, opt = {}) {
+  const r = await fetch(SRV + path, opt);
+  if (!r.ok) { let m = r.status + ""; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
+  return r.json();
+}
+
+/* ---------------- connection ---------------- */
+async function ping() {
+  try {
+    const h = await api("/api/health");
+    online = true; $("#cdot").classList.add("on");
+    $("#ctext").textContent = "PC 연결됨" + (h.gpu ? " · GPU" : "");
+    $("#offline").hidden = true;
+  } catch (e) {
+    online = false; $("#cdot").classList.remove("on"); $("#ctext").textContent = "PC 연결 안 됨";
+    $("#offline").hidden = false;
+  }
+  return online;
+}
+$("#conn").onclick = () => { $("#srvInput").value = SRV || DEFAULT_SRV; $("#dlg").showModal(); };
+$("#dlgOk").onclick = () => { SRV = $("#srvInput").value.trim().replace(/\/$/, ""); LS.set("srv", SRV); $("#dlg").close(); boot(); };
+$("#dlgReset").onclick = () => { $("#srvInput").value = DEFAULT_SRV; };
+
+/* ---------------- home ---------------- */
+let jobsTimer = null;
+async function loadLib() {
+  if (!online) { $("#lib").innerHTML = ""; return; }
+  const list = await api("/api/songs");
+  $("#lib").innerHTML = list.length ? list.map(s => `
+    <div class="song" data-id="${s.id}">
+      <div class="th" style="${s.thumbnail ? `background-image:url('${esc(s.thumbnail)}')` : ""}">${s.thumbnail ? "" : "🎵"}</div>
+      <div class="meta"><div class="ttl">${esc(s.title)}</div>
+        <div class="chips"><span class="chip">키 <b>${esc(s.key || "-")}</b></span><span class="chip"><b>${Math.round(s.tempo || 0)}</b> BPM</span><span class="chip">${fmt(s.duration)}</span></div>
+      </div></div>`).join("") : `<div class="empty">아직 분석한 곡이 없어요. 위에 유튜브 링크를 넣어 보세요.</div>`;
+  $$("#lib .song").forEach(el => el.onclick = () => openSong(el.dataset.id));
+}
+async function loadJobs() {
+  if (!online) return;
+  const jobs = (await api("/api/jobs")).filter(j => j.state !== "done" || Date.now() / 1000 - j.updated < 8);
+  $("#jobs").innerHTML = jobs.map(j => {
+    const si = STEP_ORDER.indexOf(j.step);
+    const steps = STEP_ORDER.slice(0, 5).map((s, i) => `<i class="${i < si || j.state === "done" ? "on" : i === si && j.state === "running" ? "cur" : ""}"></i>`).join("");
+    const icon = j.state === "error" ? "⚠️" : j.state === "done" ? "✅" : "⏳";
+    return `<div class="job"><div style="font-size:20px">${icon}</div><div class="t">
+      <div><b>${esc(j.title || j.name || j.url || "")}</b></div>
+      <div class="small ${j.state === "error" ? "" : "mute"}" style="${j.state === "error" ? "color:var(--err)" : ""}">${esc(j.detail)}</div>
+      <div class="steps">${steps}</div></div></div>`;
+  }).join("");
+  const active = jobs.some(j => j.state === "running" || j.state === "queued");
+  if (jobs.some(j => j.state === "done")) loadLib();
+  clearTimeout(jobsTimer);
+  if (active || jobs.length) jobsTimer = setTimeout(loadJobs, active ? 1500 : 5000);
+}
+$("#addForm").onsubmit = async e => {
+  e.preventDefault();
+  const url = $("#url").value.trim();
+  if (!url) return;
+  if (!online && !(await ping())) return toast("PC 서버에 연결되지 않았어요");
+  $("#addBtn").disabled = true;
+  try { await api("/api/jobs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) }); $("#url").value = ""; toast("분석을 시작했어요. 보통 1~3분 걸려요"); loadJobs(); }
+  catch (err) { toast("실패: " + err.message); }
+  $("#addBtn").disabled = false;
+};
+$("#file").onchange = async () => {
+  const f = $("#file").files[0]; if (!f) return;
+  const fd = new FormData(); fd.append("file", f);
+  try { await api("/api/upload", { method: "POST", body: fd }); toast("업로드했어요. 분석을 시작해요"); loadJobs(); }
+  catch (err) { toast("실패: " + err.message); }
+  $("#file").value = "";
+};
+
+/* ---------------- chord diagrams ---------------- */
+const OPEN = { // strings 6->1, -1 = mute
+  "C": [-1,3,2,0,1,0], "D": [-1,-1,0,2,3,2], "E": [0,2,2,1,0,0], "G": [3,2,0,0,0,3], "A": [-1,0,2,2,2,0],
+  "Am": [-1,0,2,2,1,0], "Em": [0,2,2,0,0,0], "Dm": [-1,-1,0,2,3,1], "E7": [0,2,0,1,0,0], "A7": [-1,0,2,0,2,0],
+  "D7": [-1,-1,0,2,1,2], "G7": [3,2,0,0,0,1], "C7": [-1,3,2,3,1,0], "B7": [-1,2,1,2,0,2], "Em7": [0,2,0,0,0,0],
+  "Am7": [-1,0,2,0,1,0], "Dm7": [-1,-1,0,2,1,1], "Cmaj7": [-1,3,2,0,0,0], "Fmaj7": [-1,-1,3,2,1,0], "Amaj7": [-1,0,2,1,2,0],
+  "Dmaj7": [-1,-1,0,2,2,2], "Asus4": [-1,0,2,2,3,0], "Dsus4": [-1,-1,0,2,3,3], "Esus4": [0,2,2,2,0,0], "Gmaj7": [3,2,0,0,0,2]
+};
+const NOTE_PC = { C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11 };
+const ESH = { "": [0,2,2,1,0,0], m: [0,2,2,0,0,0], "7": [0,2,0,1,0,0], m7: [0,2,0,0,0,0], maj7: [0,-1,1,1,0,-1], sus4: [0,2,2,2,0,0], dim: [0,1,2,0,-1,-1] };
+const ASH = { "": [-1,0,2,2,2,0], m: [-1,0,2,2,1,0], "7": [-1,0,2,0,2,0], m7: [-1,0,2,0,1,0], maj7: [-1,0,2,1,2,0], sus4: [-1,0,2,2,3,0], dim: [-1,0,1,2,1,-1] };
+function shape(ch) {
+  if (OPEN[ch]) return OPEN[ch];
+  const m = ch.match(/^([A-G][#b]?)(.*)$/); if (!m) return null;
+  const pc = NOTE_PC[m[1]], q = m[2]; if (pc == null || !ESH[q]) return null;
+  const fe = (pc - 4 + 12) % 12, fa = (pc - 9 + 12) % 12;
+  const useE = (fe || 12) <= (fa || 12);
+  const f = useE ? (fe || 12) : (fa || 12), base = useE ? ESH[q] : ASH[q];
+  return base.map(v => v < 0 ? -1 : v + f);
+}
+function diagram(ch, w = 92) {
+  const s = shape(ch); if (!s) return `<div class="small mute" style="height:${w}px;display:flex;align-items:center;justify-content:center">—</div>`;
+  const fr = s.filter(v => v > 0); const lo = fr.length ? Math.min(...fr) : 1; const start = Math.max(...fr, 0) > 4 ? lo : 1;
+  const W = w, H = w * 1.05, x0 = 14, y0 = 16, dx = (W - 2 * x0) / 5, dy = (H - y0 - 6) / 4;
+  let g = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  for (let i = 0; i < 6; i++) g += `<line x1="${x0 + i * dx}" y1="${y0}" x2="${x0 + i * dx}" y2="${y0 + 4 * dy}" stroke="#58616a"/>`;
+  for (let j = 0; j <= 4; j++) g += `<line x1="${x0}" y1="${y0 + j * dy}" x2="${x0 + 5 * dx}" y2="${y0 + j * dy}" stroke="#58616a" stroke-width="${j === 0 && start === 1 ? 3 : 1}"/>`;
+  if (start > 1) g += `<text x="2" y="${y0 + dy * .7}" font-size="10" fill="#8b949e">${start}</text>`;
+  s.forEach((v, i) => { const x = x0 + i * dx;
+    if (v < 0) g += `<text x="${x}" y="${y0 - 5}" font-size="10" text-anchor="middle" fill="#8b949e">×</text>`;
+    else if (v === 0) g += `<circle cx="${x}" cy="${y0 - 8}" r="3" fill="none" stroke="#8b949e"/>`;
+    else g += `<circle cx="${x}" cy="${y0 + (v - start + .5) * dy}" r="${dx * .36}" fill="#e9edf1"/>`; });
+  return g + "</svg>";
+}
+
+/* ---------------- player ---------------- */
+const P = { song: null, audios: {}, master: null, playing: false, rate: 1, loop: null, mixer: {}, metro: false, lastBeat: -1, ac: null };
+function stopAll() { Object.values(P.audios).forEach(a => { a.pause(); a.src = ""; }); P.audios = {}; P.master = null; P.playing = false; }
+function cur() { return P.master ? P.master.currentTime : 0; }
+function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); Object.values(P.audios).forEach(a => a.currentTime = t); P.lastBeat = -1; render(true); }
+function setPlaying(on) {
+  P.playing = on; $("#play").textContent = on ? "❚❚" : "▶";
+  Object.values(P.audios).forEach(a => on ? a.play().catch(() => {}) : a.pause());
+  if (on && P.metro) ensureAC();
+}
+function applyMix() {
+  const anySolo = Object.values(P.mixer).some(m => m.solo);
+  for (const [n, a] of Object.entries(P.audios)) {
+    const m = P.mixer[n]; const audible = anySolo ? m.solo : !m.mute;
+    a.volume = audible ? m.vol : 0;
+    const row = document.querySelector(`.row[data-stem="${n}"]`);
+    if (row) { row.classList.toggle("dim", !audible); row.querySelector(".m").classList.toggle("on", m.mute); row.querySelector(".s").classList.toggle("on", m.solo); }
+  }
+  LS.set("mix:" + P.song.id, P.mixer);
+}
+function ensureAC() { if (!P.ac) P.ac = new (window.AudioContext || window.webkitAudioContext)(); if (P.ac.state === "suspended") P.ac.resume(); }
+function click(accent) {
+  ensureAC(); const t = P.ac.currentTime, o = P.ac.createOscillator(), g = P.ac.createGain();
+  o.frequency.value = accent ? 1600 : 1000; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(accent ? .5 : .3, t + .002); g.gain.exponentialRampToValueAtTime(0.0001, t + .05);
+  o.connect(g).connect(P.ac.destination); o.start(t); o.stop(t + .06);
+}
+
+async function openSong(id) {
+  stopAll();
+  const s = await api("/api/songs/" + id);
+  P.song = s; location.hash = "song=" + id;
+  $("#vHome").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
+  $("#sTitle").textContent = s.title;
+  $("#sChips").innerHTML = `<span class="chip">키 <b>${esc(s.key)}</b></span><span class="chip"><b>${Math.round(s.tempo)}</b> BPM</span><span class="chip">4/4</span><span class="chip">${fmt(s.duration)}</span>` +
+    (s.source && s.source.startsWith("http") ? `<a class="chip" href="${esc(s.source)}" target="_blank" style="text-decoration:none">원본 ↗</a>` : "");
+  // mixer
+  const saved = LS.get("mix:" + id, null);
+  P.mixer = {};
+  const maxLv = Math.max(...Object.values(s.levels || { a: 1 }));
+  $("#mixer").innerHTML = s.stems.map(n => {
+    const quiet = s.levels && s.levels[n] < maxLv * 0.04;
+    P.mixer[n] = saved?.[n] || { vol: 0.85, mute: false, solo: false };
+    return `<div class="row" data-stem="${n}"><span class="sw" style="background:var(--${n})"></span>
+      <span class="nm">${STEM_LABEL[n]}${quiet ? ' <span class="small mute">(거의 없음)</span>' : ""}</span>
+      <button class="ms m">M</button><button class="ms s">S</button>
+      <input type="range" min="0" max="1" step="0.01" value="${P.mixer[n].vol}"></div>`;
+  }).join("");
+  $$("#mixer .row").forEach(r => { const n = r.dataset.stem;
+    r.querySelector(".m").onclick = () => { P.mixer[n].mute = !P.mixer[n].mute; applyMix(); };
+    r.querySelector(".s").onclick = () => { P.mixer[n].solo = !P.mixer[n].solo; applyMix(); };
+    r.querySelector("input").oninput = e => { P.mixer[n].vol = +e.target.value; applyMix(); };
+  });
+  // audio
+  for (const n of s.stems) {
+    const a = new Audio(); a.preload = "auto"; a.crossOrigin = "anonymous"; a.src = `${SRV}/files/${id}/${n}.mp3`;
+    a.preservesPitch = true; a.playbackRate = P.rate; P.audios[n] = a;
+  }
+  P.master = P.audios[s.stems.find(n => n === "drums") || s.stems[0]];
+  P.master.onended = () => setPlaying(false);
+  applyMix();
+  P.loop = null; $("#loopBtn").classList.remove("on");
+  buildChords(); buildStrip(); buildInfo();
+  tabLoaded = false; switchTab(LS.get("tab", "chords"));
+  render(true);
+}
+
+/* bars from downbeats */
+function bars() {
+  const s = P.song; const db = s.downbeats.length ? s.downbeats : s.beats.filter((_, i) => i % 4 === 0);
+  const out = []; for (let i = 0; i < db.length; i++) out.push({ i, start: db[i], end: db[i + 1] ?? s.duration });
+  if (db.length && db[0] > 0.3) out.unshift({ i: -1, start: 0, end: db[0] });
+  return out;
+}
+function chordAt(t) { const c = P.song.chords; let lo = 0, hi = c.length - 1; while (lo <= hi) { const m = (lo + hi) >> 1; if (c[m].end <= t) lo = m + 1; else if (c[m].start > t) hi = m - 1; else return m; } return -1; }
+function buildChords() {
+  const B = bars(); P.bars = B;
+  let html = "";
+  B.forEach((b, k) => {
+    if (k > 0 && k % 16 === 0) html += `<div class="sec">${k + 1}마디~</div>`;
+    const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push(c.chord); });
+    const uniq = names.filter((n, i) => names[i - 1] !== n);
+    html += `<div class="bar" data-k="${k}"><small>${b.i < 0 ? "" : b.i + 1}</small>${uniq.map(n => `<span>${esc(n)}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
+  });
+  $("#cgrid").innerHTML = html;
+  $$("#cgrid .bar").forEach(el => {
+    let timer = null; const k = +el.dataset.k;
+    const setLoopTo = () => { const b = P.bars[k]; if (!P.loop || P.loop.pending == null) { P.loop = { a: b.start, b: b.end, pending: k }; } else { const k0 = P.loop.pending; const s = Math.min(k0, k), e = Math.max(k0, k); P.loop = { a: P.bars[s].start, b: P.bars[e].end }; } $("#loopBtn").classList.add("on"); render(true); toast(P.loop.pending != null ? "구간 시작을 잡았어요. 끝 마디를 길게 누르세요" : "구간 반복 켬"); };
+    el.onpointerdown = e => { timer = setTimeout(() => { timer = null; setLoopTo(); }, 500); };
+    el.onpointerup = el.onpointerleave = () => { if (timer) clearTimeout(timer); };
+    el.onclick = e => { if (e.shiftKey) return setLoopTo(); if (timer === null && e.pointerType === "touch") return; seek(P.bars[k].start); };
+  });
+}
+function buildStrip() {
+  const d = P.song.duration; const c = P.song.chords.filter(x => x.chord !== "N");
+  $("#strip").innerHTML = c.map(x => `<div style="position:absolute;left:${x.start / d * 100}%;width:${(x.end - x.start) / d * 100}%">${esc(x.chord)}</div>`).join("");
+}
+function buildInfo() {
+  const s = P.song; const counts = {}; s.chords.forEach(c => { if (c.chord !== "N") counts[c.chord] = (counts[c.chord] || 0) + (c.end - c.start); });
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
+  $("#pInfo").innerHTML = `
+    <ul>
+      <li><b>키</b>: ${esc(s.key)} · <b>템포</b>: 약 ${Math.round(s.tempo)} BPM · <b>길이</b>: ${fmt(s.duration)}</li>
+      <li><b>많이 나오는 코드</b>: ${top.map(esc).join(", ") || "-"}</li>
+      <li><b>기타에서 찾은 음</b>: ${s.guitar_notes || 0}개 ${s.tab ? "→ 타브 초안 있음" : "→ 기타 소리가 작아 타브를 만들지 못했어요"}</li>
+    </ul>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">${top.slice(0, 6).map(n => `<div style="text-align:center"><div style="font-weight:700">${esc(n)}</div>${diagram(n, 76)}</div>`).join("")}</div>
+    <div class="note">AI 선생님 설명(곡 구조·진행 해설·연습 포인트)은 2단계에서 붙일 예정이에요.</div>`;
+}
+
+/* ---------------- tabs ---------------- */
+let tabLoaded = false, atApi = null, tabBars = [];
+function switchTab(t) {
+  LS.set("tab", t);
+  $$("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  $("#pChords").hidden = t !== "chords"; $("#pTab").hidden = t !== "tab"; $("#pInfo").hidden = t !== "info";
+  if (t === "tab" && !tabLoaded) loadTab();
+}
+$$("#tabs button").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+async function loadTab() {
+  tabLoaded = true; const s = P.song; const box = $("#tabbox");
+  $("#tabLinks").innerHTML = ` · <a href="${SRV}/files/${s.id}/guitar.mid" download>기타 MIDI 받기</a>`;
+  if (!s.tab) { box.innerHTML = `<div class="mute" style="padding:20px">기타 소리를 충분히 찾지 못해 타브를 만들지 못했어요.</div>`; return; }
+  const tex = await (await fetch(`${SRV}/files/${s.id}/guitar.atex`)).text();
+  tabBars = s.tab_bar_times || [];
+  if (!window.alphaTab) { box.innerHTML = `<pre style="padding:12px;white-space:pre-wrap">${esc(tex)}</pre>`; return; }
+  box.innerHTML = `<div id="at"></div>`;
+  try {
+    atApi = new alphaTab.AlphaTabApi($("#at"), {
+      core: { fontDirectory: "https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/font/", enableLazyLoading: false },
+      display: { staveProfile: "Tab", scale: 0.9, layoutMode: "page" },
+      player: { enablePlayer: false }
+    });
+    atApi.tex(tex);
+  } catch (e) { box.innerHTML = `<pre style="padding:12px;white-space:pre-wrap">${esc(tex)}</pre>`; }
+}
+let hlEl = null, lastTabBar = -2;
+function highlightTabBar(t) {
+  if (!atApi || $("#pTab").hidden || !tabBars.length) return;
+  let k = -1; for (let i = 0; i < tabBars.length; i++) { if (tabBars[i] != null && tabBars[i] <= t) k = i; else if (tabBars[i] > t) break; }
+  if (k === lastTabBar) return; lastTabBar = k;
+  try {
+    const lk = atApi.renderer.boundsLookup; if (!lk) return;
+    let mb = null; for (const sys of lk.staffSystems) for (const b of sys.bars) if (b.index === k) mb = b;
+    if (!mb) return; const r = mb.visualBounds || mb.realBounds;
+    if (!hlEl) { hlEl = document.createElement("div"); hlEl.className = "hl"; $("#tabbox").append(hlEl); }
+    Object.assign(hlEl.style, { left: r.x + "px", top: r.y + "px", width: r.w + "px", height: r.h + "px" });
+    const box = $("#tabbox"); if (r.y < box.scrollTop || r.y + r.h > box.scrollTop + box.clientHeight) box.scrollTo({ top: r.y - 40, behavior: "smooth" });
+  } catch {}
+}
+
+/* ---------------- render loop ---------------- */
+let lastIdx = -2, lastBar = -2;
+function render(force) {
+  const s = P.song; if (!s) return;
+  const t = cur(), d = s.duration;
+  $("#time").textContent = fmt(t) + " / " + fmt(d);
+  $("#fill").style.width = (t / d * 100) + "%"; $("#phead").style.left = (t / d * 100) + "%";
+  if (P.loop && P.loop.b) { const lp = $("#lp"); lp.hidden = false; lp.style.left = P.loop.a / d * 100 + "%"; lp.style.width = (P.loop.b - P.loop.a) / d * 100 + "%"; } else $("#lp").hidden = true;
+  // chord cards
+  const ci = chordAt(t);
+  if (ci !== lastIdx || force) {
+    lastIdx = ci; const c = s.chords; const list = [];
+    for (let i = Math.max(0, ci); i < c.length && list.length < 4; i++) if (c[i].chord !== "N" || i === ci) list.push(i);
+    $("#now").innerHTML = list.map((i, k) => `<div class="cc ${k === 0 && i === ci ? "cur" : ""}"><div class="nm">${c[i].chord === "N" ? "–" : esc(c[i].chord)}</div>${c[i].chord === "N" ? "" : diagram(c[i].chord)}${k === 0 ? '<div class="bar" id="ccbar"></div>' : ""}</div>`).join("");
+  }
+  if (ci >= 0) { const c = s.chords[ci]; const b = $("#ccbar"); if (b) b.style.width = Math.min(100, (t - c.start) / (c.end - c.start) * 100) + "%"; }
+  // bar highlight
+  const B = P.bars || []; let bk = -1; for (let i = 0; i < B.length; i++) if (B[i].start <= t && t < B[i].end) { bk = i; break; }
+  if (bk !== lastBar || force) {
+    lastBar = bk;
+    $$("#cgrid .bar").forEach((el, i) => { el.classList.toggle("cur", i === bk); el.classList.toggle("loop", !!(P.loop && P.loop.b && B[i].start >= P.loop.a - .01 && B[i].end <= P.loop.b + .01)); });
+    const el = document.querySelector(`#cgrid .bar[data-k="${bk}"]`); const g = $("#cgrid");
+    if (el && P.playing && (el.offsetTop < g.scrollTop || el.offsetTop > g.scrollTop + g.clientHeight - 50)) g.scrollTo({ top: el.offsetTop - g.offsetTop - 40, behavior: "smooth" });
+  }
+  highlightTabBar(t);
+}
+function tick() {
+  if (P.song && P.master) {
+    const t = cur();
+    if (P.playing) {
+      // keep stems in sync with the master
+      for (const a of Object.values(P.audios)) if (a !== P.master && Math.abs(a.currentTime - t) > 0.06) a.currentTime = t;
+      if (P.loop && P.loop.b && t >= P.loop.b) seek(P.loop.a);
+      if (P.metro) { const bt = P.song.beats; let i = P.lastBeat + 1; while (i < bt.length && bt[i] <= t) i++; if (i - 1 > P.lastBeat && t - bt[i - 1] < 0.08) { const isDown = P.song.downbeats.some(x => Math.abs(x - bt[i - 1]) < .02); click(isDown); } P.lastBeat = i - 1; }
+    }
+    render(false);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ---------------- transport ---------------- */
+$("#play").onclick = () => setPlaying(!P.playing);
+$("#rew").onclick = () => seek(cur() - 5); $("#fwd").onclick = () => seek(cur() + 5);
+$("#speed").onchange = e => { P.rate = +e.target.value; Object.values(P.audios).forEach(a => { a.playbackRate = P.rate; a.preservesPitch = true; }); };
+$("#metro").onclick = () => { P.metro = !P.metro; $("#metro").classList.toggle("on", P.metro); if (P.metro) ensureAC(); P.lastBeat = -1; };
+$("#loopBtn").onclick = () => {
+  if (P.loop) { P.loop = null; $("#loopBtn").classList.remove("on"); render(true); return toast("구간 반복 끔"); }
+  // default: the current bar ±1 (4 bars)
+  const B = P.bars; let k = B.findIndex(b => b.start <= cur() && cur() < b.end); if (k < 0) k = 0;
+  P.loop = { a: B[k].start, b: B[Math.min(B.length - 1, k + 3)].end }; $("#loopBtn").classList.add("on"); render(true);
+  toast("지금부터 4마디 반복. 코드 탭에서 마디를 길게 눌러 바꿀 수 있어요");
+};
+(() => { // seek bar drag
+  const el = $("#seek"); let drag = false;
+  const at = e => { const r = el.getBoundingClientRect(); return (Math.min(Math.max(e.clientX - r.left, 0), r.width) / r.width) * (P.song?.duration || 0); };
+  el.onpointerdown = e => { drag = true; el.setPointerCapture(e.pointerId); seek(at(e)); };
+  el.onpointermove = e => { if (drag) seek(at(e)); };
+  el.onpointerup = () => drag = false;
+})();
+document.addEventListener("keydown", e => {
+  if ($("#vSong").hidden || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.code === "Space") { e.preventDefault(); setPlaying(!P.playing); }
+  if (e.code === "ArrowLeft") seek(cur() - 5); if (e.code === "ArrowRight") seek(cur() + 5);
+});
+$$("[data-preset]").forEach(b => b.onclick = () => {
+  const p = b.dataset.preset;
+  for (const n in P.mixer) { P.mixer[n].solo = p === "guitar" && n === "guitar"; P.mixer[n].mute = p === "noguitar" && n === "guitar"; }
+  applyMix();
+});
+
+/* ---------------- routing ---------------- */
+function goHome() { stopAll(); P.song = null; location.hash = ""; $("#vSong").hidden = true; $("#vHome").hidden = false; loadLib(); loadJobs(); }
+$("#back").onclick = goHome; $("#home").onclick = goHome;
+async function boot() {
+  $("#foot").textContent = "Music Lab · BUILD " + BUILD;
+  await ping();
+  const m = location.hash.match(/song=([a-z0-9]+)/);
+  if (online && m) { try { await openSong(m[1]); return; } catch {} }
+  loadLib(); loadJobs();
+}
+setInterval(() => { if (!P.playing) ping(); }, 15000);
+boot();
+</script>
+</body>
+</html>
