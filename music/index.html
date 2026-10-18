@@ -275,7 +275,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
             <div class="r" style="justify-content:center"><button class="btn" id="keyDn">−</button><span class="bigkey" id="keyBig"></span><button class="btn" id="keyUp">+</button></div>
             <div class="semis" id="semis"></div>
             <div class="r" style="margin-top:10px"><button class="btn xs admin" id="bandKey">⭐ 이 키를 우리 밴드 키로 저장</button><span class="mute small" id="bandKeyT"></span></div>
-            <div class="hint">드럼은 음정이 없어서 그대로예요. 처음 고르는 키는 만드는 데 10~20초 걸리고, 한 번 만든 키(초록 테두리)는 바로 바뀌어요. 2주 동안 안 쓰면 자리 차지 안 하게 지워져요. <b>밴드 키로 저장</b>하면 그 키는 계속 남고, 곡을 열 때 그 키로 바로 열려요.</div>
+            <div class="hint">드럼은 음정이 없어서 그대로예요. 처음 고르는 키는 만드는 데 10~20초 걸리고, 한 번 만든 키(초록 테두리)는 바로 바뀌어요. <b>밴드 키로 저장</b>하면 그 키만 남고 나머지 키는 바로 지워져요(용량 절약). 저장 안 하고 시험만 해 본 키는 다음 날 새벽에 정리돼요.</div>
           </div></span>
         <span class="tbtn"><button class="btn sm" data-pop="popLoop" id="loopBtn">🔁 구간</button>
           <div class="pop" id="popLoop" hidden>
@@ -336,7 +336,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18m";
+const BUILD = "2026-10-18n";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -700,7 +700,7 @@ async function buildKey(fetchReady) {
   $("#bandKeyT").textContent = bs ? `밴드 키: ${k ? keyName((k.pc + bs + 120) % 12, k.minor) : ""} (${bs > 0 ? "+" : ""}${bs})` : "";
 }
 $("#bandKey").onclick = async () => {
-  try { await api(`/api/songs/${P.song.id}/prefs`, jsonOpt("PUT", { band_semi: P.semi })); P.song.band_semi = P.semi; buildKey(); toast(P.semi ? `${tKey()} 키를 밴드 키로 저장했어요` : "밴드 키를 원키로 되돌렸어요"); }
+  try { await api(`/api/songs/${P.song.id}/prefs`, jsonOpt("PUT", { band_semi: P.semi })); P.song.band_semi = P.semi; buildKey(); pitchReady = {}; if (P.semi) pitchReady[P.semi] = true; buildKey(); toast(P.semi ? `${tKey()} 키를 밴드 키로 저장했어요 · 다른 키 파일은 정리했어요` : "밴드 키를 원키로 되돌렸어요"); }
   catch (e) { toast("저장 실패: " + e.message); }
 };
 async function changeKey(d) {
