@@ -79,6 +79,9 @@ h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
 .ms.s.on{background:var(--warn);color:#2a1e00;border-color:var(--warn)}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .row.dim{opacity:.45}
+.mixer.wait #mixer{opacity:.5}
+.mixer .wnote{display:none;font-weight:400;font-size:12px;color:var(--warn);margin-left:6px}
+.mixer.wait .wnote{display:inline}
 .presets{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .linkbtn{background:none;border:0;color:var(--mute);font-size:12px;text-decoration:underline;padding:6px 0}
 
@@ -287,7 +290,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
     <div class="grid2">
       <div class="card mixer">
-        <h2>트랙</h2>
+        <h2>트랙<span class="wnote">준비 중 · 지금은 전체 소리로 재생돼요</span></h2>
         <div id="mixer"></div>
       </div>
       <div class="card">
@@ -339,7 +342,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18o";
+const BUILD = "2026-10-18p";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -368,7 +371,8 @@ function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;
 const jsonOpt = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 let AUTH = LS.get("auth", null); // {role, token}
 const isAdmin = () => AUTH?.role === "admin";
-function fileUrl(id, name) { return `${SRV}/files/${id}/${name}?t=${encodeURIComponent(AUTH?.token || "")}`; }
+// 폰은 128k 가벼운 파일(서버가 처음 요청 때 만들어 둠) → 받는 양 2/3
+function fileUrl(id, name) { return `${SRV}/files/${id}/${name}?t=${encodeURIComponent(AUTH?.token || "")}${isMobile && name.endsWith(".mp3") ? "&lite=1" : ""}`; }
 async function api(path, opt = {}) {
   opt.headers = Object.assign({}, opt.headers || {}, AUTH ? { Authorization: "Bearer " + AUTH.token } : {});
   const r = await fetch(SRV + path, opt);
@@ -405,6 +409,9 @@ let jobsTimer = null;
 async function loadLib() {
   if (!online) { $("#lib").innerHTML = ""; return; }
   const list = await api("/api/songs");
+  LS.set("libCache", list); renderLib(list);
+}
+function renderLib(list) { // 목록은 기기에 기억해 두고 먼저 보여준 뒤 새로 받아 바꿈 (폰에서 공개 주소 왕복이 느림)
   $("#lib").innerHTML = list.length ? list.map(s => `
     <div class="song" data-id="${s.id}">
       <div class="th" style="${s.thumbnail ? `background-image:url('${esc(s.thumbnail)}')` : ""}">${s.thumbnail ? "" : "🎵"}</div>
@@ -502,11 +509,41 @@ const P = { song: null, audios: {}, master: null, playing: false, rate: 1, semi:
             clicks: [], clickIdx: 0, counting: false, secEdit: false, bars: [] };
 const MET = Object.assign({ on: false, vol: 0.9, sub: "1", acc: true, count: false, snd: "wood" }, LS.get("metro3", {}));
 function stopAll() {
-  P.abort?.abort(); P.ready = false; P.pos = 0;
-  allEls().forEach(a => { a.pause(); a.removeAttribute("src"); a.load(); }); P.metroEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶";
+  P.abort?.abort(); P.ready = false; P.stems = false; P.pos = 0;
+  allEls().forEach(a => { a.pause(); a.removeAttribute("src"); a.load(); }); P.metroEl = null; P.mixEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶";
   Object.values(P.blobs || {}).forEach(u => URL.revokeObjectURL(u)); P.blobs = {};
 }
-// 폰(공개 주소)에서는 스트리밍 중 위치를 맞출 때마다 버퍼링이 생겨 소리가 끊기고 메트로놈이 밀렸다 → 트랙을 통째로 받아 둔 뒤 재생
+// 폰(공개 주소)에서는 트랙 6개를 스트리밍하며 맞추면 버퍼링 때문에 끊기고 메트로놈이 밀렸다 → 트랙은 통째로 받아 둔 뒤 재생.
+// 기다리지 않게: 곡을 열면 섞인 파일(mix) 하나로 바로 재생하고, 트랙을 다 받으면 재생 중에 트랙별로 넘어감 (2026-10-18)
+function startMix(s) {
+  const m = new Audio(); m.preload = "auto"; m.src = fileUrl(s.id, P.mixFile); m.preservesPitch = true; m.playbackRate = P.rate; m.volume = 0.85;
+  P.mixEl = m;
+  m.addEventListener("loadedmetadata", () => {
+    if (P.mixEl !== m || P.stems) return;
+    try { m.currentTime = P.pos || 0; } catch {}
+    P.master = m; m.onended = () => setPlaying(false); P.ready = true; $("#play").disabled = false;
+  }, { once: true });
+  m.addEventListener("error", () => { if (P.mixEl === m && !P.stems) { P.mixEl = null; P.master = null; P.ready = false; $("#play").disabled = true; } }, { once: true });
+}
+async function switchToStems(s, urls) {
+  const els = {}, wait = (a, ev, ms) => new Promise(r => { a.addEventListener(ev, r, { once: true }); setTimeout(r, ms); });
+  for (const n of s.stems) { const a = new Audio(); a.preload = "auto"; a.src = urls[n]; a.preservesPitch = true; a.playbackRate = P.rate; a.volume = 0; els[n] = a; }
+  await Promise.all(Object.values(els).map(a => a.readyState >= 3 ? 0 : wait(a, "canplaythrough", 3000)));
+  if (P.song !== s) return Object.values(els).forEach(a => a.removeAttribute("src"));
+  if (P.playing) { // 소리 0으로 먼저 같이 돌려 두고 위치를 맞춘 뒤 한 번에 바꿔 끼움 → 끊김 없음
+    Object.values(els).forEach(a => { try { a.currentTime = cur(); } catch {} a.play().catch(() => {}); });
+    await Promise.all(Object.values(els).map(a => wait(a, "playing", 1500)));
+    const t = cur(); Object.values(els).forEach(a => { if (Math.abs(a.currentTime - t) > 0.03) try { a.currentTime = t; } catch {} });
+    await new Promise(r => setTimeout(r, 200));
+    if (P.song !== s) return Object.values(els).forEach(a => { a.pause(); a.removeAttribute("src"); });
+  } else { const t = cur(); Object.values(els).forEach(a => { try { a.currentTime = t; } catch {} }); }
+  const mix = P.mixEl;
+  P.audios = els; P.blobs = urls; P.stems = true; P.ready = true; P.mixEl = null;
+  P.master = els[s.stems.includes("drums") ? "drums" : s.stems[0]]; P.master.onended = () => setPlaying(false);
+  if (!P.playing) Object.values(els).forEach(a => a.pause());
+  applyMix(); $("#play").disabled = false;
+  if (mix) { mix.pause(); mix.removeAttribute("src"); mix.load(); }
+}
 async function fetchBlob(url, onp, signal) {
   const r = await fetch(url, { signal }); if (!r.ok) throw new Error("파일 " + r.status);
   const total = +r.headers.get("content-length") || 0;
@@ -526,7 +563,7 @@ async function loadFiles(files, msg) { // files: {stem: name} → {stem: blob ur
   } finally { if (P.abort === ctl) $("#loadMsg").hidden = true; }
 }
 function cur() { return P.master ? P.master.currentTime : P.pos || 0; }
-function allEls() { return Object.values(P.audios).concat(P.metroEl ? [P.metroEl] : []); }
+function allEls() { return Object.values(P.audios).concat(P.metroEl ? [P.metroEl] : [], P.mixEl ? [P.mixEl] : []); }
 function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); P.pos = t; allEls().forEach(a => { try { a.currentTime = t; } catch {} }); render(true); }
 function goTo(t) { // 사용자가 직접 이동: 반복 중이면 구간 안에서만 움직인다
   const lr = loopRange();
@@ -534,7 +571,7 @@ function goTo(t) { // 사용자가 직접 이동: 반복 중이면 구간 안에
   seek(t);
 }
 function setPlaying(on) {
-  if (on && !P.ready) return toast("트랙을 다 받으면 재생할 수 있어요");
+  if (on && !P.ready) return toast("곡을 불러오는 중이에요");
   if (on && !P.playing && MET.count && !P.counting) return countIn();
   P.playing = on; $("#play").textContent = on ? "❚❚" : "▶";
   if (on) { const t = cur(); allEls().forEach(a => { if (Math.abs(a.currentTime - t) > 0.01) try { a.currentTime = t; } catch {} }); }
@@ -546,8 +583,12 @@ function applyMix() {
     const m = P.mixer[n]; const audible = anySolo ? m.solo : !m.mute;
     a.volume = audible ? m.vol : 0;
     const row = document.querySelector(`.row[data-stem="${n}"]`);
+  }
+  for (const [n, m] of Object.entries(P.mixer)) { // 트랙 받기 전에도 누른 상태는 보여주고, 다 받으면 바로 적용
+    const row = document.querySelector(`.row[data-stem="${n}"]`), audible = anySolo ? m.solo : !m.mute;
     if (row) { row.classList.toggle("dim", !audible); row.querySelector(".m").classList.toggle("on", m.mute); row.querySelector(".s").classList.toggle("on", m.solo); }
   }
+  $(".mixer").classList.toggle("wait", !P.stems);
   LS.set("mix:" + P.song.id, P.mixer);
 }
 
@@ -668,7 +709,7 @@ $("#speedR").oninput = e => setRate(+e.target.value / 100);
 
 /* ---------------- song ---------------- */
 async function openSong(id) {
-  stopAll();
+  stopAll(); await pickServer();
   const s = await api("/api/songs/" + id);
   P.song = s; P.semi = 0; location.hash = "song=" + id;
   $("#vHome").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
@@ -676,13 +717,17 @@ async function openSong(id) {
   $("#sChips").innerHTML = `<span class="chip">키 <b>${esc(s.key)}</b></span><span class="chip"><b>${Math.round(s.tempo)}</b> BPM</span><span class="chip">4/4</span><span class="chip">${fmt(s.duration)}</span>` +
     (s.source && s.source.startsWith("http") ? `<a class="chip" href="${esc(s.source)}" target="_blank" style="text-decoration:none">원본 ↗</a>` : "");
   buildMixer();
-  P.files = Object.fromEntries(s.stems.map(n => [n, n + ".mp3"]));
-  P.loop = null; loopUI(); closePops(); setRate(P.rate); pitchReady = {};
+  P.files = Object.fromEntries(s.stems.map(n => [n, n + ".mp3"])); P.mixFile = "mix.mp3";
+  P.loop = null; loopUI(); closePops(); setRate(P.rate); pitchReady = {}; applyMix();
   $("#play").disabled = true;
   await buildKey(true);
   if (s.band_semi && P.song === s) { // 밴드 키가 있으면 처음부터 그 키 파일을 받음 (원키 받고 또 받지 않게)
-    try { const r = await api(`/api/songs/${id}/pitch`, jsonOpt("POST", { semi: s.band_semi })); Object.assign(P.files, r.files); P.semi = s.band_semi; pitchReady[P.semi] = true; } catch {}
+    try { const r = await api(`/api/songs/${id}/pitch`, jsonOpt("POST", { semi: s.band_semi }));
+      if (r.files.mix) P.mixFile = r.files.mix; delete r.files.mix;
+      Object.assign(P.files, r.files); P.semi = s.band_semi; pitchReady[P.semi] = true; } catch {}
   }
+  if (P.song !== s) return;
+  startMix(s);
   P.bars = bars();
   buildKey(); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
   tabLoaded = false; VIEW = null; applyViews();
@@ -690,18 +735,9 @@ async function openSong(id) {
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
   let urls;
-  try { urls = await loadFiles(P.files, "트랙 불러오는 중"); } catch (e) { if (P.song === s && e.name !== "AbortError") toast("트랙을 받지 못했어요: " + e.message); return; }
+  try { urls = await loadFiles(P.files, "트랙 준비 중"); } catch (e) { if (P.song === s && e.name !== "AbortError") toast("트랙을 받지 못했어요: " + e.message); return; }
   if (P.song !== s) return Object.values(urls).forEach(u => URL.revokeObjectURL(u));
-  P.blobs = urls;
-  const t = cur();
-  for (const n of s.stems) {
-    const a = new Audio(); a.preload = "auto"; a.src = urls[n];
-    a.preservesPitch = true; a.playbackRate = P.rate; P.audios[n] = a;
-    a.addEventListener("loadedmetadata", () => { try { a.currentTime = t; } catch {} }, { once: true });
-  }
-  P.master = P.audios[s.stems.includes("drums") ? "drums" : s.stems[0]];
-  P.master.onended = () => setPlaying(false);
-  applyMix(); P.ready = true; $("#play").disabled = false;
+  await switchToStems(s, urls);
 }
 function buildMixer() {
   const s = P.song, id = s.id; const saved = LS.get("mix:" + id, null); P.mixer = {};
@@ -742,7 +778,7 @@ $("#bandKey").onclick = async () => {
   catch (e) { toast("저장 실패: " + e.message); }
 };
 async function changeKey(d) {
-  if (!P.ready) return toast("트랙을 다 받은 뒤에 바꿀 수 있어요");
+  if (!P.stems) return toast("트랙 준비가 끝나면 키를 바꿀 수 있어요");
   const n = P.semi + d; if (n < -6 || n > 6) return toast("±6반음까지 바꿀 수 있어요");
   const quick = n === 0 || pitchReady[n];
   const done = quick ? () => {} : busy(`키를 ${n > 0 ? "+" : ""}${n} 바꾸는 중… (처음 한 번 10~20초)`);
@@ -1017,11 +1053,12 @@ function core() { // sync, loop — runs on a timer so it keeps working even whe
   if (!P.song || !P.master || !P.playing) return;
   const t = cur();
   const lr = loopRange(); if (lr && t >= lr.b - 0.03) { seek(lr.a); return; }
-  // 트랙은 재생·이동 때 한꺼번에 맞춰 시작하면 그대로 붙어 감(실측 0~12ms). 자잘한 보정은 오히려 밀림·끊김을 만듦
-  // (속도 살짝 바꾸기 → 클릭이 20~50ms 계속 뒤처짐 실측) → 80ms 넘게 벌어진 상태가 0.1초 이어질 때만 위치 다시 잡기
+  // 트랙은 재생·이동 때 한꺼번에 맞춰 시작하면 그대로 붙어 감(실측 0~12ms). 재생 중 위치를 다시 잡으면 그 트랙이 끊김.
+  // 폰은 currentTime 이 거칠게 갱신돼 80ms 기준으로도 자주 다시 잡아 "악기로 재생하면 끊김"(2026-10-18 Benny) →
+  // 0.25초 넘게 벌어진 상태가 1초 내내 이어질 때(백그라운드 갔다 온 경우 등)만 다시 잡음. 속도 미세조정은 쓰지 말 것(클릭 밀림 실측)
   for (const a of allEls()) {
     if (a === P.master) continue;
-    if (Math.abs(a.currentTime - t) > 0.08) { a._off = (a._off || 0) + 1; if (a._off >= 4) { a._off = 0; try { a.currentTime = cur(); } catch {} } }
+    if (Math.abs(a.currentTime - t) > 0.25) { a._off = (a._off || 0) + 1; if (a._off >= 40) { a._off = 0; P.resyncs = (P.resyncs || 0) + 1; try { a.currentTime = cur(); } catch {} } }
     else a._off = 0;
   }
 }
@@ -1054,7 +1091,9 @@ function goHome() { stopAll(); P.song = null; location.hash = ""; $("#vSong").hi
 $("#back").onclick = goHome; $("#home").onclick = goHome;
 async function boot() {
   $("#foot").textContent = "Music Lab · BUILD " + BUILD;
-  if (!$("#lib").children.length) $("#lib").innerHTML = `<div class="empty">PC에 연결해서 곡 목록을 불러오는 중…</div>`;
+  const cached = AUTH && LS.get("libCache", null);
+  if (cached?.length && !$("#lib .song")) renderLib(cached);
+  else if (!$("#lib").children.length) $("#lib").innerHTML = `<div class="empty">PC에 연결해서 곡 목록을 불러오는 중…</div>`;
   await pickServer();
   await ping(); applyRole();
   if (!online || !AUTH) $("#lib").innerHTML = "";
