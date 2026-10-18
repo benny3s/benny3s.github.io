@@ -361,7 +361,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18r";
+const BUILD = "2026-10-18s";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -996,7 +996,8 @@ $("#lNowB").onclick = () => { const k = barAt(cur()); setLoop(Math.min(k, P.loop
 /* ---------------- lyrics ---------------- */
 // 서버: LRCLIB(시간 붙은 가사) → 없으면 보컬 받아쓰기(Whisper) 초안 → 붙여넣은 가사는 받아쓰기 시간에 맞춰 정렬
 let LYR = null, lyrTimer = null, lastLyr = -2;
-const LYR_SRC = { lrclib: "인터넷 가사", whisper: "보컬에서 받아 적은 초안 · 틀린 곳이 있을 수 있어요", user: "붙여넣은 가사 (시간은 자동으로 맞춤)" };
+const LYR_SRC = { lrclib: "인터넷 가사 (LRCLIB)", bugs: "인터넷 가사 (벅스)", netease: "인터넷 가사 (NetEase)",
+  whisper: "보컬에서 받아 적은 초안 · 틀린 곳이 있을 수 있어요", user: "붙여넣은 가사 (시간은 자동으로 맞춤)" };
 async function loadLyrics() {
   const s = P.song; if (!s) return; clearTimeout(lyrTimer);
   try { LYR = await api(`/api/songs/${s.id}/lyrics`); } catch (e) { LYR = { lines: [], err: e.message }; }
@@ -1006,7 +1007,8 @@ async function loadLyrics() {
 }
 function renderLyrics() {
   const L = LYR?.lines || [], src = LYR?.source;
-  $("#lyrBar").innerHTML = `<span class="small mute" style="flex:1">${LYR?.busy ? "가사 찾는 중… (인터넷 가사 → 없으면 보컬에서 받아 적기, 30초~1분)" : esc(LYR_SRC[src] || "")}</span>` +
+  const how = LYR?.timing === "aligned" ? " · 시간은 이 음원에 맞춤" : "";
+  $("#lyrBar").innerHTML = `<span class="small mute" style="flex:1">${LYR?.busy ? "가사 찾는 중… (벅스·NetEase·LRCLIB → 없으면 보컬에서 받아 적기, 30초~1분)" : esc((LYR_SRC[src] || "") + how)}</span>` +
     `<button class="btn xs" id="lyrPaste">가사 붙여넣기</button>` + (src === "user" ? `<button class="btn xs" id="lyrUndo">자동 가사로</button>` : "");
   $("#lyrPaste").onclick = () => { $("#lyrText").value = L.map(l => l.text).join("\n"); $("#lyrDlg").showModal(); };
   if ($("#lyrUndo")) $("#lyrUndo").onclick = async () => { await api(`/api/songs/${P.song.id}/lyrics`, jsonOpt("PUT", { clear: true })); loadLyrics(); };
