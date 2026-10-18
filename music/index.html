@@ -361,7 +361,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18t";
+const BUILD = "2026-10-18u";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -481,11 +481,14 @@ const FLAT_KEYS = new Set(["F","Bb","Eb","Ab","Db","Dm","Gm","Cm","Fm","Bbm"]);
 function parseKey(k) { const m = String(k || "").match(/^([A-G][#b]?)(m?)$/); return m ? { pc: NOTE_PC[m[1]], minor: !!m[2] } : null; }
 function keyName(pc, minor) { const f = FLAT[pc] + (minor ? "m" : ""); return FLAT_KEYS.has(f) ? f : SHARP[pc] + (minor ? "m" : ""); }
 function tKey() { const k = parseKey(P.song.key); return k ? keyName((k.pc + P.semi + 120) % 12, k.minor) : P.song.key; }
-function tChord(ch) {
-  if (!P.semi || ch === "N") return ch;
+// 구간별 키(전조, 서버 keys): 그 시각의 키(키 변경 반영) → 코드 이름을 그 키에 맞는 #/♭ 로 (B♭ 구간에서 A# 대신 B♭)
+function keyAt(t) { const K = P.song.keys || []; const s = K.find(x => x.start <= t && t < x.end) || K[0]; const k = parseKey(s ? s.key : P.song.key); return k ? keyName((k.pc + P.semi + 120) % 12, k.minor) : tKey(); }
+function keysText() { const K = P.song.keys || []; return K.length > 1 ? K.map((s, i) => i ? `${keyAt(s.start + 0.01)} (${fmt(s.start)}~)` : keyAt(0.01)).join(" → ") : tKey(); }
+function tChord(ch, t) {
+  if (ch === "N") return ch;
   const m = ch.match(/^([A-G][#b]?)(.*)$/); if (!m) return ch;
   const pc = (NOTE_PC[m[1]] + P.semi + 120) % 12;
-  const flats = FLAT_KEYS.has(tKey());
+  const flats = FLAT_KEYS.has(t != null ? keyAt(t) : tKey());
   return (flats ? FLAT : SHARP)[pc] + m[2];
 }
 
@@ -768,7 +771,7 @@ async function openSong(id) {
   P.song = s; P.semi = 0; location.hash = "song=" + id;
   $("#vHome").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
   $("#sTitle").textContent = s.title;
-  $("#sChips").innerHTML = `<span class="chip">키 <b>${esc(s.key)}</b></span><span class="chip"><b>${Math.round(s.tempo)}</b> BPM</span><span class="chip">4/4</span><span class="chip">${fmt(s.duration)}</span>` +
+  $("#sChips").innerHTML = `<span class="chip">키 <b>${esc((s.keys || []).length > 1 ? s.keys.map(x => x.key.replace(/^([A-G])b/, "$1♭")).join(" → ") : s.key)}</b></span><span class="chip"><b>${Math.round(s.tempo)}</b> BPM</span><span class="chip">4/4</span><span class="chip">${fmt(s.duration)}</span>` +
     (s.source && s.source.startsWith("http") ? `<a class="chip" href="${esc(s.source)}" target="_blank" style="text-decoration:none">원본 ↗</a>` : "");
   buildMixer();
   P.files = Object.fromEntries(s.stems.map(n => [n, n + ".mp3"])); P.mixFile = "mix.mp3";
@@ -912,7 +915,7 @@ function buildChords() {
   const heads = new Map(S.map((s, i) => [nearestBar(s.start), s]));
   B.forEach((b, k) => {
     if (heads.has(k)) { const s = heads.get(k); html += `<div class="shd">${esc(s.name)}</div>`; }
-    const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push(tChord(c.chord)); });
+    const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push(tChord(c.chord, c.start)); });
     const uniq = names.filter((n, i) => names[i - 1] !== n);
     html += `<div class="bar" data-k="${k}"><small>${b.n || ""}</small>${uniq.map(n => `<span>${esc(n)}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
   });
@@ -934,11 +937,11 @@ function buildStrip() {
   $("#strip").innerHTML = S.map(s => `<div style="left:${s.start / d * 100}%;width:${(s.end - s.start) / d * 100}%" title="${esc(s.name)}"></div>`).join("");
 }
 function buildInfo() {
-  const s = P.song; const counts = {}; s.chords.forEach(c => { if (c.chord !== "N") counts[tChord(c.chord)] = (counts[tChord(c.chord)] || 0) + (c.end - c.start); });
+  const s = P.song; const counts = {}; s.chords.forEach(c => { if (c.chord !== "N") counts[tChord(c.chord, c.start)] = (counts[tChord(c.chord, c.start)] || 0) + (c.end - c.start); });
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
   $("#pInfo").innerHTML = `
     <ul>
-      <li><b>키</b>: ${esc(tKey())}${P.semi ? ` (원키 ${esc(s.key)})` : ""} · <b>템포</b>: 약 ${Math.round(s.tempo)} BPM · <b>길이</b>: ${fmt(s.duration)}</li>
+      <li><b>키</b>: ${esc(keysText())}${P.semi ? ` (원키 ${esc(s.key)})` : ""}${(s.keys || []).length > 1 ? " <span class=\"mute\">· 중간에 키가 바뀌어요(전조)</span>" : ""} · <b>템포</b>: 약 ${Math.round(s.tempo)} BPM · <b>길이</b>: ${fmt(s.duration)}</li>
       <li><b>구조</b>: ${secs().map(x => esc(x.name)).join(" → ") || "-"}</li>
       <li><b>많이 나오는 코드</b>: ${top.map(esc).join(", ") || "-"}</li>
       <li><b>기타에서 찾은 음</b>: ${s.guitar_notes || 0}개 ${s.tab ? "→ 타브 초안 있음" : "→ 기타 소리가 작아 타브를 만들지 못했어요"}</li>
@@ -1023,7 +1026,7 @@ function renderLyrics() {
       const span = Math.max(0.5, l.e - l.t); let lastPos = -99;
       C.forEach(c => { if (c.end <= l.t + 0.1 || c.start >= l.e - 0.1) return;
         const pos = Math.max(0, (c.start - l.t) / span * 100); if (pos - lastPos < 9) return; lastPos = pos;
-        ch += `<span style="left:${Math.min(pos, 92)}%">${esc(tChord(c.chord))}</span>`; });
+        ch += `<span style="left:${Math.min(pos, 92)}%">${esc(tChord(c.chord, c.start))}</span>`; });
     }
     html += `<div class="ln" data-i="${i}">${ch ? `<div class="ch">${ch}</div>` : ""}<div class="tx">${esc(l.text)}</div></div>`;
   });
@@ -1058,23 +1061,28 @@ function applyViews() {
 }
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
 // 타브 출처: score(올린 악보) > ss(Songsterr, 우리 마디에 맞춰 서버가 만든 score_ss.gp5) > auto(자동 채보)
-const ssOk = s => !!s.songsterr?.found;
-function defaultTabMode(s) { return s.score ? "score" : ssOk(s) ? "ss" : "auto"; }
-function activeScore() { const s = P.song; return tabMode === "score" ? s.score : tabMode === "ss" && ssOk(s) ? s.songsterr : null; }
+const ssOk = s => !!s.songsterr?.found, vidOk = s => !!s.videotab?.found;
+// 기본 출처: 올린 악보 > 영상 악보(보며 연습하는 타브) > Songsterr > 자동 채보
+function defaultTabMode(s) { return s.score ? "score" : vidOk(s) ? "vid" : ssOk(s) ? "ss" : "auto"; }
+function activeScore() { const s = P.song; return tabMode === "score" ? s.score : tabMode === "ss" && ssOk(s) ? s.songsterr : tabMode === "vid" && vidOk(s) ? s.videotab : null; }
 function tabNote() {
   const ss = P.song.songsterr;
   $("#tabNote").innerHTML = (tabMode === "auto" ? "자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요."
     : tabMode === "ss" ? `Songsterr 타브 <b>${esc(ss.ref || "")}</b>${ss.ai ? " (AI가 만든 타브라 틀린 곳이 있을 수 있어요)" : " (사람이 만든 타브)"}를 이 음원 마디에 맞췄어요 · ${ss.mapped}/${ss.bars}마디. 위에서 트랙(리드·리듬·베이스)을 고르세요.`
+    : tabMode === "vid" ? `타브 영상을 읽어 이 음원 마디에 맞춘 악보예요 (${P.song.videotab.tracks.map((t, i) => `${esc(t)} ${P.song.videotab.mapped[i]}마디`).join(" · ")}). 운지 숫자는 정확도가 높고, 박 위치는 영상 간격으로 맞춘 근사예요. <a href="https://youtu.be/${esc(P.song.videotab.video)}" target="_blank">원본 영상 ↗</a>`
     : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
     (P.semi ? ` <b style="color:var(--warn)">악보는 원키(${esc(P.song.key)}) 기준이에요.</b>` : "");
 }
 function buildTabBar() {
-  const s = P.song; const sc = s.score, ss = ssOk(s);
+  const s = P.song; const sc = s.score, ss = ssOk(s), vd = vidOk(s);
   const btn = (m, label) => `<button class="btn xs ${tabMode === m ? "on" : ""}" data-m="${m}">${label}</button>`;
-  $("#tabbar").innerHTML = (sc || ss ? btn("auto", "자동 채보") + (ss ? btn("ss", "Songsterr") : "") + (sc ? btn("score", `올린 악보 (${esc(sc.original || "")})`) : "") : "") +
+  $("#tabbar").innerHTML = (sc || ss || vd ? btn("auto", "자동 채보") + (vd ? btn("vid", "영상 악보") : "") + (ss ? btn("ss", "Songsterr") : "") + (sc ? btn("score", `올린 악보 (${esc(sc.original || "")})`) : "") : "") +
     (activeScore() ? `<select id="trackSel"></select>` : "") +
     (tabMode === "score" ? `<button class="btn xs admin" id="bar1">지금 위치를 1마디로</button><button class="btn xs admin" id="scoreDel">악보 지우기</button>` : "") +
     (!ss ? `<button class="btn xs" id="ssFind">Songsterr에서 찾기</button>` : "") +
+    (s.videotab?.state === "working" ? `<span class="small" style="color:var(--warn)">영상 악보: ${esc(s.videotab.detail || "")}</span>`
+      : `<button class="btn xs" id="vidAdd">🎬 타브 영상 넣기</button>`) +
+    (s.videotab?.state === "error" ? `<span class="small" style="color:var(--err)">영상 악보 실패: ${esc(s.videotab.detail || "")}</span>` : "") +
     `<button class="btn xs admin" id="scoreUp">📄 전문가 악보 올리기 (.gp · .gpx · MusicXML)</button><a class="btn xs" href="${fileUrl(s.id, "guitar.mid")}" download style="text-decoration:none">기타 MIDI 받기</a>`;
   $$("#tabbar [data-m]").forEach(b => b.onclick = () => { tabMode = b.dataset.m; loadTab(); });
   if ($("#ssFind")) $("#ssFind").onclick = async () => {
@@ -1084,9 +1092,23 @@ function buildTabBar() {
     catch (e) { toast("실패: " + e.message); }
     done();
   };
+  if ($("#vidAdd")) $("#vidAdd").onclick = async () => {
+    const url = prompt("보면서 연습하는 유튜브 타브 영상 링크를 넣어 주세요.\n(악보가 화면에 나오는 영상 · 기타1/기타2 이어지는 영상도 돼요 · 몇 분 걸려요)");
+    if (!url) return;
+    try { await api(`/api/songs/${s.id}/tabvideo`, jsonOpt("POST", { url: url.trim() })); s.videotab = Object.assign({}, s.videotab, { state: "working", detail: "시작" }); buildTabBar(); toast("영상 악보를 읽기 시작했어요 · 몇 분 뒤 타브 탭에 '영상 악보'가 생겨요"); pollVideoTab(s); }
+    catch (e) { toast("실패: " + e.message); }
+  };
   $("#scoreUp").onclick = () => $("#scoreFile").click();
   if ($("#bar1")) $("#bar1").onclick = async () => { const t = cur(); await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { bar1: t })); s.score.bar1 = t; computeScoreBars(); toast("지금 위치를 1마디로 맞췄어요"); };
   if ($("#scoreDel")) $("#scoreDel").onclick = async () => { if (!confirm("올린 악보를 지울까요?")) return; await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove: true })); delete s.score; tabMode = "auto"; loadTab(); };
+}
+async function pollVideoTab(s) { // 영상 악보 진행 상황 (10초마다, 곡을 떠나면 멈춤)
+  await new Promise(r => setTimeout(r, 10000));
+  if (P.song !== s) return;
+  try { const m = await api(`/api/songs/${s.id}`); s.videotab = m.videotab; } catch { return; }
+  if (s.videotab?.state === "working") { if (VIEW === "tab") buildTabBar(); return pollVideoTab(s); }
+  if (s.videotab?.found && s.videotab.state === "done") { tabMode = "vid"; if (VIEW === "tab") loadTab(); toast("영상 악보가 준비됐어요"); }
+  else if (VIEW === "tab") buildTabBar();
 }
 $("#scoreFile").onchange = async () => {
   const f = $("#scoreFile").files[0]; if (!f) return; const fd = new FormData(); fd.append("file", f);
@@ -1157,7 +1179,7 @@ function render(force) {
   if (ci !== lastIdx || force) {
     lastIdx = ci; const c = s.chords; const list = [];
     for (let i = Math.max(0, ci); i < c.length && list.length < 4; i++) if (c[i].chord !== "N" || i === ci) list.push(i);
-    $("#now").innerHTML = list.map((i, k) => { const nm = tChord(c[i].chord); return `<div class="cc ${k === 0 && i === ci ? "cur" : ""}"><div class="nm">${nm === "N" ? "–" : esc(nm)}</div>${nm === "N" ? "" : diagram(nm)}${k === 0 ? '<div class="bar" id="ccbar"></div>' : ""}</div>`; }).join("");
+    $("#now").innerHTML = list.map((i, k) => { const nm = tChord(c[i].chord, c[i].start); return `<div class="cc ${k === 0 && i === ci ? "cur" : ""}"><div class="nm">${nm === "N" ? "–" : esc(nm)}</div>${nm === "N" ? "" : diagram(nm)}${k === 0 ? '<div class="bar" id="ccbar"></div>' : ""}</div>`; }).join("");
   }
   if (ci >= 0) { const c = s.chords[ci]; const b = $("#ccbar"); if (b) b.style.width = Math.min(100, (t - c.start) / (c.end - c.start) * 100) + "%"; }
   const bk = barAt(t);
