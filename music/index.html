@@ -122,6 +122,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .opg img{width:100%;height:auto;display:block;user-select:none} /* width/height 속성으로 받기 전에도 자리 잡음(지연 로딩 때 위치 계산이 0 이던 문제) */
 #tabbox.zoom{overflow-x:auto} #tabbox.zoom .opg{width:210%} /* 폰: 4마디 한 줄을 2배로 키우고 가로로 따라감 */
 .obar{position:absolute;top:22%;bottom:10%;background:rgba(25,211,181,.16);border:2px solid rgba(25,211,181,.85);border-radius:5px;pointer-events:none}
+.mvrow{display:flex;align-items:center;gap:10px;padding:4px 0 8px;border-bottom:1px solid var(--line)} .mvrow input{flex:1} .mvrow b{min-width:40px;text-align:right}
+.cgrid .bar span.weak{opacity:.55;font-style:italic}
 .upmenu{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 #tabSrc{height:34px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);padding:0 8px;max-width:62%}
 .tablyr{font-size:15px;padding:6px 10px;margin-bottom:6px;border-radius:9px;background:var(--panel2);min-height:34px}
@@ -306,10 +308,11 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
             <div class="r"><span class="lbl">박</span><select id="mSub" class="grow">
               <option value="bar">마디마다 1번</option><option value="half">2박마다</option><option value="1">매 박 (4분)</option>
               <option value="2">8분 (박 쪼개기 ×2)</option><option value="3">셋잇단 (×3)</option><option value="4">16분 (×4)</option></select></div>
+            <div class="r"><span class="lbl">타이밍</span><button class="btn xs" id="mAdjM">− 빠르게</button><b id="mAdjT" style="min-width:56px;text-align:center"></b><button class="btn xs" id="mAdjP">+ 늦게</button></div>
             <div class="r"><span class="lbl">소리</span><select id="mSnd" class="grow"><option value="wood">우드블록</option><option value="beep">삑</option><option value="hat">하이햇</option></select></div>
             <div class="r"><span class="lbl grow">첫 박 강조</span><span class="sw2 sm" id="mAcc"><span class="st">꺼짐</span><span class="tr"></span></span></div>
             <div class="r"><span class="lbl grow">재생 전 1마디 카운트</span><span class="sw2 sm" id="mCount"><span class="st">꺼짐</span><span class="tr"></span></span></div>
-            <div class="hint">곡에서 찾은 박을 따라가요. 켜면 시간 옆 점 4개가 박마다 켜져요 (노란 점 = 첫 박).</div>
+            <div class="hint">곡에서 찾은 박을 따라가요. 켜면 시간 옆 점 4개가 박마다 켜져요 (노란 점 = 첫 박). 클릭이 드럼보다 늦게 들리면 <b>− 빠르게</b>로 맞추세요 (기기·이어폰마다 달라 이 기기에만 저장).</div>
           </div></span>
       </div>
     </div>
@@ -317,6 +320,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
     <div class="grid2">
       <div class="card mixer">
         <h2 style="display:flex;align-items:center">트랙<span class="wnote">준비 중 · 지금은 전체 소리로 재생돼요</span><span style="flex:1"></span><button class="btn xs" id="mixReset" hidden>↺ 초기화</button></h2>
+        <div class="mvrow"><span class="small">전체 볼륨</span><input type="range" id="mVolAll" min="0" max="1" step="0.01"><b id="mVolAllT" class="small"></b></div>
         <div id="mixer"></div>
       </div>
       <div class="card">
@@ -382,7 +386,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19f";
+const BUILD = "2026-10-19i";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -589,7 +593,7 @@ function stopAll() {
 // 폰(공개 주소)에서는 트랙 6개를 스트리밍하며 맞추면 버퍼링 때문에 끊기고 메트로놈이 밀렸다 → 트랙은 통째로 받아 둔 뒤 재생.
 // 기다리지 않게: 곡을 열면 섞인 파일(mix) 하나로 바로 재생하고, 트랙을 다 받으면 재생 중에 트랙별로 넘어감 (2026-10-18)
 function startMix(s) {
-  const m = takeEl(); m.src = fileUrl(s.id, P.mixFile); m.volume = 0.85;
+  const m = takeEl(); m.src = fileUrl(s.id, P.mixFile); m.volume = VOL0 * P.mv;
   $(".mixer .wnote").textContent = "준비 중 · 지금은 전체 소리로 재생돼요";
   P.mixEl = m;
   m.addEventListener("loadedmetadata", () => {
@@ -666,15 +670,17 @@ function applyMix() {
   const anySolo = Object.values(P.mixer).some(m => m.solo);
   for (const [n, a] of Object.entries(P.audios)) {
     const m = P.mixer[n]; const audible = anySolo ? m.solo : !m.mute;
-    a.volume = audible ? m.vol : 0;
+    a.volume = audible ? m.vol * P.mv : 0;
     const row = document.querySelector(`.row[data-stem="${n}"]`);
   }
   for (const [n, m] of Object.entries(P.mixer)) { // 트랙 받기 전에도 누른 상태는 보여주고, 다 받으면 바로 적용
     const row = document.querySelector(`.row[data-stem="${n}"]`), audible = anySolo ? m.solo : !m.mute;
     if (row) { row.classList.toggle("dim", !audible); row.querySelector(".m").classList.toggle("on", m.mute); row.querySelector(".s").classList.toggle("on", m.solo); }
   }
+  if (P.mixEl) P.mixEl.volume = VOL0 * P.mv; // 트랙 준비 전 섞인 파일 재생 중에도
+  $("#mVolAll").value = P.mv; $("#mVolAllT").textContent = Math.round(P.mv * 100) + "%";
   $(".mixer").classList.toggle("wait", !P.stems);
-  $("#mixReset").hidden = !Object.values(P.mixer).some(m => m.mute || m.solo || Math.abs(m.vol - 0.85) > 0.01); // 바꾼 게 있을 때만 보임
+  $("#mixReset").hidden = !Object.values(P.mixer).some(m => m.mute || m.solo || Math.abs(m.vol - VOL0) > 0.01); // 바꾼 게 있을 때만 보임
   LS.set("mix:" + P.song.id, P.mixer);
 }
 
@@ -712,7 +718,7 @@ function buildClicks() {
   }
   // 브라우저가 mp3 를 재생할 때 실제 드럼 소리는 분석 박 시각보다 조금 늦게 나옴(mp3 앞부분 지연).
   // 크롬에서 드럼·클릭 출력 소리를 같은 시계로 녹음해 잰 값(Alive, 2026-10-18): 보정 없으면 클릭이 약 15ms 일찍 → 그만큼 늦춤
-  P.clicks = out.map(c => ({ t: Math.max(0, c.t + CLICK_SHIFT), l: c.l })); renderClickTrack();
+  P.clicks = out.map(c => ({ t: Math.max(0, c.t + CLICK_SHIFT + (MET.adj || 0) / 1000), l: c.l })); renderClickTrack(); // MET.adj = 사람이 맞춘 기기별 보정(ms)
 }
 const CLICK_SHIFT = 0.012;
 // 클릭을 음악과 같은 길이의 오디오 트랙(WAV)으로 만들어 다른 트랙과 함께 재생 → 지연 보정 불필요
@@ -762,6 +768,7 @@ function syncMetroUI() {
   $("#metroBtn").classList.toggle("live", MET.on); $("#metroV").textContent = MET.on ? "켜짐" : "꺼짐";
   $("#mVol").value = MET.vol; $("#mVolT").textContent = Math.round(MET.vol * 100) + "%";
   $("#mSub").value = MET.sub; $("#mSnd").value = MET.snd;
+  $("#mAdjT").textContent = (MET.adj > 0 ? "+" : "") + (MET.adj || 0) + "ms";
   $("#beatDots").hidden = !MET.on; metroVol();
   LS.set("metro3", MET);
 }
@@ -770,6 +777,9 @@ $("#mVol").oninput = e => { MET.vol = +e.target.value; syncMetroUI(); };
 $("#mSub").onchange = e => { MET.sub = e.target.value; buildClicks(); syncMetroUI(); };
 $("#mAcc").onclick = () => { MET.acc = !MET.acc; buildClicks(); syncMetroUI(); };
 $("#mCount").onclick = () => { MET.count = !MET.count; syncMetroUI(); };
+// 드럼 소리는 분석 박보다 ~29ms 먼저 시작함(어택 시작 vs 정점, 2026-10-19 실측) + 폰·블루투스 출력 지연이 기기마다 달라 귀로 맞추게
+const adjMet = d => { MET.adj = Math.max(-80, Math.min(80, (MET.adj || 0) + d)); buildClicks(); syncMetroUI(); };
+$("#mAdjM").onclick = () => adjMet(-5); $("#mAdjP").onclick = () => adjMet(5);
 $("#mSnd").onchange = e => { MET.snd = e.target.value; buildClicks(); syncMetroUI(); clickAt(P.ac ? P.ac.currentTime + .02 : 0, 2); };
 
 /* ---------------- popovers ---------------- */
@@ -797,7 +807,7 @@ $("#speedR").oninput = e => setRate(+e.target.value / 100);
 async function openSong(id) {
   stopAll(); await pickServer();
   const s = await api("/api/songs/" + id);
-  s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, LS.get("chsrc:" + id, "score"));
+  s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, LS.get("chsrc:" + id, "best"));
   P.song = s; P.semi = 0; location.hash = "song=" + id;
   $("#vHome").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
   $("#sTitle").textContent = s.title;
@@ -826,12 +836,17 @@ async function openSong(id) {
   if (P.song !== s) return Object.values(urls).forEach(u => URL.revokeObjectURL(u));
   await switchToStems(s, urls);
 }
+// 기본 볼륨 1.0 = 원음 그대로 (예전 0.85 는 −1.4dB 작게 들림, 2026-10-19 Benny "악기 볼륨이 작은 것 같다")
+const VOL0 = 1;
+P.mv = LS.get("masterVol", 1); // 음악 전체 볼륨(메트로놈은 따로), 기기별
+$("#mVolAll").oninput = e => { P.mv = +e.target.value; LS.set("masterVol", P.mv); applyMix(); };
 function buildMixer() {
   const s = P.song, id = s.id; const saved = LS.get("mix:" + id, null); P.mixer = {};
   const maxLv = Math.max(...Object.values(s.levels || { a: 1 }));
   const quiet = n => s.levels && s.levels[n] < maxLv * 0.06;
   $("#mixer").innerHTML = s.stems.map(n => {
-    P.mixer[n] = saved?.[n] || { vol: 0.85, mute: false, solo: false };
+    P.mixer[n] = saved?.[n] || { vol: VOL0, mute: false, solo: false };
+    if (Math.abs(P.mixer[n].vol - 0.85) < 0.001) P.mixer[n].vol = VOL0; // 예전 기본값(0.85) → 새 기본값
     return `<div class="row" data-stem="${n}"><span class="sw" style="background:var(--${n})"></span>
       <span class="nm">${STEM_LABEL[n]}${quiet(n) ? '<div class="small mute" style="font-weight:400">거의 없음</div>' : ""}</span>
       <button class="ms m">M</button><button class="ms s">S</button>
@@ -844,7 +859,7 @@ function buildMixer() {
     r.querySelector("input").oninput = e => { P.mixer[n].vol = +e.target.value; applyMix(); };
   });
   $("#mixReset").onclick = () => { // M·S 다 풀고 볼륨 기본으로 (S 를 다 누르면 전부 들려서 그대로인 게 맞지만, 하나씩 풀기 번거로움)
-    for (const [n, m] of Object.entries(P.mixer)) { Object.assign(m, { vol: 0.85, mute: false, solo: false }); const r = document.querySelector(`#mixer .row[data-stem="${n}"] input`); if (r) r.value = 0.85; }
+    for (const [n, m] of Object.entries(P.mixer)) { Object.assign(m, { vol: VOL0, mute: false, solo: false }); const r = document.querySelector(`#mixer .row[data-stem="${n}"] input`); if (r) r.value = VOL0; }
     applyMix();
   };
 }
@@ -945,23 +960,28 @@ function splitAtBar(k) {
 
 /* chord grid */
 // 코드 출처: 악보(영상 악보 위 사람이 쓴 코드 이름 — 텐션·자리 정확, 서버 chords_score) / 자동 분석(음원에서 계산 — 단순화, 곳에 따라 2박 일찍)
+// 코드 출처 (2026-10-19): best = 추천(서버 chords.build_best: 영상 악보 > Songsterr 음표 계산 > 자동, 반 마디마다) / score = 영상 악보 / ss = Songsterr 계산 / auto
+const CH_SRC = [["best", "추천", s => s.chords_best, s => s.keys_best], ["score", "영상 악보", s => s.chords_score, s => s.keys_score],
+  ["ss", "Songsterr", s => s.chords_ss, () => null], ["auto", "자동 분석", s => s.chords_auto, s => s.keys_auto]];
 function useChordSrc(s, src) {
-  const ok = src === "score" && s.chords_score?.length;
-  s.chordSrc = ok ? "score" : "auto"; s.chords = ok ? s.chords_score : s.chords_auto; s.keys = ok && s.keys_score ? s.keys_score : s.keys_auto;
+  const avail = CH_SRC.filter(([k, , g]) => g(s)?.length);
+  const pick = avail.find(x => x[0] === src) || avail[0];
+  s.chordSrc = pick[0]; s.chords = pick[2](s); s.keys = pick[3](s) || s.keys_auto;
 }
 function buildChords() {
-  const cs = $("#chSrc"); cs.hidden = !P.song.chords_score?.length;
+  const avail = CH_SRC.filter(([k, , g]) => g(P.song)?.length);
+  const cs = $("#chSrc"); cs.hidden = avail.length < 2;
   if (!cs.hidden) {
-    cs.innerHTML = `<span class="small mute">코드</span><button class="btn xs ${P.song.chordSrc === "score" ? "on" : ""}" data-c="score">악보 기준</button><button class="btn xs ${P.song.chordSrc === "auto" ? "on" : ""}" data-c="auto">자동 분석</button>`;
+    cs.innerHTML = `<span class="small mute">코드</span>` + avail.map(([k, label]) => `<button class="btn xs ${P.song.chordSrc === k ? "on" : ""}" data-c="${k}">${label}</button>`).join("");
     $$("#chSrc [data-c]").forEach(b => b.onclick = () => { LS.set("chsrc:" + P.song.id, b.dataset.c); useChordSrc(P.song, b.dataset.c); buildChords(); buildInfo(); loopUI(); render(true); });
   }
   const B = P.bars; const S = secs(); let html = "";
   const heads = new Map(S.map((s, i) => [nearestBar(s.start), s]));
   B.forEach((b, k) => {
     if (heads.has(k)) { const s = heads.get(k); html += `<div class="shd">${esc(s.name)}</div>`; }
-    const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push(tChord(c.chord, c.start)); });
-    const uniq = names.filter((n, i) => names[i - 1] !== n);
-    html += `<div class="bar" data-k="${k}"><small>${barLabel(k) || ""}</small>${uniq.map(n => `<span>${esc(n)}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
+    const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push({ n: tChord(c.chord, c.start), weak: c.src === "auto" && !c.sure }); });
+    const uniq = names.filter((x, i) => names[i - 1]?.n !== x.n); // 추천 코드표에서 자동 분석만 근거인 코드는 흐리게 (확인 필요)
+    html += `<div class="bar" data-k="${k}"><small>${barLabel(k) || ""}</small>${uniq.map(x => `<span${x.weak ? ' class="weak"' : ""}>${esc(x.n)}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
   });
   $("#cgrid").innerHTML = html;
   $$("#cgrid .bar").forEach(el => el.onclick = () => {
@@ -1285,7 +1305,7 @@ function computeScoreBars() {
 let scoreStart = null;
 function barLabel(bk) { // 악보를 보는 중이면 악보 마디 번호로 (영상·악보와 같은 번호)
   if (VIEW === "tab" && activeScore() && scoreStart != null) { const n = bk - scoreStart + 1; return n >= 1 ? n : 0; }
-  const vb = P.song?.chordSrc === "score" && P.song.videotab?.bar1 != null ? nearestBar(P.song.videotab.bar1) : null; // 코드표가 악보 기준이면 악보 번호로
+  const vb = ["score", "best"].includes(P.song?.chordSrc) && P.song.videotab?.found && P.song.videotab?.bar1 != null ? nearestBar(P.song.videotab.bar1) : null; // 코드표가 악보 기준이면 악보 번호로
   if (vb != null) { const n = bk - vb + 1; return n >= 1 ? n : 0; }
   return P.bars[bk]?.n || 0;
 }
