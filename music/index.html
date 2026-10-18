@@ -125,6 +125,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tablyr{font-size:15px;padding:6px 10px;margin-bottom:6px;border-radius:9px;background:var(--panel2);min-height:34px}
 .tablyr .nx{color:var(--mute);font-size:12px;margin-left:8px}
 #trackBtns .btn.on{background:var(--accent);border-color:var(--accent);color:#04241f}
+.lsn{line-height:1.6}
+.lsn .sum{font-size:15px;margin:4px 0 12px}
+.lsn .kp{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.lsn .kp h5{margin:0 0 4px;font-size:15px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lsn .kp .bars{font-size:12px;color:var(--mute);font-weight:400}
+.lsn .kp .pr{font-size:13px;color:var(--accent);margin-top:6px}
+.lsn h4{margin:16px 0 6px;font-size:14px;color:var(--mute)}
+.lsn .sec{padding:4px 0;border-bottom:1px solid var(--line);font-size:14px} .lsn .sec b{margin-right:6px}
+.lsn .foot{font-size:12px;color:#4b535b;margin-top:10px}
 .lyr{max-height:62vh;overflow:auto;padding:2px}
 .lyr .ln{padding:6px 10px;border-radius:9px;cursor:pointer;color:var(--mute)}
 .lyr .ln:hover{background:var(--panel2)}
@@ -314,9 +323,9 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
           <button data-v="chords">코드</button>
           <button data-v="lyrics">가사</button>
           <button data-v="tab">악보</button>
-          <button data-v="info">정보</button>
+          <button data-v="info">해설</button>
         </div>
-        <div id="pInfo" class="teach" hidden></div>
+        <div id="pInfo" hidden><div id="lessonBox"></div><div id="infoBox" class="teach"></div></div>
         <div id="pChords" hidden>
           <div id="shapes" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px"></div>
           <div class="now" id="now"></div>
@@ -370,7 +379,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19a";
+const BUILD = "2026-10-19c";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -796,7 +805,7 @@ async function openSong(id) {
   startMix(s);
   P.bars = bars();
   buildKey(); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
-  tabLoaded = false; tabMode = defaultTabMode(s); VIEW = null; LYR = null; applyViews();
+  tabLoaded = false; tabMode = defaultTabMode(s); VIEW = null; LYR = null; LESSON = null; applyViews();
   render(true);
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
@@ -948,7 +957,7 @@ function buildStrip() {
 function buildInfo() {
   const s = P.song; const counts = {}; s.chords.forEach(c => { if (c.chord !== "N") counts[tChord(c.chord, c.start)] = (counts[tChord(c.chord, c.start)] || 0) + (c.end - c.start); });
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
-  $("#pInfo").innerHTML = `
+  $("#infoBox").innerHTML = `
     <ul>
       <li><b>키</b>: ${esc(keysText())}${P.semi ? ` (원키 ${esc(s.key)})` : ""}${(s.keys || []).length > 1 ? " <span class=\"mute\">· 중간에 키가 바뀌어요(전조)</span>" : ""} · <b>템포</b>: 약 ${Math.round(s.tempo)} BPM · <b>길이</b>: ${fmt(s.duration)}</li>
       <li><b>구조</b>: ${secs().map(x => esc(x.name)).join(" → ") || "-"}</li>
@@ -1004,6 +1013,43 @@ $$("[data-l]").forEach(b => b.onclick = () => {
 });
 $("#lNowA").onclick = () => { const k = barAt(cur()); setLoop(k, Math.max(k, P.loop?.b ?? k + 3), false); };
 $("#lNowB").onclick = () => { const k = barAt(cur()); setLoop(Math.min(k, P.loop?.a ?? k), k, false); };
+
+/* ---------------- 곡 해설 (AI 선생님 1단계) ---------------- */
+// 서버: theory.py 가 코드·로마 숫자·특징을 계산 → Claude Haiku 가 그 근거로 문장만 씀 (lesson.json, 밴드 공용)
+let LESSON = null, lessonTimer = null;
+async function loadLesson() {
+  const s = P.song; if (!s) return; clearTimeout(lessonTimer);
+  try { LESSON = await api(`/api/songs/${s.id}/lesson`); } catch (e) { LESSON = { none: true, error: e.message }; }
+  if (P.song !== s) return;
+  renderLesson();
+  if (LESSON.busy) lessonTimer = setTimeout(() => { if (P.song === s && VIEW === "info") loadLesson(); }, 5000);
+}
+function practiceLoop(t0, t1, speed, label) { // 해설·연습 계획의 '이 구간 반복' (포인트는 서버가 8마디까지로 자름, 연습 계획은 구간 그대로)
+  if (t0 == null) return toast("이 구간은 위치를 찾지 못했어요");
+  const a = nearestBar(t0), b = Math.max(a, barAt(Math.max(t0, t1 - 0.1)));
+  setLoop(a, b, !label); if (speed) setRate(Math.max(0.5, Math.min(1.25, speed / 100)));
+  seek(P.bars[a].start); if (label) toast(label + "마디 반복" + (speed ? ` · ${speed}%` : "")); // 해설과 같은 마디 번호로 알림
+}
+function renderLesson() {
+  const L = LESSON || {}, box = $("#lessonBox");
+  const head = `<div class="tabbar"><span class="small mute" style="flex:1">${L.busy ? "AI 선생님이 해설을 쓰는 중… (30초쯤)" : L.none ? "아직 해설이 없어요" : `AI 해설 · 근거: ${esc(L.chord_source || "")} 코드 · 마디 번호는 ${L.bar_basis === "score" ? "원본 악보" : "코드표"} 기준`}</span>` +
+    (L.busy ? "" : `<button class="btn xs" id="lessonMake">${L.none ? "🎓 해설 만들기" : "다시 만들기"}</button>`) + `</div>` +
+    (L.error ? `<div class="small" style="color:var(--err)">실패: ${esc(L.error)}</div>` : "");
+  if (L.none || !L.summary) { box.innerHTML = head; bindLesson(); return; }
+  const loopBtn = (x, label) => x.t0 != null ? `<button class="btn xs" data-t0="${x.t0}" data-t1="${x.t1}" data-sp="${x.speed || ""}" data-lb="${x.bar_from}~${x.bar_to}">${label}</button>` : "";
+  box.innerHTML = head + `<div class="lsn">
+    <div class="sum">${esc(L.summary)}</div>
+    ${(L.key_points || []).map(k => `<div class="kp"><h5>${esc(k.title)} <span class="bars">${k.bar_from}${k.bar_to !== k.bar_from ? "~" + k.bar_to : ""}마디</span>${loopBtn(k, "🔁 이 구간 반복")}</h5>
+      <div>${esc(k.text)}</div>${k.practice ? `<div class="pr">연습: ${esc(k.practice)}</div>` : ""}</div>`).join("")}
+    ${(L.practice_plan || []).length ? `<h4>연습 순서</h4>` + L.practice_plan.map((p, i) => `<div class="kp"><h5>${i + 1}. ${p.bar_from}~${p.bar_to}마디 · ${p.speed}% ${loopBtn(p, "▶ 이 설정으로")}</h5><div>${esc(p.tip)}</div></div>`).join("") : ""}
+    ${(L.sections || []).length ? `<h4>구간별</h4>` + L.sections.map(x => `<div class="sec"><b>${esc(x.name)}</b>${esc(x.text)}</div>`).join("") : ""}
+    <div class="foot">코드·화성 분석은 계산으로, 문장은 AI(${esc(L.model || "")})가 썼어요. 틀린 설명이 있으면 알려 주세요.</div></div>`;
+  bindLesson();
+}
+function bindLesson() {
+  if ($("#lessonMake")) $("#lessonMake").onclick = async () => { try { await api(`/api/songs/${P.song.id}/lesson`, { method: "POST" }); LESSON = { busy: true, none: !LESSON?.summary }; renderLesson(); setTimeout(loadLesson, 4000); } catch (e) { toast("실패: " + e.message); } };
+  $$("#lessonBox [data-t0]").forEach(b => b.onclick = () => practiceLoop(+b.dataset.t0, +b.dataset.t1, +b.dataset.sp || 0, b.dataset.lb));
+}
 
 /* ---------------- lyrics ---------------- */
 // 서버: LRCLIB(시간 붙은 가사) → 없으면 보컬 받아쓰기(Whisper) 초안 → 붙여넣은 가사는 받아쓰기 시간에 맞춰 정렬
@@ -1066,6 +1112,7 @@ function applyViews() {
   for (const [k, el] of Object.entries(VIEW_EL())) el.hidden = k !== VIEW;
   if (VIEW === "tab" && !tabLoaded && P.song) loadTab();
   if ((VIEW === "lyrics" || VIEW === "tab") && P.song && (!LYR || LYR.busy)) loadLyrics(); // 악보 화면에도 가사 한 줄
+  if (VIEW === "info" && P.song && (!LESSON || LESSON.busy)) loadLesson();
   lastIdx = -2; lastBar = -2; if (P.song) render(true);
 }
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
