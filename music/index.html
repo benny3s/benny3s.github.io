@@ -147,6 +147,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .semis button.on{background:var(--accent);color:#04241f;border-color:var(--accent);font-weight:700}
 .semis button.ready{border-color:#2e5f57}
 .toggle{min-width:56px}
+.saved{display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid var(--line)}
+.saved button.go{flex:1;text-align:left;background:none;border:0;color:var(--text);padding:4px 0}
+.saved button.x{background:none;border:0;color:var(--mute);font-size:16px;width:30px}
+.sw2{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-weight:700;font-size:13px}
+.sw2 .tr{width:46px;height:26px;border-radius:13px;background:#3a424b;position:relative;transition:.15s}
+.sw2 .tr::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#cfd6dc;transition:.15s}
+.sw2.on .tr{background:var(--accent)} .sw2.on .tr::after{left:23px;background:#fff}
+.sw2 .st{color:var(--mute)} .sw2.on .st{color:var(--accent)}
+.btn.live{background:#10302b;border-color:var(--accent);color:var(--accent)}
 .beats{display:inline-flex;gap:4px;margin-left:4px}
 .beats i{width:9px;height:9px;border-radius:50%;background:#2a3138}
 .beats i.on{background:var(--accent)} .beats i.on.d{background:var(--warn)}
@@ -223,12 +232,14 @@ body.band .admin{display:none !important}
       </div>
       <div class="card">
         <div class="secs" id="secs"></div>
-        <div class="tabs" id="tabs">
-          <button data-tab="chords" class="on">코드</button>
-          <button data-tab="tab">기타 타브</button>
-          <button data-tab="info">곡 정보</button>
+        <div id="pInfo" class="teach"></div>
+        <div class="tabs" id="tabs" style="margin-top:12px">
+          <span class="small mute" style="align-self:center;margin-right:4px">보기</span>
+          <button data-v="chords">☐ 코드</button>
+          <button data-v="lyrics">☐ 가사</button>
+          <button data-v="tab">☐ 기타 타브</button>
         </div>
-        <div id="pChords">
+        <div id="pChords" hidden>
           <div class="now" id="now"></div>
           <div class="cgrid" id="cgrid"></div>
           <div class="note" id="gridHint">마디를 누르면 그 위치로 이동해요.</div>
@@ -239,7 +250,7 @@ body.band .admin{display:none !important}
           <div class="note" id="tabNote"></div>
           <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
         </div>
-        <div id="pInfo" hidden class="teach"></div>
+        <div id="pLyrics" hidden><div class="empty" style="padding:18px">가사는 다음 업데이트에서 붙어요 (인터넷 가사 + 노래에 맞춰 흘러가기).</div></div>
       </div>
     </div>
 
@@ -275,20 +286,21 @@ body.band .admin{display:none !important}
             <div class="r"><span class="lbl">끝</span><span class="stepper"><button data-l="b-">−</button><b id="lb" style="min-width:34px;text-align:center">-</b><button data-l="b+">+</button></span>마디
               <button class="btn xs" id="lNowB">지금 위치</button></div>
             <div class="r"><span class="lbl">섹션</span><select id="lSec" style="flex:1"></select></div>
-            <div class="hint">타임라인을 <b>드래그</b>해도 구간이 잡혀요. 구간 밖을 누르면 반복이 꺼져요.</div>
+            <div class="r"><button class="btn xs" id="lSave">💾 이 구간 저장</button></div>
+            <div id="lSaved"></div>
+            <div class="hint">타임라인을 <b>드래그</b>하거나, 이 창이 열린 채로 코드표에서 시작 → 끝 마디를 누르세요. 반복 중에는 구간 밖으로 넘어가지 않아요. 저장한 구간은 이 기기에 남아요.</div>
           </div></span>
-        <span class="tbtn"><button class="btn sm" data-pop="popMetro" id="metroBtn">🥁 메트로놈</button>
+        <span class="tbtn"><button class="btn sm" data-pop="popMetro" id="metroBtn">🥁 <span id="metroLbl">메트로놈</span></button>
           <div class="pop" id="popMetro" hidden>
-            <h4>🥁 메트로놈 <button class="btn xs toggle" id="mOn">켜기</button></h4>
-            <div class="r"><label>볼륨</label><input type="range" id="mVol" min="0" max="3" step="0.1"><b id="mVolT" style="min-width:40px;text-align:right"></b></div>
+            <h4 style="justify-content:space-between">🥁 메트로놈 <span class="sw2" id="mOn"><span class="st">꺼짐</span><span class="tr"></span></span></h4>
+            <div class="r"><label>볼륨</label><input type="range" id="mVol" min="0" max="1" step="0.05"><b id="mVolT" style="min-width:40px;text-align:right"></b></div>
             <div class="r"><label>박</label><select id="mSub" style="flex:1">
               <option value="bar">마디마다 1번</option><option value="half">2박마다</option><option value="1">매 박 (4분)</option>
               <option value="2">8분 (박 쪼개기 ×2)</option><option value="3">셋잇단 (×3)</option><option value="4">16분 (×4)</option></select></div>
             <div class="r"><label>소리</label><select id="mSnd" style="flex:1"><option value="wood">우드블록</option><option value="beep">삑</option><option value="hat">하이햇</option></select></div>
             <div class="r"><label><input type="checkbox" id="mAcc"> 첫 박 강조</label><label style="margin-left:12px"><input type="checkbox" id="mCount"> 재생 전 1마디 카운트</label></div>
-            <div class="r"><label>지연 보정</label><input type="range" id="mOff" min="-150" max="150" step="5"><b id="mOffT" style="min-width:56px;text-align:right"></b></div>
-            <div class="hint">‘지연 보정’은 블루투스 스피커처럼 소리가 늦게 나오는 기기에서 클릭이 음악보다 <b>늦게 들리면 왼쪽(−)</b>, 빠르면 오른쪽으로 옮기는 값이에요. 보통은 0이면 돼요.
-              재생 중 시간 옆 <b>점 4개</b>가 박마다 켜져요(노란 점 = 마디 첫 박). 클릭과 점, 음악이 같이 가는지 보세요.</div>
+            <div class="hint">클릭은 음악 트랙과 한 몸으로 같이 재생돼서 따로 맞출 필요가 없어요. 곡에서 찾은 박 위치를 따라가니 템포가 조금씩 변해도 같이 움직여요.
+              재생 중 시간 옆 <b>점 4개</b>가 박마다 켜져요 (노란 점 = 마디 첫 박).</div>
           </div></span>
       </div>
     </div>
@@ -299,7 +311,7 @@ body.band .admin{display:none !important}
 
 <dialog id="dlg">
   <h3 style="margin-top:0">PC 서버 주소</h3>
-  <p class="small mute">기본은 이 PC(<code>http://127.0.0.1:8765</code>)예요. 나중에 폰에서 쓰려면 터널 주소를 넣으면 돼요.</p>
+  <p class="small mute">기본은 PC의 공개 주소(Tailscale Funnel)예요. PC에서만 쓸 때는 <code>http://127.0.0.1:8765</code> 도 돼요.</p>
   <input id="srvInput">
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
     <button class="btn" id="dlgReset">기본값</button><button class="btn pri" id="dlgOk">저장</button>
@@ -325,12 +337,12 @@ body.band .admin{display:none !important}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18h";
+const BUILD = "2026-10-18k";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-const DEFAULT_SRV = "http://127.0.0.1:8765";
-const sameOrigin = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === "8765";
+const DEFAULT_SRV = "https://desktop-ijcbddr.tail4df4c9.ts.net";
+const sameOrigin = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === "8765") || location.hostname.endsWith(".ts.net");
 let SRV = sameOrigin ? "" : LS.get("srv", DEFAULT_SRV);
 const STEM_LABEL = { vocals: "보컬", drums: "드럼", bass: "베이스", guitar: "기타", piano: "피아노", other: "그 외 악기" };
 const STEP_ORDER = ["download", "convert", "separate", "analyze", "encode", "done"];
@@ -481,19 +493,20 @@ function diagram(ch, w = 92) {
 /* ---------------- player state ---------------- */
 const P = { song: null, audios: {}, master: null, playing: false, rate: 1, semi: 0, loop: null, loopPick: null, mixer: {}, ac: null,
             clicks: [], clickIdx: 0, counting: false, secEdit: false, bars: [] };
-const MET = Object.assign({ on: false, vol: 1.5, sub: "1", acc: true, count: false, snd: "wood", off: 0 }, LS.get("metro2", {}));
-function stopAll() { Object.values(P.audios).forEach(a => { a.pause(); a.removeAttribute("src"); a.load(); }); P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶"; }
+const MET = Object.assign({ on: false, vol: 0.9, sub: "1", acc: true, count: false, snd: "wood" }, LS.get("metro3", {}));
+function stopAll() { allEls().forEach(a => { a.pause(); a.removeAttribute("src"); a.load(); }); P.metroEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶"; }
 function cur() { return P.master ? P.master.currentTime : 0; }
-function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); Object.values(P.audios).forEach(a => { try { a.currentTime = t; } catch {} }); resetClicks(t); render(true); }
-function goTo(t) { // 사용자가 직접 이동: 반복 구간 밖이면 반복을 끈다
-  const lr = loopRange(); if (lr && (t < lr.a - 0.05 || t >= lr.b)) { loopOff(); toast("구간 밖으로 이동해서 반복을 껐어요"); }
+function allEls() { return Object.values(P.audios).concat(P.metroEl ? [P.metroEl] : []); }
+function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); allEls().forEach(a => { try { a.currentTime = t; } catch {} }); render(true); }
+function goTo(t) { // 사용자가 직접 이동: 반복 중이면 구간 안에서만 움직인다
+  const lr = loopRange();
+  if (lr && (t < lr.a - 0.05 || t >= lr.b)) { t = Math.min(Math.max(t, lr.a), lr.b - 0.1); toast("구간 반복 중이에요 · 끄려면 🔁 구간에서 끄기", 1800); }
   seek(t);
 }
 function setPlaying(on) {
   if (on && !P.playing && MET.count && !P.counting) return countIn();
   P.playing = on; $("#play").textContent = on ? "❚❚" : "▶";
-  Object.values(P.audios).forEach(a => on ? a.play().catch(() => {}) : a.pause());
-  if (on) { ensureAC(); resetClicks(cur()); }
+  allEls().forEach(a => on ? a.play().catch(() => {}) : a.pause());
 }
 function applyMix() {
   const anySolo = Object.values(P.mixer).some(m => m.solo);
@@ -538,16 +551,43 @@ function buildClicks() {
     const k = +MET.sub; out.push({ t, l: down ? 2 : 1 });
     for (let j = 1; j < k; j++) out.push({ t: t + (next - t) * j / k, l: 0 });
   }
-  P.clicks = out; resetClicks(cur());
+  P.clicks = out; renderClickTrack();
 }
-function resetClicks(t) { const c = P.clicks; let i = 0; while (i < c.length && c[i].t < t - 0.01) i++; P.clickIdx = i; }
-function scheduleClicks() {
-  if (!MET.on || !P.playing || !P.ac) return;
-  const t = cur(), c = P.clicks, ahead = 0.15 * P.rate + Math.max(0, -MET.off / 1000);
-  while (P.clickIdx < c.length && c[P.clickIdx].t < t + ahead) {
-    const k = c[P.clickIdx]; const kt = k.t + MET.off / 1000 * P.rate; if (kt >= t - 0.03) clickAt(P.ac.currentTime + Math.max(0, (kt - t) / P.rate), k.l); P.clickIdx++;
+// 클릭을 음악과 같은 길이의 오디오 트랙(WAV)으로 만들어 다른 트랙과 함께 재생 → 지연 보정 불필요
+function clickSample(level, sr) {
+  const strong = level === 2 && MET.acc, n = Math.floor(sr * (MET.snd === "hat" ? .035 : .045)), buf = new Float32Array(n);
+  const amp = strong ? 1 : level === 0 ? .45 : .75;
+  const f = (MET.snd === "wood" ? 950 : 1150) * (strong ? 1.5 : level === 0 ? .8 : 1);
+  let prev = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / sr, env = Math.exp(-t * (MET.snd === "hat" ? 140 : 90));
+    let v;
+    if (MET.snd === "hat") { const w = Math.random() * 2 - 1; v = w - prev; prev = w; v *= .7; }
+    else if (MET.snd === "wood") v = Math.sin(2 * Math.PI * f * t) * .8 + Math.sin(2 * Math.PI * f * 2.7 * t) * .25 + (i < sr * .002 ? (Math.random() * 2 - 1) * .5 : 0);
+    else v = Math.sin(2 * Math.PI * f * t);
+    buf[i] = v * env * amp;
   }
+  return buf;
 }
+function renderClickTrack() {
+  const s = P.song; if (!s) return; const sr = 22050, N = Math.ceil((s.duration + 1) * sr), pcm = new Int16Array(N);
+  const cache = {};
+  for (const c of P.clicks) {
+    const smp = cache[c.l] || (cache[c.l] = clickSample(c.l, sr)); const i0 = Math.round(c.t * sr);
+    for (let i = 0; i < smp.length && i0 + i < N; i++) if (i0 + i >= 0) pcm[i0 + i] = Math.max(-32767, Math.min(32767, pcm[i0 + i] + smp[i] * 32000));
+  }
+  const hdr = new ArrayBuffer(44), v = new DataView(hdr), w = (o, str) => [...str].forEach((ch, i) => v.setUint8(o + i, ch.charCodeAt(0)));
+  w(0, "RIFF"); v.setUint32(4, 36 + N * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, N * 2, true);
+  const url = URL.createObjectURL(new Blob([hdr, pcm.buffer], { type: "audio/wav" }));
+  const old = P.metroEl; const t = cur(), playing = P.playing;
+  const a = new Audio(); a.preload = "auto"; a.src = url; a.preservesPitch = true; a.playbackRate = P.rate; a.volume = MET.on ? MET.vol : 0;
+  a.addEventListener("loadedmetadata", () => { try { a.currentTime = t; } catch {} if (playing && P.playing) a.play().catch(() => {}); }, { once: true });
+  P.metroEl = a;
+  if (old) { old.pause(); URL.revokeObjectURL(old.src); old.removeAttribute("src"); }
+}
+function metroVol() { if (P.metroEl) P.metroEl.volume = MET.on ? MET.vol : 0; }
+function resetClicks() {}
 function countIn() {
   ensureAC(); P.counting = true; const spb = 60 / (P.song.tempo || 100) / P.rate; const t0 = P.ac.currentTime + 0.05;
   for (let i = 0; i < 4; i++) clickAt(t0 + i * spb, i === 0 ? 2 : 1);
@@ -555,27 +595,24 @@ function countIn() {
   setTimeout(() => { P.counting = false; if (P.song) { P.playing = false; setPlaying(true); } }, (0.05 + 4 * spb) * 1000);
 }
 function syncMetroUI() {
-  $("#mOn").textContent = MET.on ? "끄기" : "켜기"; $("#mOn").classList.toggle("on", MET.on); $("#metroBtn").classList.toggle("on", MET.on);
-  $("#mVol").value = MET.vol; $("#mVolT").textContent = Math.round(MET.vol / 1.5 * 100) + "%";
-  $("#mOff").value = MET.off; $("#mOffT").textContent = (MET.off > 0 ? "+" : "") + MET.off + "ms";
+  $("#mOn").classList.toggle("on", MET.on); $("#mOn").querySelector(".st").textContent = MET.on ? "켜짐" : "꺼짐";
+  $("#metroBtn").classList.toggle("live", MET.on); $("#metroLbl").textContent = MET.on ? "메트로놈 켜짐" : "메트로놈";
+  $("#mVol").value = MET.vol; $("#mVolT").textContent = Math.round(MET.vol * 100) + "%";
   $("#mSub").value = MET.sub; $("#mAcc").checked = MET.acc; $("#mCount").checked = MET.count; $("#mSnd").value = MET.snd;
-  $("#beatDots").hidden = !MET.on;
-  LS.set("metro2", MET);
+  $("#beatDots").hidden = !MET.on; metroVol();
+  LS.set("metro3", MET);
 }
-$("#mOn").onclick = () => { MET.on = !MET.on; if (MET.on) { ensureAC(); resetClicks(cur()); } syncMetroUI(); };
+$("#mOn").onclick = () => { MET.on = !MET.on; syncMetroUI(); };
 $("#mVol").oninput = e => { MET.vol = +e.target.value; syncMetroUI(); };
-$("#mVol").onchange = () => clickAt(P.ac ? P.ac.currentTime + .02 : 0, 2);
 $("#mSub").onchange = e => { MET.sub = e.target.value; buildClicks(); syncMetroUI(); };
-$("#mOff").oninput = e => { MET.off = +e.target.value; resetClicks(cur()); syncMetroUI(); };
-$("#mAcc").onchange = e => { MET.acc = e.target.checked; syncMetroUI(); };
+$("#mAcc").onchange = e => { MET.acc = e.target.checked; buildClicks(); syncMetroUI(); };
 $("#mCount").onchange = e => { MET.count = e.target.checked; syncMetroUI(); };
-$("#mSnd").onchange = e => { MET.snd = e.target.value; syncMetroUI(); clickAt(P.ac ? P.ac.currentTime + .02 : 0, 2); };
+$("#mSnd").onchange = e => { MET.snd = e.target.value; buildClicks(); syncMetroUI(); clickAt(P.ac ? P.ac.currentTime + .02 : 0, 2); };
 
 /* ---------------- popovers ---------------- */
 function closePops(except) { $$(".pop").forEach(p => { if (p.id !== except) p.hidden = true; }); }
 $$("[data-pop]").forEach(b => b.onclick = e => {
   e.stopPropagation(); const p = $("#" + b.dataset.pop); const open = p.hidden; closePops(); p.hidden = !open;
-  if (open && b.dataset.pop === "popMetro" && !MET.on) { MET.on = true; ensureAC(); resetClicks(cur()); syncMetroUI(); }
   if (open && b.dataset.pop === "popLoop") openLoopPop();
   if (open && b.dataset.pop === "popKey") buildKey(true);
 });
@@ -585,7 +622,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closePops();
 
 /* speed */
 function setRate(r) {
-  P.rate = r; Object.values(P.audios).forEach(a => { a.playbackRate = r; a.preservesPitch = true; }); resetClicks(cur());
+  P.rate = r; allEls().forEach(a => { a.playbackRate = r; a.preservesPitch = true; });
   $("#speedV").textContent = $("#speedT").textContent = Math.round(r * 100) + "%"; $("#speedR").value = Math.round(r * 100);
   $$("#speedPre button").forEach(b => b.classList.toggle("on", +b.dataset.r === Math.round(r * 100)));
 }
@@ -611,11 +648,13 @@ async function openSong(id) {
   P.master = P.audios[s.stems.includes("drums") ? "drums" : s.stems[0]];
   P.master.onended = () => setPlaying(false);
   applyMix();
-  loopOff(); closePops(); setRate(P.rate); pitchReady = {};
+  P.loop = null; $("#loopBtn").classList.remove("on"); $("#loopNow").textContent = ""; closePops(); setRate(P.rate); pitchReady = {};
   P.bars = bars();
   await buildKey(true); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
-  tabLoaded = false; switchTab(LS.get("tab", "chords"));
+  tabLoaded = false; applyViews();
   render(true);
+  const act = LS.get("loopact:" + id, null);
+  if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
   if (s.band_semi) changeKey(s.band_semi);
 }
 function buildMixer() {
@@ -768,13 +807,12 @@ function buildInfo() {
       <li><b>많이 나오는 코드</b>: ${top.map(esc).join(", ") || "-"}</li>
       <li><b>기타에서 찾은 음</b>: ${s.guitar_notes || 0}개 ${s.tab ? "→ 타브 초안 있음" : "→ 기타 소리가 작아 타브를 만들지 못했어요"}</li>
     </ul>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">${top.slice(0, 6).map(n => `<div style="text-align:center"><div style="font-weight:700">${esc(n)}</div>${diagram(n, 76)}</div>`).join("")}</div>
-    <div class="note">AI 선생님 설명(곡 구조·진행 해설·연습 포인트)은 다음 단계에서 붙일 예정이에요.</div>`;
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">${top.slice(0, 6).map(n => `<div style="text-align:center"><div style="font-weight:700">${esc(n)}</div>${diagram(n, 64)}</div>`).join("")}</div>`;
 }
 
 /* ---------------- loop ---------------- */
 function setLoop(a, b, announce) {
-  P.loop = { a, b }; $("#loopBtn").classList.add("on");
+  P.loop = { a, b }; $("#loopBtn").classList.add("on"); LS.set("loopact:" + P.song.id, P.loop);
   $("#la").textContent = P.bars[a].n || "0"; $("#lb").textContent = P.bars[b].n || "0";
   $("#lToggle").textContent = "끄기"; $("#lToggle").classList.add("on");
   $("#loopNow").innerHTML = `🔁 <b>${P.bars[a].n}~${P.bars[b].n}마디</b> 반복 중`;
@@ -783,12 +821,25 @@ function setLoop(a, b, announce) {
   lastBar = -2; render(true);
 }
 function loopOff() {
-  P.loop = null; P.loopPick = null; $("#loopBtn").classList.remove("on");
+  P.loop = null; P.loopPick = null; $("#loopBtn").classList.remove("on"); if (P.song) LS.set("loopact:" + P.song.id, null);
   $("#lToggle").textContent = "켜기"; $("#lToggle").classList.remove("on"); $("#loopNow").textContent = "";
   $("#la").textContent = $("#lb").textContent = "-"; lastBar = -2; render(true);
 }
 function loopRange() { return P.loop ? { a: P.bars[P.loop.a].start, b: P.bars[P.loop.b].end } : null; }
-function openLoopPop() { if (!P.loop) { $("#la").textContent = $("#lb").textContent = "-"; } $("#lSec").value = ""; }
+function openLoopPop() { if (!P.loop) { $("#la").textContent = $("#lb").textContent = "-"; } $("#lSec").value = ""; buildSaved(); }
+function loopName(a, b) { const si = secAt(P.bars[a].start + 0.01); const sec = si >= 0 ? secs()[si].name : ""; return `${P.bars[a].n}~${P.bars[b].n}마디${sec ? " · " + sec : ""}`; }
+function buildSaved() {
+  const L = LS.get("loops:" + P.song.id, []);
+  $("#lSaved").innerHTML = L.map((x, i) => `<div class="saved"><button class="go" data-i="${i}">▶ ${esc(x.name)}</button><button class="x" data-i="${i}" title="지우기">×</button></div>`).join("");
+  $$("#lSaved .go").forEach(b => b.onclick = () => { const x = L[+b.dataset.i]; setLoop(Math.min(x.a, P.bars.length - 1), Math.min(x.b, P.bars.length - 1), true); });
+  $$("#lSaved .x").forEach(b => b.onclick = () => { L.splice(+b.dataset.i, 1); LS.set("loops:" + P.song.id, L); buildSaved(); });
+}
+$("#lSave").onclick = () => {
+  if (!P.loop) return toast("먼저 구간을 잡아 주세요");
+  const L = LS.get("loops:" + P.song.id, []); const name = loopName(P.loop.a, P.loop.b);
+  if (!L.some(x => x.a === P.loop.a && x.b === P.loop.b)) L.push({ a: P.loop.a, b: P.loop.b, name });
+  LS.set("loops:" + P.song.id, L); buildSaved(); toast("구간을 저장했어요");
+};
 $("#lToggle").onclick = () => { if (P.loop) return loopOff(); const k = barAt(cur()); const si = secAt(cur());
   if (si >= 0) { const s = secs()[si]; setLoop(nearestBar(s.start), Math.max(nearestBar(s.start), nearestBar(s.end) - 1), true); }
   else setLoop(k, Math.min(P.bars.length - 1, k + 3), true); };
@@ -803,13 +854,14 @@ $("#lNowB").onclick = () => { const k = barAt(cur()); setLoop(Math.min(k, P.loop
 
 /* ---------------- tab / score ---------------- */
 let tabLoaded = false, atApi = null, tabBars = [], tabMode = "auto";
-function switchTab(t) {
-  LS.set("tab", t);
-  $$("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
-  $("#pChords").hidden = t !== "chords"; $("#pTab").hidden = t !== "tab"; $("#pInfo").hidden = t !== "info";
-  if (t === "tab" && !tabLoaded) loadTab();
+let VIEWS = LS.get("views", { chords: false, lyrics: false, tab: false });
+function applyViews() {
+  $$("#tabs [data-v]").forEach(b => { const on = !!VIEWS[b.dataset.v]; b.classList.toggle("on", on); b.textContent = (on ? "☑ " : "☐ ") + b.textContent.replace(/^[☐☑] /, ""); });
+  $("#pChords").hidden = !VIEWS.chords; $("#pLyrics").hidden = !VIEWS.lyrics; $("#pTab").hidden = !VIEWS.tab;
+  if (VIEWS.tab && !tabLoaded && P.song) loadTab();
+  LS.set("views", VIEWS); lastIdx = -2; lastBar = -2; if (P.song) render(true);
 }
-$$("#tabs button").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+$$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEWS[b.dataset.v] = !VIEWS[b.dataset.v]; applyViews(); });
 function tabNote() {
   $("#tabNote").innerHTML = (tabMode === "auto" ? "자동 채보 <b>초안</b>이에요. 디스토션 리프나 빠른 솔로는 틀린 음이 섞일 수 있어요. 기타 트랙을 솔로로 들으며 확인해 주세요." : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
     (P.semi ? ` <b style="color:var(--warn)">악보는 원키(${esc(P.song.key)}) 기준이에요.</b>` : "");
@@ -912,9 +964,8 @@ function render(force) {
 function core() { // sync, loop, metronome — runs on a timer so it keeps working even when frames are throttled
   if (!P.song || !P.master || !P.playing) return;
   const t = cur();
-  for (const a of Object.values(P.audios)) if (a !== P.master && Math.abs(a.currentTime - t) > 0.06) a.currentTime = t;
+  for (const a of allEls()) if (a !== P.master && Math.abs(a.currentTime - t) > 0.05) a.currentTime = t;
   const lr = loopRange(); if (lr && t >= lr.b - 0.03) { seek(lr.a); return; }
-  scheduleClicks();
 }
 setInterval(core, 25);
 function tick() { if (P.song && P.master) render(false); requestAnimationFrame(tick); }
