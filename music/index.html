@@ -118,6 +118,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .note{font-size:13px;color:var(--mute);margin-top:8px}
 .tabbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
 .teach{line-height:1.7} .teach li{margin:4px 0}
+.tablyr{font-size:15px;padding:6px 10px;margin-bottom:6px;border-radius:9px;background:var(--panel2);min-height:34px}
+.tablyr .nx{color:var(--mute);font-size:12px;margin-left:8px}
+#trackBtns .btn.on{background:var(--accent);border-color:var(--accent);color:#04241f}
 .lyr{max-height:62vh;overflow:auto;padding:2px}
 .lyr .ln{padding:6px 10px;border-radius:9px;cursor:pointer;color:var(--mute)}
 .lyr .ln:hover{background:var(--panel2)}
@@ -306,7 +309,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
         <div class="tabs" id="tabs">
           <button data-v="chords">코드</button>
           <button data-v="lyrics">가사</button>
-          <button data-v="tab">기타 타브</button>
+          <button data-v="tab">악보</button>
           <button data-v="info">정보</button>
         </div>
         <div id="pInfo" class="teach" hidden></div>
@@ -318,6 +321,8 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
         </div>
         <div id="pTab" hidden>
           <div class="tabbar" id="tabbar"></div>
+          <div class="tabbar" id="trackBtns" hidden></div>
+          <div class="tablyr" id="tabLyric" hidden></div>
           <div id="tabbox"><div class="mute" style="padding:20px">타브 불러오는 중…</div></div>
           <div class="note" id="tabNote"></div>
           <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
@@ -361,7 +366,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18u";
+const BUILD = "2026-10-18v";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -1056,7 +1061,7 @@ function applyViews() {
   $$("#tabs [data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === VIEW));
   for (const [k, el] of Object.entries(VIEW_EL())) el.hidden = k !== VIEW;
   if (VIEW === "tab" && !tabLoaded && P.song) loadTab();
-  if (VIEW === "lyrics" && P.song && (!LYR || LYR.busy)) loadLyrics();
+  if ((VIEW === "lyrics" || VIEW === "tab") && P.song && (!LYR || LYR.busy)) loadLyrics(); // 악보 화면에도 가사 한 줄
   lastIdx = -2; lastBar = -2; if (P.song) render(true);
 }
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
@@ -1077,7 +1082,6 @@ function buildTabBar() {
   const s = P.song; const sc = s.score, ss = ssOk(s), vd = vidOk(s);
   const btn = (m, label) => `<button class="btn xs ${tabMode === m ? "on" : ""}" data-m="${m}">${label}</button>`;
   $("#tabbar").innerHTML = (sc || ss || vd ? btn("auto", "자동 채보") + (vd ? btn("vid", "영상 악보") : "") + (ss ? btn("ss", "Songsterr") : "") + (sc ? btn("score", `올린 악보 (${esc(sc.original || "")})`) : "") : "") +
-    (activeScore() ? `<select id="trackSel"></select>` : "") +
     (tabMode === "score" ? `<button class="btn xs admin" id="bar1">지금 위치를 1마디로</button><button class="btn xs admin" id="scoreDel">악보 지우기</button>` : "") +
     (!ss ? `<button class="btn xs" id="ssFind">Songsterr에서 찾기</button>` : "") +
     (s.videotab?.state === "working" ? `<span class="small" style="color:var(--warn)">영상 악보: ${esc(s.videotab.detail || "")}</span>`
@@ -1116,10 +1120,31 @@ $("#scoreFile").onchange = async () => {
   catch (e) { toast("실패: " + e.message); }
   $("#scoreFile").value = "";
 };
+function trackLabel(name, i) { // 트랙 이름을 짧게: Gt.1 (영상) → 기타 1, Lead Guitar (D.on) → 리드 기타 (D.on)
+  const n = String(name || "");
+  let m = n.match(/^Gt\.?\s*(\d)/i); if (m) return "기타 " + m[1];
+  return n.replace(/Lead Guitar/i, "리드 기타").replace(/Rhythm Guitar/i, "리듬 기타").replace(/Electric Bass.*|Bass.*/i, "베이스").trim() || "트랙 " + (i + 1);
+}
+// 악보를 보는 동안 지금 가사 한 줄 (+다음 줄) — 가사 탭을 따로 열지 않아도
+function tabLyricLine(t) {
+  const el = $("#tabLyric"); if (!el || $("#pTab").hidden) return;
+  const L = LYR?.lines || []; if (!L.length) { el.hidden = true; return; }
+  let k = -1; for (let i = 0; i < L.length; i++) if (L[i].t != null && L[i].t <= t + 0.15) k = i;
+  const curL = k >= 0 && t <= L[k].e + 3 ? L[k] : null, nx = L[k + 1];
+  const html = (curL ? `♪ ${esc(curL.text)}` : `<span class="mute">♪ (연주)</span>`) + (nx ? `<span class="nx">다음: ${esc(nx.text)}</span>` : "");
+  if (el._h !== html) { el._h = html; el.innerHTML = html; }
+  el.hidden = false;
+}
 function computeScoreBars() {
   const sc = activeScore();
   const start = sc && sc.bar1 != null ? nearestBar(sc.bar1) : P.bars.findIndex(b => b.n >= 1); // Songsterr 판은 bar1 = 우리 1마디, 이후 1:1
   tabBars = P.bars.slice(Math.max(0, start)).map(b => b.start);
+  scoreStart = Math.max(0, start); // 악보 1마디 = P.bars[scoreStart] (영상 악보는 우리 음원보다 1마디 늦게 시작하기도 함)
+}
+let scoreStart = null;
+function barLabel(bk) { // 악보를 보는 중이면 악보 마디 번호로 (영상·악보와 같은 번호)
+  if (VIEW === "tab" && activeScore() && scoreStart != null) { const n = bk - scoreStart + 1; return n >= 1 ? n : 0; }
+  return P.bars[bk]?.n || 0;
 }
 function makeApi() {
   $("#tabbox").innerHTML = `<div id="at"></div>`; hlEl = null; lastTabBar = -2;
@@ -1129,19 +1154,19 @@ function makeApi() {
   });
 }
 async function loadTab() {
-  tabLoaded = true; const s = P.song; const box = $("#tabbox");
+  tabLoaded = true; const s = P.song; const box = $("#tabbox"); $("#trackBtns").hidden = true;
   buildTabBar(); tabNote();
   if (!window.alphaTab) { box.innerHTML = `<div class="mute" style="padding:20px">악보 표시 도구를 불러오는 중… 잠시 뒤 다시 눌러 주세요.</div>`; tabLoaded = false; return; }
   const sc = activeScore();
   if (sc) {
     makeApi(); computeScoreBars();
     const key = `trk:${s.id}:${tabMode}`;
-    atApi.scoreLoaded.on(score => {
-      const sel = $("#trackSel"); if (!sel) return;
-      sel.innerHTML = score.tracks.map((t, i) => `<option value="${i}">${esc(t.name || "트랙 " + (i + 1))}</option>`).join("");
-      let g = LS.get(key, -1); if (!(g >= 0 && g < score.tracks.length)) g = score.tracks.findIndex(t => /guitar|기타|gtr/i.test(t.name));
-      if (g >= 0) { sel.value = g; atApi.renderTracks([score.tracks[g]]); }
-      sel.onchange = () => { LS.set(key, +sel.value); hlEl = null; lastTabBar = -2; atApi.renderTracks([score.tracks[+sel.value]]); };
+    atApi.scoreLoaded.on(score => { // 트랙은 버튼으로 바로 (기타 1 / 기타 2 / 리드 / 리듬 / 베이스)
+      const tb = $("#trackBtns"); tb.hidden = score.tracks.length < 2;
+      let g = LS.get(key, -1); if (!(g >= 0 && g < score.tracks.length)) g = Math.max(0, score.tracks.findIndex(t => /guitar|기타|gtr/i.test(t.name)));
+      const draw = () => { tb.innerHTML = `<span class="small mute">트랙</span>` + score.tracks.map((t, i) => `<button class="btn xs ${i === g ? "on" : ""}" data-t="${i}">${esc(trackLabel(t.name, i))}</button>`).join("");
+        $$("#trackBtns [data-t]").forEach(b => b.onclick = () => { g = +b.dataset.t; LS.set(key, g); hlEl = null; lastTabBar = -2; atApi.renderTracks([score.tracks[g]]); draw(); }); };
+      draw(); atApi.renderTracks([score.tracks[g]]);
     });
     atApi.load(fileUrl(s.id, sc.file) + "&v=" + (sc.v || "")); // 파일은 30일 캐시 → 다시 만들면 v 가 바뀌어 새로 받음
     return;
@@ -1192,12 +1217,12 @@ function render(force) {
   const si = secAt(t);
   if (si !== lastSec || force) { lastSec = si; $$("#secs .sec").forEach(el => el.classList.toggle("cur", +el.dataset.i === si));
     $$("#strip div").forEach((el, i) => el.classList.toggle("cur", i === si));
-    $("#secNow").innerHTML = si >= 0 ? `<b>${esc(secs()[si].name)}</b> · ${P.bars[bk]?.n || 0}마디` : ""; }
+    $("#secNow").innerHTML = si >= 0 ? `<b>${esc(secs()[si].name)}</b> · ${barLabel(bk)}마디` : ""; }
   if (MET.on) { const bt = s.beats; let bi = -1; for (let i = 0; i < bt.length && bt[i] <= t; i++) bi = i;
     const db = s.downbeats; let pos = -1; if (bi >= 0) { let dj = -1; for (let j = 0; j < db.length && db[j] <= bt[bi] + .02; j++) dj = j; if (dj >= 0) pos = bt.findIndex(x => Math.abs(x - db[dj]) < .03); }
     const inBar = bi >= 0 && pos >= 0 ? (bi - pos) % 4 : -1;
     $$("#beatDots i").forEach((el, i) => { el.classList.toggle("on", i === inBar); el.classList.toggle("d", i === 0); }); }
-  highlightTabBar(t); highlightLyrics(t);
+  highlightTabBar(t); highlightLyrics(t); tabLyricLine(t);
 }
 function core() { // sync, loop — runs on a timer so it keeps working even when frames are throttled
   if (!P.song || !P.master || !P.playing) return;
