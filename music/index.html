@@ -337,13 +337,18 @@ body.band .admin{display:none !important}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-18k";
+const BUILD = "2026-10-18l";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 const DEFAULT_SRV = "https://desktop-ijcbddr.tail4df4c9.ts.net";
 const sameOrigin = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === "8765") || location.hostname.endsWith(".ts.net");
-let SRV = sameOrigin ? "" : LS.get("srv", DEFAULT_SRV);
+let SRV = sameOrigin ? "" : LS.get("srv", null);
+async function pickServer() { // 이 PC면 127.0.0.1(가장 빠름), 아니면 공개 주소
+  if (SRV !== null) return;
+  try { const c = new AbortController(); setTimeout(() => c.abort(), 900); const r = await fetch("http://127.0.0.1:8765/api/health", { signal: c.signal }); if (r.ok) { SRV = "http://127.0.0.1:8765"; return; } } catch {}
+  SRV = DEFAULT_SRV;
+}
 const STEM_LABEL = { vocals: "보컬", drums: "드럼", bass: "베이스", guitar: "기타", piano: "피아노", other: "그 외 악기" };
 const STEP_ORDER = ["download", "convert", "separate", "analyze", "encode", "done"];
 const SEC_LABELS = ["인트로", "벌스", "프리코러스", "코러스", "브릿지", "기타 솔로", "간주", "아웃트로"];
@@ -390,8 +395,8 @@ async function ping() {
   return online;
 }
 $("#conn").onclick = () => { $("#srvInput").value = SRV || DEFAULT_SRV; $("#dlg").showModal(); };
-$("#dlgOk").onclick = () => { SRV = $("#srvInput").value.trim().replace(/\/$/, ""); LS.set("srv", SRV); $("#dlg").close(); boot(); };
-$("#dlgReset").onclick = () => { $("#srvInput").value = DEFAULT_SRV; };
+$("#dlgOk").onclick = () => { SRV = $("#srvInput").value.trim().replace(/\/$/, ""); LS.set("srv", SRV === DEFAULT_SRV ? null : SRV); $("#dlg").close(); boot(); };
+$("#dlgReset").onclick = () => { $("#srvInput").value = DEFAULT_SRV; LS.set("srv", null); };
 
 /* ---------------- home ---------------- */
 let jobsTimer = null;
@@ -1001,6 +1006,7 @@ function goHome() { stopAll(); P.song = null; location.hash = ""; $("#vSong").hi
 $("#back").onclick = goHome; $("#home").onclick = goHome;
 async function boot() {
   $("#foot").textContent = "Music Lab · BUILD " + BUILD;
+  await pickServer();
   await ping(); applyRole();
   if (!AUTH) return;
   const m = location.hash.match(/song=([a-z0-9]+)/);
