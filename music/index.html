@@ -400,7 +400,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19o";
+const BUILD = "2026-10-19p";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -430,7 +430,8 @@ const jsonOpt = (method, body) => ({ method, headers: { "Content-Type": "applica
 let AUTH = LS.get("auth", null); // {role, token}
 const isAdmin = () => AUTH?.role === "admin";
 // 폰은 128k 가벼운 파일(서버가 처음 요청 때 만들어 둠) → 받는 양 2/3
-function fileUrl(id, name) { return `${SRV}/files/${id}/${name}?t=${encodeURIComponent(AUTH?.token || "")}${isMobile && name.endsWith(".mp3") ? "&lite=1" : ""}`; }
+function fileUrl(id, name) { const v = P.song?.id === id && P.song.sep_v && name.endsWith(".mp3") ? `&sv=${P.song.sep_v}` : ""; // 트랙을 다시 나누면 주소가 바뀌어 캐시(30일) 대신 새로 받음
+  return `${SRV}/files/${id}/${name}?t=${encodeURIComponent(AUTH?.token || "")}${isMobile && name.endsWith(".mp3") ? "&lite=1" : ""}${v}`; }
 async function api(path, opt = {}) {
   opt.headers = Object.assign({}, opt.headers || {}, AUTH ? { Authorization: "Bearer " + AUTH.token } : {});
   const r = await fetch(SRV + path, opt);
