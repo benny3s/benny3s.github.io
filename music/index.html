@@ -250,6 +250,25 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .bkp .ex{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)} .bkp .ex .t{flex:1;font-size:14px} .bkp .ex .t div{color:var(--mute);font-size:12.5px}
 .bkp .nav{display:flex;justify-content:space-between;gap:8px;margin:22px 0 8px}
 .bkp textarea,.bkp input.ti{width:100%;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px;font:inherit;font-size:14px}
+
+/* ---- 작사·작곡 (2026-10-19) ---- */
+.wr h1{font-size:22px;margin:16px 0 4px}
+.wr .it{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:6px 0;cursor:pointer}
+.wr .it .t{flex:1} .wr .it .t span{display:block;color:var(--mute);font-size:12.5px}
+.wr .hdr{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.wr input,.wr select,.wr textarea{border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 10px;font:inherit}
+.wr .ttl{font-size:20px;font-weight:800;flex:1;min-width:180px}
+.wr .sec{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:12px;margin:12px 0}
+.wr .sec .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.wr .sec .chords{width:100%;margin-top:8px;font-size:17px;font-weight:700;letter-spacing:.02em}
+.wr .bars{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0} .wr .bars .b{border:1px solid var(--line);border-radius:8px;padding:4px 8px;min-width:56px;background:var(--panel2)}
+.wr .bars .b.on{border-color:var(--accent)} .wr .bars .b .c{font-weight:700} .wr .bars .b .r{font-size:11.5px;color:var(--accent)}
+.wr .notes{font-size:12.5px;color:var(--warn);margin:2px 0 6px}
+.wr textarea.lyr{width:100%;min-height:90px;line-height:1.7}
+.wr .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.wr .aiout{margin-top:8px;padding:10px;border-radius:10px;background:var(--panel2);font-size:14px;line-height:1.65}
+.wr .memo{display:flex;align-items:center;gap:8px;margin-top:6px} .wr .memo audio{flex:1;height:34px}
+.wr .rec{background:#7f1d1d!important;color:#fff!important}
 </style>
 </head>
 <body>
@@ -264,7 +283,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
   <!-- ============ 이론 책 ============ -->
   <section id="vBook" class="bk" hidden><div id="bookToc"></div><div id="bookPage" class="bkp" hidden></div></section>
   <!-- ============ 작사·작곡 ============ -->
-  <section id="vWrite" hidden><div id="writeBox"></div></section>
+  <section id="vWrite" hidden><div id="writeBox" class="wr"></div></section>
   <!-- ============ HOME ============ -->
   <section id="vHome">
     <div class="hero">
@@ -428,7 +447,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19v";
+const BUILD = "2026-10-19x";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -1680,11 +1699,12 @@ function goHome() {
 }
 let RETURN_TO = null, MAIN = "songs";
 function showMain(view, arg) {
+  if (view !== "write") { try { wStop(); } catch {} }
   MAIN = view; $("#vHome").hidden = view !== "songs"; $("#vBook").hidden = view !== "book"; $("#vWrite").hidden = view !== "write"; $("#mainnav").hidden = false;
   $$("#mainnav button").forEach(b => b.classList.toggle("on", b.dataset.main === view));
   if (view === "songs") { location.hash = ""; loadLib(); loadJobs(); }
   if (view === "book") arg ? bookOpen(arg) : bookToc();
-  if (view === "write") writeHome(arg);
+  if (view === "write") arg ? writeOpen(arg) : writeHome();
   window.scrollTo(0, 0);
 }
 $$("#mainnav button").forEach(b => b.onclick = () => showMain(b.dataset.main));
@@ -1761,7 +1781,147 @@ async function playExample(e, pid) { // 그 곡 그 마디로 → 곡 화면에�
   seek(Math.max(0, e.t - 1)); render(true);
   toast(`${e.bars?.[0] ?? ""}마디 근처예요 · ▶ 를 누르면 들려요`, 2500);
 }
-function writeHome() { $("#writeBox").innerHTML = `<div class="empty" style="margin-top:20px">✍️ 작사·작곡 노트는 곧 열려요.</div>`; }
+
+/* ---------------- 작사·작곡 노트 (write.py) ---------------- */
+let WN = null, WSAVE = null, WP = { on: false }, WREC = null;
+const KEYS = ["C","C#","Db","D","Eb","E","F","F#","Gb","G","Ab","A","Bb","B"];
+const CQ = [["maj9",[0,4,7,11,14]],["M9",[0,4,7,11,14]],["maj7",[0,4,7,11]],["M7",[0,4,7,11]],["mM7",[0,3,7,11]],["m7b5",[0,3,6,10]],["m9",[0,3,7,10,14]],["m11",[0,3,7,10,14,17]],
+  ["m7",[0,3,7,10]],["m6",[0,3,7,9]],["madd9",[0,3,7,14]],["m",[0,3,7]],["dim7",[0,3,6,9]],["dim",[0,3,6]],["aug",[0,4,8]],["9sus4",[0,5,7,10,14]],["7sus4",[0,5,7,10]],
+  ["sus4",[0,5,7]],["sus2",[0,2,7]],["add9",[0,4,7,14]],["13",[0,4,7,10,21]],["11",[0,4,7,10,14,17]],["9",[0,4,7,10,14]],["7",[0,4,7,10]],["6",[0,4,7,9]],["5",[0,7]],["",[0,4,7]]];
+function chordNotes(name, prev) { // 코드 이름 → {root, bass, iv}
+  const m = String(name).match(/^([A-G][#b]?)?([^/]*)(?:\/([A-G][#b]?))?$/); if (!m) return null;
+  let root = m[1] != null ? NOTE_PC[m[1]] : prev?.root, iv = m[1] != null ? null : prev?.iv;
+  if (root == null) return null;
+  if (!iv) { const q = m[2] || ""; iv = (CQ.find(([k]) => k === q) || CQ.find(([k]) => k && q.startsWith(k)) || CQ[CQ.length - 1])[1]; }
+  return { root, iv, bass: m[3] != null ? NOTE_PC[m[3]] : root };
+}
+function wBars(s) { s = (s || "").trim(); return s.includes("|") ? s.split("|").map(b => b.trim().split(/\s+/).filter(Boolean)).filter(b => b.length) : s.split(/\s+/).filter(Boolean).map(c => [c]); }
+function transposeText(s, d, flat) { const N = flat ? FLAT : SHARP; return s.replace(/(^|[\s|/])([A-G][#b]?)/g, (_, p, n) => p + N[(NOTE_PC[n] + d + 120) % 12]); }
+async function writeHome() {
+  location.hash = "write"; WN = null; wStop();
+  const box = $("#writeBox"); box.className = "wr";
+  let list = []; try { list = await api("/api/write"); } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  box.innerHTML = `<h1>✍️ 작사·작곡 노트</h1><div class="mute">곡 아이디어를 구간별로 — 코드 진행을 바로 들어 보고, 흥얼거림을 녹음하고, AI 선생님에게 다음 코드·가사를 물어봐요.</div>
+    ${can("compose") ? `<div class="hdr"><button class="btn sm pri" id="wNew">+ 새 곡 메모</button></div>` : ""}
+    ${list.length ? list.map(w => `<div class="it" data-w="${w.id}"><div class="t"><b>${esc(w.title)}</b><span>키 ${esc(w.key)} · ${w.tempo} BPM · 구간 ${w.nsec}개 · ${new Date((w.updated || 0) * 1000).toLocaleDateString("ko-KR")}</span></div>›</div>`).join("")
+      : `<div class="empty" style="margin-top:14px">아직 노트가 없어요.</div>`}`;
+  $$("#writeBox [data-w]").forEach(el => el.onclick = () => writeOpen(el.dataset.w));
+  if ($("#wNew")) $("#wNew").onclick = async () => { const t = prompt("곡 제목 (가제)"); if (!t) return; const w = await api("/api/write", jsonOpt("POST", { title: t })); writeOpen(w.id); };
+}
+async function writeOpen(id) {
+  location.hash = "write/" + id; wStop();
+  try { WN = await api(`/api/write/${id}`); } catch (e) { toast(e.message); return writeHome(); }
+  writeRender();
+}
+function wSaveSoon() { if (!can("compose")) return; clearTimeout(WSAVE); WSAVE = setTimeout(wSaveNow, 1000); }
+async function wSaveNow() {
+  clearTimeout(WSAVE); if (!WN || !can("compose")) return;
+  try { const r = await api(`/api/write/${WN.id}`, jsonOpt("PUT", { title: WN.title, key: WN.key, tempo: WN.tempo, notes: WN.notes, sections: WN.sections })); WN.analysis = r.analysis; WN.updated = r.updated; wDrawRoman(); }
+  catch (e) { toast("저장 실패: " + e.message); }
+}
+function wDrawRoman() { // 구간마다 마디 칸(코드 + 로마 숫자) + 눈에 띄는 것
+  const A = Object.fromEntries((WN.analysis || []).map(a => [a.id, a]));
+  WN.sections.forEach(s => { const el = document.querySelector(`#writeBox .sec[data-s="${s.id}"]`); if (!el) return;
+    const a = A[s.id] || {}, bars = wBars(s.chords); let k = 0;
+    el.querySelector(".bars").innerHTML = bars.map((b, i) => `<div class="b" data-bi="${i}"><div class="c">${b.map(esc).join(" ")}</div><div class="r">${b.map(() => esc(a.roman?.[k++] || "?")).join(" ")}</div></div>`).join("");
+    el.querySelector(".notes").textContent = (a.notes || []).join(" · ");
+  });
+}
+function writeRender() {
+  const w = WN, ed = can("compose"), dis = ed ? "" : "disabled";
+  const flat = FLAT_KEYS.has(w.key);
+  $("#writeBox").innerHTML = `<button class="btn xs" id="wBack">← 노트 목록</button>
+    <div class="hdr"><input class="ttl" id="wTitle" value="${esc(w.title)}" ${dis}></div>
+    <div class="hdr"><span class="small mute">키</span><select id="wKey" ${dis}>${KEYS.flatMap(k => [k, k + "m"]).map(k => `<option ${k === w.key ? "selected" : ""}>${k}</option>`).join("")}</select>
+      ${ed ? `<button class="btn xs" id="wTdn" title="코드 전부 반음 내리기">조 −</button><button class="btn xs" id="wTup" title="코드 전부 반음 올리기">조 +</button>` : ""}
+      <span class="small mute">템포</span><input id="wTempo" type="number" min="40" max="240" value="${w.tempo}" style="width:78px" ${dis}>
+      <button class="btn sm pri" id="wPlayAll">▶ 처음부터 듣기</button></div>
+    ${w.sections.map((s, i) => `<div class="sec" data-s="${s.id}">
+      <div class="top"><select class="nm" ${dis}>${["인트로","벌스","프리코러스","코러스","브릿지","간주","솔로","아웃트로","기타"].map(n => `<option ${n === s.name ? "selected" : ""}>${n}</option>`).join("")}</select>
+        <button class="btn xs wplay">▶ 이 구간 반복</button>${ed ? `<button class="btn xs wup" ${i ? "" : "disabled"}>↑</button><button class="btn xs wdel">삭제</button>` : ""}</div>
+      <input class="chords" value="${esc(s.chords)}" placeholder="코드 (예: C G | Am F)  — 칸마다 한 마디, '|' 로 한 마디에 여러 코드" ${dis}>
+      <div class="bars"></div><div class="notes"></div>
+      <textarea class="lyr" placeholder="가사" ${dis}>${esc(s.lyrics || "")}</textarea>
+      ${(s.memos || []).map(m => `<div class="memo">🎙<audio controls preload="none" src="${SRV}/files/w/${w.id}/${m.file}?t=${encodeURIComponent(AUTH?.ftoken || AUTH?.token || "")}"></audio><span class="small mute">${new Date(m.at * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span></div>`).join("")}
+      ${ed ? `<div class="acts"><button class="btn xs wrec">🎙 녹음</button><button class="btn xs" data-ai="next">🤖 다음 코드 추천</button><button class="btn xs" data-ai="explain">🤖 진행 설명</button><button class="btn xs" data-ai="${s.lyrics ? "lyrics" : "lyrics_new"}">🤖 ${s.lyrics ? "가사 다듬기" : "가사 아이디어"}</button></div>` : ""}
+      <div class="aiout" hidden></div></div>`).join("")}
+    ${ed ? `<div class="hdr"><button class="btn sm" id="wAdd">+ 구간 추가</button><button class="btn sm" id="wDelNote" style="margin-left:auto">노트 지우기</button></div>` : ""}
+    <div class="small mute" style="margin:6px 0 20px">코드 소리는 연습용 간단한 피아노 + 베이스 + 메트로놈이에요. ${ed ? "고치면 저절로 저장돼요." : "보기만 할 수 있어요 (Benny 가 권한에서 열 수 있어요)."}</div>`;
+  wDrawRoman();
+  $("#wBack").onclick = () => { wSaveNow(); writeHome(); };
+  $("#wTitle").oninput = e => { w.title = e.target.value; wSaveSoon(); };
+  $("#wKey").onchange = e => { w.key = e.target.value; wSaveNow(); };
+  $("#wTempo").onchange = e => { w.tempo = +e.target.value || 90; wSaveSoon(); };
+  if ($("#wTup")) { const tr = d => { const k = parseKey(w.key); if (k) w.key = keyName((k.pc + d + 120) % 12, k.minor); w.sections.forEach(s => s.chords = transposeText(s.chords, d, FLAT_KEYS.has(w.key))); writeRender(); wSaveNow(); };
+    $("#wTup").onclick = () => tr(1); $("#wTdn").onclick = () => tr(-1); }
+  $("#wPlayAll").onclick = () => WP.on && WP.all ? wStop() : wPlay(null);
+  $$("#writeBox .sec").forEach(el => { const s = w.sections.find(x => x.id === el.dataset.s);
+    el.querySelector(".nm").onchange = e => { s.name = e.target.value; wSaveSoon(); };
+    el.querySelector(".chords").oninput = e => { s.chords = e.target.value; wSaveSoon(); };
+    el.querySelector(".lyr").oninput = e => { s.lyrics = e.target.value; wSaveSoon(); };
+    el.querySelector(".wplay").onclick = () => WP.on && WP.sec === s.id ? wStop() : wPlay(s.id);
+    if (el.querySelector(".wdel")) el.querySelector(".wdel").onclick = () => { if (!confirm(`'${s.name}' 구간을 지울까요?`)) return; w.sections = w.sections.filter(x => x !== s); writeRender(); wSaveNow(); };
+    if (el.querySelector(".wup")) el.querySelector(".wup").onclick = () => { const i = w.sections.indexOf(s); w.sections.splice(i, 1); w.sections.splice(i - 1, 0, s); writeRender(); wSaveNow(); };
+    if (el.querySelector(".wrec")) el.querySelector(".wrec").onclick = e => wRecord(s, e.currentTarget);
+    el.querySelectorAll("[data-ai]").forEach(b => b.onclick = async () => {
+      await wSaveNow(); const out = el.querySelector(".aiout"); out.hidden = false; out.innerHTML = `<span class="mute">AI 선생님이 생각하는 중… (10초쯤)</span>`;
+      try { const r = await api(`/api/write/${w.id}/ai`, jsonOpt("POST", { sec: s.id, task: b.dataset.ai })); out.innerHTML = mdHtml(r.text) + `<div style="text-align:right"><button class="btn xs" data-close>닫기</button></div>`; out.querySelector("[data-close]").onclick = () => out.hidden = true; }
+      catch (e2) { out.textContent = "실패: " + e2.message; }
+    });
+  });
+  if ($("#wAdd")) $("#wAdd").onclick = () => { w.sections.push({ id: "s" + Date.now().toString(36), name: "코러스", chords: "", lyrics: "", memos: [] }); writeRender(); wSaveNow(); };
+  if ($("#wDelNote")) $("#wDelNote").onclick = async () => { if (!confirm("이 노트를 지울까요? (따로 보관돼요)")) return; await api(`/api/write/${w.id}`, { method: "DELETE" }); writeHome(); };
+}
+// ---- 코드 진행 소리: 간단한 피아노(삼각파+사인) + 베이스 + 메트로놈, AudioContext 시계로 미리 잡아 둠
+function wTone(ac, out, midi, t, dur, vol, type) {
+  const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = 440 * 2 ** ((midi - 69) / 12);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(vol * 0.35, t + 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(out); o.start(t); o.stop(t + dur + 0.05);
+}
+function wSchedule() { // 0.2초 앞까지 박마다 미리 잡음
+  const ac = P.ac, spb = 60 / (WN.tempo || 90);
+  while (WP.next < ac.currentTime + 0.25) {
+    const it = WP.seq[WP.i]; if (!it) { if (WP.loop) { WP.i = 0; continue; } setTimeout(wStop, (WP.next - ac.currentTime) * 1000 + 200); return; }
+    const t = WP.next;
+    for (let b = 0; b < 4; b++) wTone(ac, WP.out, b === 0 ? 96 : 89, t + b * spb, 0.05, b === 0 ? 0.25 : 0.14, "square"); // 메트로놈
+    const n = it.chords.length, per = 4 / n;
+    it.chords.forEach((nm, j) => { const cn = chordNotes(nm, WP.prev); if (!cn) return; WP.prev = cn; const at = t + j * per * spb, dur = per * spb * 0.95;
+      wTone(ac, WP.out, 36 + cn.bass, at, dur, 0.32, "triangle");
+      cn.iv.forEach(iv => { let m = 60 + ((cn.root + iv) % 12); if (m > 71) m -= 12; if (iv >= 12) m += 12; wTone(ac, WP.out, m, at, dur, 0.09, "triangle"); });
+    });
+    const el = document.querySelector(`#writeBox .sec[data-s="${it.sec}"] .b[data-bi="${it.bi}"]`);
+    setTimeout(() => { $$("#writeBox .b.on").forEach(x => x.classList.remove("on")); el?.classList.add("on"); }, Math.max(0, (t - ac.currentTime) * 1000));
+    WP.next += 4 * spb; WP.i++;
+  }
+}
+function wPlay(secId) {
+  wStop(); ensureAC(); P.ac.resume();
+  const seq = []; WN.sections.filter(s => !secId || s.id === secId).forEach(s => wBars(s.chords).forEach((b, bi) => seq.push({ sec: s.id, bi, chords: b })));
+  if (!seq.length) return toast("코드를 먼저 적어 주세요");
+  WP = { on: true, all: !secId, sec: secId, loop: !!secId, seq, i: 0, prev: null, next: P.ac.currentTime + 0.1, out: P.ac.createGain() };
+  WP.out.gain.value = 0.9; WP.out.connect(P.ac.destination);
+  WP.timer = setInterval(wSchedule, 60); wSchedule();
+  $$("#writeBox .wplay").forEach(b => b.textContent = b.closest(".sec").dataset.s === secId ? "■ 멈춤" : "▶ 이 구간 반복"); if (!secId) $("#wPlayAll").textContent = "■ 멈춤";
+}
+function wStop() {
+  if (WP.timer) clearInterval(WP.timer); if (WP.out) { try { WP.out.gain.setTargetAtTime(0, P.ac.currentTime, 0.02); setTimeout(() => WP.out?.disconnect(), 300); } catch {} }
+  WP = { on: false }; $$("#writeBox .wplay").forEach(b => b.textContent = "▶ 이 구간 반복"); if ($("#wPlayAll")) $("#wPlayAll").textContent = "▶ 처음부터 듣기"; $$("#writeBox .b.on").forEach(x => x.classList.remove("on"));
+}
+async function wRecord(s, btn) { // 흥얼거림 녹음 (이어폰 끼면 코드 반주 들으면서)
+  if (WREC) { WREC.stop(); return; }
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return toast("마이크를 쓸 수 없어요: " + e.message); }
+  const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find(t => window.MediaRecorder?.isTypeSupported?.(t)) || "";
+  const rec = new MediaRecorder(stream, type ? { mimeType: type } : {}), parts = [], t0 = Date.now(); WREC = rec;
+  rec.ondataavailable = e => e.data.size && parts.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop()); WREC = null; btn.classList.remove("rec"); btn.textContent = "🎙 녹음"; wStop();
+    const blob = new Blob(parts, { type: rec.mimeType || "audio/webm" }), ext = (rec.mimeType || "").includes("mp4") ? ".m4a" : ".webm";
+    const fd = new FormData(); fd.append("file", blob, "memo" + ext);
+    try { const r = await api(`/api/write/${WN.id}/audio?sec=${s.id}&length=${(Date.now() - t0) / 1000}`, { method: "POST", body: fd }); WN.sections.forEach(x => { const y = r.sections.find(z => z.id === x.id); if (y) x.memos = y.memos; }); writeRender(); toast("녹음을 저장했어요"); }
+    catch (e) { toast("녹음 저장 실패: " + e.message); }
+  };
+  rec.start(); btn.classList.add("rec"); btn.textContent = "■ 녹음 멈춤"; if (!WP.on) wPlay(s.id); // 이 구간 반주를 틀어 둠
+}
 $("#back").onclick = goHome; $("#home").onclick = goHome;
 async function boot() {
   $("#foot").textContent = "Music Lab · BUILD " + BUILD;
@@ -1776,7 +1936,8 @@ async function boot() {
   if (online && m) { try { await openSong(m[1]); return; } catch {} }
   const bk = location.hash.match(/^#book(?:\/([a-z0-9]+))?/);
   if (online && bk) return showMain("book", bk[1]);
-  if (online && location.hash.startsWith("#write")) return showMain("write");
+  const wr = location.hash.match(/^#write(?:\/([a-z0-9]+))?/);
+  if (online && wr) return showMain("write", wr[1]);
   loadLib(); loadJobs();
 }
 setInterval(() => { if (!P.playing) ping(); }, 15000);
