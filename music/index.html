@@ -236,6 +236,20 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .more a:hover{border-color:var(--accent);color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);background:#222a31;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:50;font-size:14px;max-width:90vw}
 .busy{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+/* ---- 메인 탭 · 이론 책 (2026-10-19) ---- */
+.mainnav{display:flex;gap:6px;margin:14px 0 4px;border-bottom:1px solid var(--line)}
+.mainnav button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);font:inherit;font-weight:700;padding:10px 4px;cursor:pointer}
+.mainnav button.on{color:var(--text);border-bottom-color:var(--accent)}
+.bk h1{font-size:22px;margin:16px 0 4px} .bk .lead{color:var(--mute);margin-bottom:12px}
+.bk .ch{margin:18px 0 6px;font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px}
+.bk .pg{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:6px 0;cursor:pointer}
+.bk .pg .t{flex:1;min-width:0} .bk .pg .t b{display:block;font-size:15px} .bk .pg .t span{display:block;font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk .badge{font-size:11px;border:1px solid var(--line);border-radius:20px;padding:1px 7px;color:var(--mute);white-space:nowrap} .bk .badge.ok{border-color:var(--accent);color:var(--accent)}
+.bkp{line-height:1.75;font-size:15.5px} .bkp h2{font-size:17px;color:var(--text);margin:22px 0 6px} .bkp ul{margin:6px 0;padding-left:20px} .bkp p{margin:6px 0}
+.bkp .ex{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)} .bkp .ex .t{flex:1;font-size:14px} .bkp .ex .t div{color:var(--mute);font-size:12.5px}
+.bkp .nav{display:flex;justify-content:space-between;gap:8px;margin:22px 0 8px}
+.bkp textarea,.bkp input.ti{width:100%;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px;font:inherit;font-size:14px}
 </style>
 </head>
 <body>
@@ -246,6 +260,11 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 </div></header>
 
 <main class="wrap">
+  <nav class="mainnav" id="mainnav"><button data-main="songs" class="on">🎸 곡</button><button data-main="book">📖 이론 책</button><button data-main="write">✍️ 작사·작곡</button></nav>
+  <!-- ============ 이론 책 ============ -->
+  <section id="vBook" class="bk" hidden><div id="bookToc"></div><div id="bookPage" class="bkp" hidden></div></section>
+  <!-- ============ 작사·작곡 ============ -->
+  <section id="vWrite" hidden><div id="writeBox"></div></section>
   <!-- ============ HOME ============ -->
   <section id="vHome">
     <div class="hero">
@@ -409,7 +428,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19u";
+const BUILD = "2026-10-19v";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -1000,7 +1019,7 @@ async function openSong(id) {
   const s = await api("/api/songs/" + id);
   s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, LS.get("chsrc:" + id, "best"));
   P.song = s; P.semi = 0; location.hash = "song=" + id;
-  $("#vHome").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
+  $("#vHome").hidden = true; $("#vBook").hidden = true; $("#vWrite").hidden = true; $("#mainnav").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
   $("#sTitle").textContent = s.title;
   $("#sChips").innerHTML = `<span class="chip">키 <b>${esc((s.keys || []).length > 1 ? s.keys.map(x => x.key.replace(/^([A-G])b/, "$1♭")).join(" → ") : s.key)}</b></span><span class="chip"><b>${Math.round(s.tempo)}</b> BPM</span><span class="chip">4/4</span><span class="chip">${fmt(s.duration)}</span>` +
     (s.source && s.source.startsWith("http") ? `<a class="chip" href="${esc(s.source)}" target="_blank" style="text-decoration:none">원본 ↗</a>` : "");
@@ -1653,7 +1672,96 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---------------- routing ---------------- */
-function goHome() { stopAll(); P.song = null; location.hash = ""; $("#vSong").hidden = true; $("#vHome").hidden = false; loadLib(); loadJobs(); }
+function goHome() {
+  stopAll(); P.song = null; $("#vSong").hidden = true; $("#mainnav").hidden = false;
+  const back = RETURN_TO; RETURN_TO = null;
+  if (back) return showMain(back.view, back.arg); // 이론 책 예제 듣고 ← 누르면 그 페이지로
+  location.hash = ""; showMain("songs");
+}
+let RETURN_TO = null, MAIN = "songs";
+function showMain(view, arg) {
+  MAIN = view; $("#vHome").hidden = view !== "songs"; $("#vBook").hidden = view !== "book"; $("#vWrite").hidden = view !== "write"; $("#mainnav").hidden = false;
+  $$("#mainnav button").forEach(b => b.classList.toggle("on", b.dataset.main === view));
+  if (view === "songs") { location.hash = ""; loadLib(); loadJobs(); }
+  if (view === "book") arg ? bookOpen(arg) : bookToc();
+  if (view === "write") writeHome(arg);
+  window.scrollTo(0, 0);
+}
+$$("#mainnav button").forEach(b => b.onclick = () => showMain(b.dataset.main));
+
+/* ---------------- 이론 책 (book.py) ---------------- */
+let BOOK = null;
+function mdHtml(s) { // ## 소제목, - 목록, **굵게** 만
+  const out = []; let ul = false;
+  for (const raw of String(s || "").split(/\n/)) {
+    const line = raw.trim(), inl = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    if (/^[-•]\s+/.test(line)) { if (!ul) { out.push("<ul>"); ul = true; } out.push(`<li>${inl(line.replace(/^[-•]\s+/, ""))}</li>`); continue; }
+    if (ul) { out.push("</ul>"); ul = false; }
+    if (/^#{1,3}\s+/.test(line)) out.push(`<h2>${inl(line.replace(/^#+\s+/, ""))}</h2>`);
+    else if (line) out.push(`<p>${inl(line)}</p>`);
+  }
+  if (ul) out.push("</ul>");
+  return out.join("");
+}
+async function bookLoad() { BOOK = await api("/api/book"); return BOOK; }
+async function bookToc() {
+  location.hash = "book"; $("#bookPage").hidden = true; $("#bookToc").hidden = false;
+  try { await bookLoad(); } catch (e) { $("#bookToc").innerHTML = `<div class="empty">책을 불러오지 못했어요: ${esc(e.message)}</div>`; return; }
+  const ed = can("study");
+  $("#bookToc").innerHTML = `<h1>📖 음악 이론 책</h1><div class="lead">우리 합주곡에서 찾은 예로 배우는 화성학. 각 페이지의 ▶ 를 누르면 그 곡 그 마디로 가요.</div>` +
+    (ed ? `<div class="bar" style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn xs" id="bkNewCh">+ 장 추가</button><button class="btn xs" id="bkRebuild">🔄 우리 곡 예제 다시 모으기</button></div>` : "") +
+    BOOK.chapters.map(ch => `<div class="ch">${esc(ch.title)}${ed ? `<button class="btn xs" data-newp="${ch.id}">+ 페이지</button>` : ""}</div>` +
+      (ch.pages.length ? ch.pages.map(id => { const p = BOOK.pages[id]; if (!p) return "";
+        return `<div class="pg" data-p="${id}"><div class="t"><b>${esc(p.title)}</b><span>${esc(p.lead || "")}</span></div>
+          ${p.nex ? `<span class="badge">예 ${p.nex}</span>` : ""}<span class="badge ${p.has ? "ok" : ""}">${p.has ? (p.by === "AI 초안" ? "AI 초안" : "본문") : "비어 있음"}</span></div>`; }).join("")
+        : `<div class="small mute" style="padding:6px 2px">아직 페이지가 없어요${ed ? " · + 페이지로 내 공부 노트를 써 보세요" : ""}.</div>`)).join("");
+  $$("#bookToc .pg").forEach(el => el.onclick = () => bookOpen(el.dataset.p));
+  $$("#bookToc [data-newp]").forEach(b => b.onclick = async () => { const t = prompt("페이지 제목"); if (!t) return; const p = await api("/api/book/pages", jsonOpt("POST", { chapter: b.dataset.newp, title: t })); bookOpen(p.id, true); });
+  if ($("#bkNewCh")) $("#bkNewCh").onclick = async () => { const t = prompt("장 제목 (예: 8장 · 리듬)"); if (!t) return; await api("/api/book/chapters", jsonOpt("POST", { title: t })); bookToc(); };
+  if ($("#bkRebuild")) $("#bkRebuild").onclick = async () => { const done = busy("합주곡 분석에서 예제를 다시 모으는 중… (1분쯤)"); try { await api("/api/book/rebuild", { method: "POST" }); toast("예제를 다시 모았어요"); } catch (e) { toast("실패: " + e.message); } done(); bookToc(); };
+}
+async function bookOpen(pid, edit) {
+  location.hash = "book/" + pid; $("#bookToc").hidden = true; const box = $("#bookPage"); box.hidden = false; window.scrollTo(0, 0);
+  box.innerHTML = `<div class="mute" style="padding:20px">불러오는 중…</div>`;
+  let p; try { if (!BOOK) await bookLoad(); p = await api(`/api/book/pages/${pid}`); } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  const order = BOOK.chapters.flatMap(ch => ch.pages), i = order.indexOf(pid), prev = order[i - 1], next = order[i + 1];
+  const ch = BOOK.chapters.find(c => c.pages.includes(pid)), ed = can("study");
+  const exHtml = (p.examples || []).length ? `<h2>🎸 우리 곡에서 찾은 예</h2>` + p.examples.map((e, k) => `<div class="ex"><div class="t"><b>${esc(e.title)}</b> · ${e.bars?.[0] ?? "?"}${e.bars?.[1] && e.bars[1] !== e.bars[0] ? "~" + e.bars[1] : ""}마디 <span class="small mute">(${esc(e.basis)} 기준)</span><div>${esc(e.fact)}</div></div><button class="btn xs" data-ex="${k}">▶ 듣기</button></div>`).join("") : "";
+  const view = () => {
+    box.innerHTML = `<button class="btn xs" id="bkBack">← 목차</button><div class="small mute" style="margin-top:12px">${esc(ch?.title || "")}</div><h1 style="font-size:22px;margin:4px 0">${esc(p.title)}</h1>
+      ${p.lead ? `<div class="mute">${esc(p.lead)}</div>` : ""}
+      ${ed ? `<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><button class="btn xs" id="bkEdit">✏️ 고치기</button><button class="btn xs" id="bkAI">🤖 AI ${p.body ? "다시 다듬기" : "초안 쓰기"}</button></div>` : ""}
+      <div>${p.body ? mdHtml(p.body) : `<p class="mute">아직 본문이 없어요.${ed ? " 🤖 AI 초안을 받거나 ✏️ 고치기로 직접 써 보세요." : ""}</p>`}</div>
+      ${p.by ? `<div class="small mute" style="margin-top:8px">${esc(p.by)} · ${p.updated ? new Date(p.updated * 1000).toLocaleDateString("ko-KR") : ""}</div>` : ""}
+      ${exHtml}
+      <div class="nav">${prev ? `<button class="btn sm" data-go="${prev}">← ${esc(BOOK.pages[prev]?.title || "")}</button>` : "<span></span>"}${next ? `<button class="btn sm" data-go="${next}">${esc(BOOK.pages[next]?.title || "")} →</button>` : ""}</div>`;
+    $("#bkBack").onclick = () => bookToc();
+    $$("#bookPage [data-go]").forEach(b => b.onclick = () => bookOpen(b.dataset.go));
+    $$("#bookPage [data-ex]").forEach(b => b.onclick = () => playExample(p.examples[+b.dataset.ex], pid));
+    if ($("#bkEdit")) $("#bkEdit").onclick = editor;
+    if ($("#bkAI")) $("#bkAI").onclick = async () => { const done = busy("AI 선생님이 쓰는 중… (20~30초)"); try { const r = await api(`/api/book/pages/${pid}/draft`, { method: "POST" }); p.body = r.body; p.by = r.by; p.updated = r.updated; view(); toast("초안을 썼어요 · ✏️ 고치기로 다듬을 수 있어요"); } catch (e) { toast("실패: " + e.message); } done(); };
+  };
+  const editor = () => {
+    box.innerHTML = `<button class="btn xs" id="bkCancel">← 그만 고치기</button>
+      <div style="margin-top:12px" class="small mute">제목</div><input class="ti" id="bkT" value="${esc(p.title)}">
+      <div style="margin-top:8px" class="small mute">한 줄 설명</div><input class="ti" id="bkL" value="${esc(p.lead || "")}">
+      <div style="margin-top:8px" class="small mute">본문 · <b>## 소제목</b>, <b>- 목록</b>, <b>**굵게**</b></div><textarea id="bkB" rows="18">${esc(p.body || "")}</textarea>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn sm pri" id="bkSave">저장</button><button class="btn sm" id="bkDel" style="margin-left:auto">이 페이지 지우기</button></div>`;
+    $("#bkCancel").onclick = view;
+    $("#bkSave").onclick = async () => { try { const r = await api(`/api/book/pages/${pid}`, jsonOpt("PUT", { title: $("#bkT").value, lead: $("#bkL").value, body: $("#bkB").value })); Object.assign(p, r); BOOK.pages[pid] = Object.assign(BOOK.pages[pid] || {}, { title: r.title, lead: r.lead, has: !!r.body, by: r.by }); view(); toast("저장했어요"); } catch (e) { toast("저장 실패: " + e.message); } };
+    $("#bkDel").onclick = async () => { if (!confirm("이 페이지를 지울까요? (따로 보관돼요)")) return; await api(`/api/book/pages/${pid}`, { method: "DELETE" }); bookToc(); };
+  };
+  edit && ed ? editor() : view();
+}
+async function playExample(e, pid) { // 그 곡 그 마디로 → 곡 화면에서 ← 누르면 이 페이지로 돌아옴
+  RETURN_TO = { view: "book", arg: pid };
+  $("#vBook").hidden = true; $("#mainnav").hidden = true;
+  await openSong(e.song);
+  for (let i = 0; i < 100 && !P.ready; i++) await new Promise(r => setTimeout(r, 100));
+  seek(Math.max(0, e.t - 1)); render(true);
+  toast(`${e.bars?.[0] ?? ""}마디 근처예요 · ▶ 를 누르면 들려요`, 2500);
+}
+function writeHome() { $("#writeBox").innerHTML = `<div class="empty" style="margin-top:20px">✍️ 작사·작곡 노트는 곧 열려요.</div>`; }
 $("#back").onclick = goHome; $("#home").onclick = goHome;
 async function boot() {
   $("#foot").textContent = "Music Lab · BUILD " + BUILD;
@@ -1666,6 +1774,9 @@ async function boot() {
   if (!AUTH) return;
   const m = location.hash.match(/song=([a-z0-9]+)/);
   if (online && m) { try { await openSong(m[1]); return; } catch {} }
+  const bk = location.hash.match(/^#book(?:\/([a-z0-9]+))?/);
+  if (online && bk) return showMain("book", bk[1]);
+  if (online && location.hash.startsWith("#write")) return showMain("write");
   loadLib(); loadJobs();
 }
 setInterval(() => { if (!P.playing) ping(); }, 15000);
