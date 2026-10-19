@@ -409,7 +409,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19r";
+const BUILD = "2026-10-19s";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -418,7 +418,8 @@ const sameOrigin = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && loca
 const srvParam = new URLSearchParams(location.search).get("srv"); // 비상용: ?srv=주소 (화면에는 주소 창 없음)
 let SRV = sameOrigin ? "" : srvParam ? srvParam.replace(/\/$/, "") : null;
 const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const OPUS_OK = (() => { try { return !!new Audio().canPlayType('audio/ogg; codecs="opus"'); } catch { return false; } })();
+let NO_OPUS = LS.get("noOpus", false); // Opus 를 받았는데 못 풀었던 기기 → 이후 mp3
 async function pickServer() { // 이 PC면 127.0.0.1(가장 빠름), 아니면 공개 주소
   if (SRV !== null) return;
   if (isMobile) { SRV = DEFAULT_SRV; return; }
@@ -441,8 +442,8 @@ let AUTH = LS.get("auth", null); // {role, token}
 const isAdmin = () => AUTH?.role === "admin";
 // 폰은 128k 가벼운 파일(서버가 처음 요청 때 만들어 둠) → 받는 양 2/3
 function fileUrl(id, name) { const v = P.song?.id === id && P.song.sep_v && name.endsWith(".mp3") ? `&sv=${P.song.sep_v}` : ""; // 트랙을 다시 나누면 주소가 바뀌어 캐시(30일) 대신 새로 받음
-  // 폰: 안드로이드 등은 Opus(80k, mp3 128k 의 약 60% 크기), 아이폰은 Ogg Opus 를 못 푸는 버전이 있어 가벼운 mp3
-  const fmt = !isMobile || !name.endsWith(".mp3") ? "" : isIOS ? "&lite=1" : "&fmt=opus";
+  // 폰: Opus 를 풀 수 있는 브라우저(안드로이드·iOS 17+ 대부분)는 Opus(80k, mp3 128k 의 약 60% 크기), 못 풀면 가벼운 mp3
+  const fmt = !isMobile || !name.endsWith(".mp3") ? "" : OPUS_OK && !NO_OPUS ? "&fmt=opus" : "&lite=1";
   return `${SRV}/files/${id}/${name}?t=${encodeURIComponent(AUTH?.ftoken || AUTH?.token || "")}${fmt}${v}`; } // ftoken = 파일 받기만 되는 토큰
 async function api(path, opt = {}) {
   opt.headers = Object.assign({}, opt.headers || {}, AUTH ? { Authorization: "Bearer " + AUTH.token } : {});
@@ -462,7 +463,9 @@ function applyPerms() {
 async function loadPerms() {
   if (!AUTH) return;
   try { PERMS = await api("/api/perms"); LS.set("perms", PERMS); } catch {}
-  if (!AUTH.ftoken) { try { AUTH.ftoken = (await api("/api/ftoken")).ftoken; LS.set("auth", AUTH); } catch {} } // 예전에 로그인한 기기
+  if (!AUTH.ftoken || !AUTH.renewed || Date.now() - AUTH.renewed > 7 * 86400e3) { // 일주일마다 로그인 자동 연장 → 비번·PIN 다시 넣을 일 없게
+    try { const r = await api("/api/renew", { method: "POST" }); AUTH = Object.assign(AUTH, r, { renewed: Date.now() }); LS.set("auth", AUTH); } catch {}
+  }
   applyPerms();
 }
 $("#permBtn").onclick = () => {
@@ -801,6 +804,14 @@ async function loadAB(files, msg) { // files: {이름: 파일} → {이름: Arra
   finally { if (P.abort === ctl) $("#loadMsg").hidden = true; }
 }
 function waNote(txt, frac) { const w = $(".mixer .wnote"); if (!w) return; w.innerHTML = `${esc(txt)}<span class="wb"><i style="width:${Math.round((frac || 0) * 100)}%"></i></span>`; }
+async function waDecode(ab, file) { // Opus 를 못 푸는 기기면 이 기기는 앞으로 mp3 → 이번 파일도 mp3 로 다시 받아 풂
+  try { return await P.ac.decodeAudioData(ab); }
+  catch (e) {
+    if (!isMobile || NO_OPUS || !OPUS_OK) throw e;
+    NO_OPUS = true; LS.set("noOpus", true);
+    return await P.ac.decodeAudioData(await (await fetch(fileUrl(P.song.id, file))).arrayBuffer());
+  }
+}
 async function waLoad(s) { // 곡 열기: mix 먼저 → 재생 가능, 트랙 6개 → 바꿔 끼움
   const gen = ++WA.gen;
   WA.bufs = {}; WA.stems = false; P.stems = false; WA.off = P.pos || 0; WA.baseSemi = P.semi;
@@ -808,11 +819,11 @@ async function waLoad(s) { // 곡 열기: mix 먼저 → 재생 가능, 트랙 6
     await waGraph(); await waParams(); renderClickTrack();
     waNote("🎚 곡 받는 중… 곧 재생할 수 있어요", 0);
     const m = await loadAB({ mix: P.mixFile }, "곡 받는 중"); if (gen !== WA.gen) return;
-    WA.bufs.mix = await P.ac.decodeAudioData(m.mix); if (gen !== WA.gen) return;
+    WA.bufs.mix = await waDecode(m.mix, P.mixFile); if (gen !== WA.gen) return;
     P.master = WA; P.ready = true; $("#play").disabled = false; waVol();
     const abs = await loadAB(P.files, "트랙 준비 중"); if (gen !== WA.gen) return;
     $("#loadMsg").hidden = false; $("#loadT").textContent = "트랙 푸는 중…"; waNote("🎚 거의 다 됐어요 · 트랙 푸는 중", 1);
-    const bufs = {}; for (const n of Object.keys(abs)) { bufs[n] = await P.ac.decodeAudioData(abs[n]); if (gen !== WA.gen) return; }
+    const bufs = {}; for (const n of Object.keys(abs)) { bufs[n] = await waDecode(abs[n], P.files[n]); if (gen !== WA.gen) return; }
     $("#loadMsg").hidden = true;
     Object.assign(WA.bufs, bufs); WA.stems = true; P.stems = true;
     if (WA.playing) waStart(waPos(), true); // 같은 시각에 mix → 트랙들
