@@ -122,6 +122,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .opg img{width:100%;height:auto;display:block;user-select:none} /* width/height 속성으로 받기 전에도 자리 잡음(지연 로딩 때 위치 계산이 0 이던 문제) */
 #tabbox.zoom{overflow-x:auto} #tabbox.zoom .opg{width:210%} /* 폰: 4마디 한 줄을 2배로 키우고 가로로 따라감 */
 .obar{position:absolute;top:22%;bottom:10%;background:rgba(25,211,181,.16);border:2px solid rgba(25,211,181,.85);border-radius:5px;pointer-events:none}
+.row.met .msub{display:flex;gap:4px;margin-top:3px} .row.met .msub button{font-size:11px;padding:1px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--mute)}
+.row.met .msub button.on{border-color:var(--accent);color:var(--accent)} .row.met .nm{white-space:nowrap;font-size:14px} .row.met .msub button{min-width:30px}
 .mvrow{display:flex;align-items:center;gap:10px;padding:4px 0 8px;border-bottom:1px solid var(--line)} .mvrow input{flex:1} .mvrow b{min-width:40px;text-align:right}
 .cgrid .bar span.weak{opacity:.55;font-style:italic}
 .upmenu{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
@@ -390,7 +392,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19k";
+const BUILD = "2026-10-19m";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -582,6 +584,7 @@ function takeEl() {
 }
 function freeEl(a) { if (!a) return; a.pause(); a.onended = null; a.removeAttribute("src"); a.load(); a._busy = false; if (a._url) { URL.revokeObjectURL(a._url); a._url = null; } }
 function unlockPool() {
+  if (P.ac && P.ac.state === "suspended") P.ac.resume();
   if (P.pending && P.song) useStems(P.pending); // 막혀서 기다리던 트랙: 지금(사람이 누른 순간) 바꿔 끼움
   for (const a of POOL) if (!a._busy && !a._unlocked) {
     a.src = SILENT_URL; a.volume = 0;
@@ -590,6 +593,7 @@ function unlockPool() {
 }
 ["click", "touchend", "keydown"].forEach(ev => document.addEventListener(ev, unlockPool, true));
 function stopAll() {
+  if (WAE) { WA.gen++; if (WA.srcs.length) waStopSrcs(); WA.playing = false; WA.bufs = {}; WA.stems = false; WA.off = 0; }
   P.abort?.abort(); P.ready = false; P.stems = false; P.pos = 0; P.pending = null;
   allEls().forEach(freeEl); P.metroEl = null; P.mixEl = null; P.audios = {}; P.master = null; P.playing = false; $("#play").textContent = "▶";
   Object.values(P.blobs || {}).forEach(u => URL.revokeObjectURL(u)); P.blobs = {};
@@ -655,9 +659,126 @@ async function loadFiles(files, msg) { // files: {stem: name} → {stem: blob ur
     return Object.fromEntries(names.map((n, i) => [n, urls[i]]));
   } finally { if (P.abort === ctl) $("#loadMsg").hidden = true; }
 }
-function cur() { return P.master ? P.master.currentTime : P.pos || 0; }
+
+/* ---------------- Web Audio 재생 엔진 (BUILD 2026-10-19l) ----------------
+   Moises 처럼 모든 트랙 + 메트로놈을 한 AudioContext 시계로: 같은 when 에 start(when, offset) → 기기와 상관없이 트랙·클릭이 안 어긋남.
+   (예전: 트랙마다 HTMLAudio 재생기 → 기기마다 수십 ms 어긋남. 시제품 engine_test.html 로 폰 실측 후 옮김)
+   속도·키 = SoundTouch AudioWorklet(web/vendor/soundtouch). 줄 2개 P(키 바꿈) / U(드럼·메트로놈, 키 안 바꿈) — 지연(115~133ms)을 DelayNode 로 같게.
+   100%·키 그대로면 SoundTouch 를 건너뜀(지연 0). 곡 열면 mix 하나 먼저 받아 재생 → 트랙 다 풀리면 같은 시각에 바꿔 끼움.
+   폰은 24kHz 로 풀어 메모리 절반(Alive 252MB). 예전 방식으로: 주소에 ?engine=el */
+const WAE = (new URLSearchParams(location.search).get("engine") || LS.get("engine", "wa")) !== "el";
+const WA = { tok: 0, bufs: {}, srcs: [], playing: false, t0: 0, off: 0, lat: 0, baseSemi: 0, gen: 0, stems: false, g: {}, loopR: null };
+const WA_LAT = {};
+function waCtx() {
+  if (!P.ac) P.ac = new (window.AudioContext || window.webkitAudioContext)(isMobile ? { sampleRate: 24000, latencyHint: "interactive" } : { latencyHint: "interactive" });
+  return P.ac;
+}
+function waST(ac) { return new AudioWorkletNode(ac, "soundtouch-processor", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], processorOptions: { sampleBufferType: "circular" } }); }
+async function waGraph() {
+  const ac = waCtx(); if (WA.lines) return;
+  WA.mod = WA.mod || ac.audioWorklet.addModule("vendor/soundtouch/soundtouch-processor.js"); await WA.mod;
+  if (WA.lines) return;
+  WA.out = ac.createGain(); WA.out.connect(ac.destination);
+  const lines = {};
+  for (const k of ["P", "U"]) { const bus = ac.createGain(), st = waST(ac), dl = ac.createDelay(1.0); st.connect(dl); dl.connect(WA.out); lines[k] = { bus, st, dl, via: null }; }
+  for (const n of ["vocals", "drums", "bass", "guitar", "piano", "other", "mix", "metro"]) { const g = ac.createGain(); g.gain.value = 0; g.connect(lines[n === "drums" || n === "metro" ? "U" : "P"].bus); WA.g[n] = g; }
+  WA.lines = lines;
+}
+async function waLatency(rate, semis) { // SoundTouch 지연(초): 임펄스 하나를 미리 그려 잼 (설정마다 한 번, 캐시)
+  const k = rate + "|" + semis; if (WA_LAT[k] != null) return WA_LAT[k];
+  const sr = P.ac.sampleRate, oac = new OfflineAudioContext(2, Math.ceil(sr * 2.5), sr);
+  await oac.audioWorklet.addModule("vendor/soundtouch/soundtouch-processor.js");
+  const st = waST(oac); st.parameters.get("playbackRate").value = rate; st.parameters.get("pitchSemitones").value = semis; st.connect(oac.destination);
+  const b = oac.createBuffer(1, sr * 2, sr); b.getChannelData(0)[Math.round(sr * 0.5)] = 1;
+  const s = oac.createBufferSource(); s.buffer = b; s.playbackRate.value = rate; s.connect(st); s.start(0);
+  const d = (await oac.startRendering()).getChannelData(0); let mx = 0; for (const v of d) mx = Math.max(mx, Math.abs(v));
+  let i = 0; while (i < d.length && Math.abs(d[i]) < mx * 0.2) i++;
+  return (WA_LAT[k] = i < d.length ? Math.max(0, i / sr - 0.5 / rate) : 0.13);
+}
+async function waParams() { // 속도·키 → SoundTouch 두 줄 + 지연 맞춤
+  if (!WA.lines) return;
+  const id = WA.pid = (WA.pid || 0) + 1; // 여러 번 연달아 불려도 마지막 설정만 적용 (지연 재는 동안 다른 설정이 끼어듦)
+  const rate = P.rate, live = P.semi - WA.baseSemi, plain = rate === 1 && live === 0, semis = { P: live, U: 0 }, lat = {};
+  for (const k of ["P", "U"]) lat[k] = plain ? 0 : await waLatency(rate, semis[k]);
+  if (id !== WA.pid) return;
+  for (const k of ["P", "U"]) {
+    const L = WA.lines[k];
+    L.st.parameters.get("playbackRate").value = rate; L.st.parameters.get("pitchSemitones").value = semis[k];
+    const via = plain ? "direct" : "st";
+    if (L.via !== via) { try { L.bus.disconnect(); } catch {} L.bus.connect(via === "st" ? L.st : L.dl); L.via = via; }
+  }
+  const mx = Math.max(lat.P, lat.U);
+  for (const k of ["P", "U"]) WA.lines[k].dl.delayTime.value = mx - lat[k];
+  WA.lat = mx;
+}
+function waVol() {
+  if (!P.ac || !WA.lines || !P.song) return;
+  const anySolo = Object.values(P.mixer).some(m => m.solo) || P.metroSolo, now = P.ac.currentTime, set = (n, v) => WA.g[n]?.gain.setTargetAtTime(v, now, 0.012);
+  for (const n of P.song.stems) { const m = P.mixer[n]; set(n, WA.stems && m && (anySolo ? m.solo : !m.mute) ? m.vol * P.mv : 0); }
+  set("mix", WA.stems ? 0 : (P.metroSolo ? 0 : VOL0 * P.mv));
+  set("metro", MET.on && (!anySolo || P.metroSolo) ? MET.vol : 0);
+}
+function waPos() { // 들리는 소리 기준 위치(처리 지연 빼고), 구간 반복이면 되감긴 위치
+  if (!WA.playing) return WA.off;
+  let p = WA.off + Math.max(0, P.ac.currentTime - WA.t0 - WA.lat) * P.rate; const lr = WA.loopR;
+  if (lr && p >= lr.b) p = lr.a + ((p - lr.a) % Math.max(0.05, lr.b - lr.a));
+  return p;
+}
+function waStopSrcs(when) { for (const s of WA.srcs) { try { s.stop(when || 0); } catch {} if (!when) s.disconnect(); } WA.srcs = []; }
+function waStart(at, smooth) { // smooth: 지금 소리는 when 에 멈추고 새 소리는 when 에 시작(끊김 없이 바꿔 끼움)
+  const ac = P.ac, when = ac.currentTime + 0.06, lr = loopRange();
+  if (smooth) at += 0.06 * P.rate;
+  waStopSrcs(smooth ? when : 0);
+  WA.loopR = lr;
+  const play = (name, buf) => { if (!buf) return; const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = P.rate;
+    if (lr) { s.loop = true; s.loopStart = lr.a; s.loopEnd = Math.min(lr.b, buf.duration); }
+    s.connect(WA.g[name]); s.start(when, Math.max(0, Math.min(at, buf.duration - 0.02))); WA.srcs.push(s); };
+  if (WA.stems) P.song.stems.forEach(n => play(n, WA.bufs[n])); else play("mix", WA.bufs.mix);
+  play("metro", WA.bufs.metro);
+  WA.t0 = when; WA.off = at; WA.playing = true;
+}
+function waStop() { WA.off = waPos(); waStopSrcs(); WA.playing = false; }
+async function fetchAB(url, onp, signal) { // 받은 만큼 진행률 표시하며 ArrayBuffer 로
+  const r = await fetch(url, { signal }); if (!r.ok) throw new Error("파일 " + r.status);
+  const total = +r.headers.get("content-length") || 0;
+  if (!r.body) return await r.arrayBuffer();
+  const rd = r.body.getReader(), parts = []; let got = 0;
+  for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onp?.(got, total); }
+  const out = new Uint8Array(got); let o = 0; for (const x of parts) { out.set(x, o); o += x.length; } return out.buffer;
+}
+async function loadAB(files, msg) { // files: {이름: 파일} → {이름: ArrayBuffer}
+  const ctl = P.abort = new AbortController(), got = {}, tot = {}, names = Object.keys(files);
+  const show = () => { const g = names.reduce((s, n) => s + (got[n] || 0), 0), t = names.reduce((s, n) => s + (tot[n] || 0), 0);
+    $("#loadBar").style.width = (t ? g / t * 100 : 0) + "%"; $("#loadT").textContent = `${msg} ${t ? Math.round(g / t * 100) : 0}%` + (t ? ` · ${(g / 1048576).toFixed(0)}/${(t / 1048576).toFixed(0)}MB` : ""); };
+  $("#loadMsg").hidden = false; show();
+  try { const abs = await Promise.all(names.map(n => fetchAB(fileUrl(P.song.id, files[n]), (g, t) => { got[n] = g; tot[n] = t; show(); }, ctl.signal)));
+    return Object.fromEntries(names.map((n, i) => [n, abs[i]])); }
+  finally { if (P.abort === ctl) $("#loadMsg").hidden = true; }
+}
+async function waLoad(s) { // 곡 열기: mix 먼저 → 재생 가능, 트랙 6개 → 바꿔 끼움
+  const gen = ++WA.gen;
+  WA.bufs = {}; WA.stems = false; P.stems = false; WA.off = P.pos || 0; WA.baseSemi = P.semi;
+  try {
+    await waGraph(); await waParams(); renderClickTrack();
+    $(".mixer .wnote").textContent = "준비 중 · 지금은 전체 소리로 재생돼요";
+    const m = await loadAB({ mix: P.mixFile }, "곡 받는 중"); if (gen !== WA.gen) return;
+    WA.bufs.mix = await P.ac.decodeAudioData(m.mix); if (gen !== WA.gen) return;
+    P.master = WA; P.ready = true; $("#play").disabled = false; waVol();
+    const abs = await loadAB(P.files, "트랙 준비 중"); if (gen !== WA.gen) return;
+    $("#loadMsg").hidden = false; $("#loadT").textContent = "트랙 푸는 중…";
+    const bufs = {}; for (const n of Object.keys(abs)) { bufs[n] = await P.ac.decodeAudioData(abs[n]); if (gen !== WA.gen) return; }
+    $("#loadMsg").hidden = true;
+    Object.assign(WA.bufs, bufs); WA.stems = true; P.stems = true;
+    if (WA.playing) waStart(waPos(), true); // 같은 시각에 mix → 트랙들
+    WA.bufs.mix = null; // 메모리 돌려줌
+    waVol(); applyMix();
+  } catch (e) { if (gen === WA.gen && e.name !== "AbortError") toast("곡을 받지 못했어요: " + e.message); }
+}
+function cur() { if (WAE) return P.master ? waPos() : P.pos || 0; return P.master ? P.master.currentTime : P.pos || 0; }
 function allEls() { return Object.values(P.audios).concat(P.metroEl ? [P.metroEl] : [], P.mixEl ? [P.mixEl] : []); }
-function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); P.pos = t; allEls().forEach(a => { try { a.currentTime = t; } catch {} }); render(true); }
+function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); P.pos = t;
+  if (WAE) { if (WA.playing) waStart(t); else WA.off = t; render(true); return; }
+  allEls().forEach(a => { try { a.currentTime = t; } catch {} }); render(true); }
 function goTo(t) { // 사용자가 직접 이동: 반복 중이면 구간 안에서만 움직인다
   const lr = loopRange();
   if (lr && (t < lr.a - 0.05 || t >= lr.b)) { t = Math.min(Math.max(t, lr.a), lr.b - 0.1); toast("구간 반복 중이에요 · 끄려면 🔁 구간에서 끄기", 1800); }
@@ -667,6 +788,7 @@ function setPlaying(on) {
   if (on && !P.ready) return toast("곡을 불러오는 중이에요");
   if (on && !P.playing && MET.count && !P.counting) return countIn();
   P.playing = on; $("#play").textContent = on ? "❚❚" : "▶";
+  if (WAE) { if (on) { P.ac.resume(); waStart(WA.off); } else if (WA.playing) waStop(); return; }
   if (on) { const t = cur(); allEls().forEach(a => { if (Math.abs(a.currentTime - t) > 0.01) try { a.currentTime = t; } catch {} }); }
   allEls().forEach(a => on ? a.play().catch(() => {}) : a.pause());
 }
@@ -681,7 +803,11 @@ function applyMix() {
     const row = document.querySelector(`.row[data-stem="${n}"]`), audible = anySolo ? m.solo : !m.mute;
     if (row) { row.classList.toggle("dim", !audible); row.querySelector(".m").classList.toggle("on", m.mute); row.querySelector(".s").classList.toggle("on", m.solo); }
   }
+  const mr = $("#mixer .row.met"); if (mr) { const anyS = Object.values(P.mixer).some(m => m.solo) || P.metroSolo;
+    mr.classList.toggle("dim", !(MET.on && (!anyS || P.metroSolo))); mr.querySelector(".m").classList.toggle("on", !MET.on); mr.querySelector(".s").classList.toggle("on", !!P.metroSolo);
+    mr.querySelector("input").value = MET.vol; mr.querySelectorAll("[data-sub]").forEach(b => b.classList.toggle("on", MET.sub === b.dataset.sub)); }
   if (P.mixEl) P.mixEl.volume = VOL0 * P.mv; // 트랙 준비 전 섞인 파일 재생 중에도
+  if (WAE) waVol();
   $("#mVolAll").value = P.mv; $("#mVolAllT").textContent = Math.round(P.mv * 100) + "%";
   $(".mixer").classList.toggle("wait", !P.stems);
   $("#mixReset").hidden = !Object.values(P.mixer).some(m => m.mute || m.solo || Math.abs(m.vol - VOL0) > 0.01); // 바꾼 게 있을 때만 보임
@@ -689,7 +815,7 @@ function applyMix() {
 }
 
 /* ---------------- metronome ---------------- */
-function ensureAC() { if (!P.ac) P.ac = new (window.AudioContext || window.webkitAudioContext)(); if (P.ac.state === "suspended") P.ac.resume(); }
+function ensureAC() { if (WAE) waCtx(); else if (!P.ac) P.ac = new (window.AudioContext || window.webkitAudioContext)(); if (P.ac.state === "suspended") P.ac.resume(); }
 function clickAt(when, level) { // level 2=bar, 1=beat, 0=subdivision
   ensureAC(); const ac = P.ac;
   if (!P.mbus) { const comp = ac.createDynamicsCompressor(); comp.threshold.value = -6; comp.ratio.value = 8; comp.connect(ac.destination); P.mbus = comp; }
@@ -742,7 +868,12 @@ function clickSample(level, sr) {
   return buf;
 }
 function renderClickTrack() {
-  const s = P.song; if (!s) return; const sr = 44100, N = Math.ceil((s.duration + 1) * sr), pcm = new Int16Array(N);
+  const s = P.song; if (!s) return;
+  if (WAE) { // 엔진: 클릭을 AudioBuffer(모노) 한 줄로 → 다른 트랙과 같은 시계
+    if (!P.ac) return; const sr = P.ac.sampleRate, N = Math.ceil((s.duration + 1) * sr), b = P.ac.createBuffer(1, N, sr), d = b.getChannelData(0), cache = {};
+    for (const c of P.clicks) { const smp = cache[c.l] || (cache[c.l] = clickSample(c.l, sr)); const i0 = Math.round(c.t * sr); for (let i = 0; i < smp.length && i0 + i < N; i++) if (i0 + i >= 0) d[i0 + i] += smp[i]; }
+    WA.bufs.metro = b; if (WA.playing) waStart(waPos(), true); return;
+  } const sr = 44100, N = Math.ceil((s.duration + 1) * sr), pcm = new Int16Array(N);
   const cache = {};
   for (const c of P.clicks) {
     const smp = cache[c.l] || (cache[c.l] = clickSample(c.l, sr)); const i0 = Math.round(c.t * sr);
@@ -758,7 +889,7 @@ function renderClickTrack() {
   if (oldUrl) URL.revokeObjectURL(oldUrl);
   a.addEventListener("loadedmetadata", () => { if (P.metroEl !== a) return; try { a.currentTime = cur(); } catch {} if (P.playing) a.play().catch(() => {}); }, { once: true });
 }
-function metroVol() { if (P.metroEl) P.metroEl.volume = MET.on ? MET.vol : 0; }
+function metroVol() { if (WAE) return waVol(); if (P.metroEl) P.metroEl.volume = MET.on ? MET.vol : 0; }
 function resetClicks() {}
 function countIn() {
   ensureAC(); P.counting = true; const spb = 60 / (P.song.tempo || 100) / P.rate; const t0 = P.ac.currentTime + 0.05;
@@ -773,7 +904,7 @@ function syncMetroUI() {
   $("#mVol").value = MET.vol; $("#mVolT").textContent = Math.round(MET.vol * 100) + "%";
   $("#mSub").value = MET.sub; $("#mSnd").value = MET.snd;
   $("#mAdjT").textContent = (MET.adj > 0 ? "+" : "") + (MET.adj || 0) + "ms";
-  $("#beatDots").hidden = !MET.on; metroVol();
+  $("#beatDots").hidden = !MET.on; metroVol(); if (P.song) applyMix();
   LS.set("metro3", MET);
 }
 $("#mOn").onclick = () => { MET.on = !MET.on; syncMetroUI(); };
@@ -799,6 +930,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closePops();
 
 /* speed */
 function setRate(r) {
+  if (WAE && P.ac && r !== P.rate) { if (WA.playing) waStop(); P.rate = r; const tok = ++WA.tok; waParams().then(() => { if (tok === WA.tok && P.playing) waStart(WA.off); }); } // 슬라이더를 빨리 움직여도 마지막 값만
   P.rate = r; allEls().forEach(a => { a.playbackRate = r; a.preservesPitch = true; });
   $("#speedV").textContent = $("#speedT").textContent = Math.round(r * 100) + "%"; $("#speedR").value = Math.round(r * 100);
   $$("#speedPre button").forEach(b => b.classList.toggle("on", +b.dataset.r === Math.round(r * 100)));
@@ -828,13 +960,14 @@ async function openSong(id) {
       Object.assign(P.files, r.files); P.semi = s.band_semi; pitchReady[P.semi] = true; } catch {}
   }
   if (P.song !== s) return;
-  startMix(s);
+  if (!WAE) startMix(s);
   P.bars = bars();
   buildKey(); buildSections(); buildChords(); buildStrip(); buildInfo(); buildClicks(); syncMetroUI();
   tabLoaded = false; tabbarMenu = false; tabMode = defaultTabMode(s); VIEW = null; LYR = null; LESSON = null; applyViews();
   render(true);
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
+  if (WAE) return waLoad(s);
   let urls;
   try { urls = await loadFiles(P.files, "트랙 준비 중"); } catch (e) { if (P.song === s && e.name !== "AbortError") toast("트랙을 받지 못했어요: " + e.message); return; }
   if (P.song !== s) return Object.values(urls).forEach(u => URL.revokeObjectURL(u));
@@ -856,7 +989,16 @@ function buildMixer() {
       <button class="ms m">M</button><button class="ms s">S</button>
       <input type="range" min="0" max="1" step="0.01" value="${P.mixer[n].vol}"></div>`;
   }).join("");
-  $$("#mixer .row").forEach(r => { const n = r.dataset.stem;
+  // 메트로놈도 믹서 한 줄 (Moises 스마트 메트로놈처럼): M = 끄기/켜기, S = 메트로놈만, 볼륨, 0.5x·1x·2x (2026-10-19 Benny)
+  $("#mixer").insertAdjacentHTML("beforeend", `<div class="row met" data-metro="1"><span class="sw" style="background:#a3e635"></span>
+      <span class="nm">메트로놈<span class="msub">${[["half", "0.5x"], ["1", "1x"], ["2", "2x"]].map(([v, l]) => `<button data-sub="${v}">${l}</button>`).join("")}</span></span>
+      <button class="ms m">M</button><button class="ms s">S</button><input type="range" min="0" max="1" step="0.05"></div>`);
+  const mr = $("#mixer .row.met");
+  mr.querySelector(".m").onclick = () => { MET.on = !MET.on; if (!MET.on) P.metroSolo = false; syncMetroUI(); applyMix(); };
+  mr.querySelector(".s").onclick = () => { P.metroSolo = !P.metroSolo; if (P.metroSolo) MET.on = true; syncMetroUI(); applyMix(); };
+  mr.querySelector("input").oninput = e => { MET.vol = +e.target.value; syncMetroUI(); };
+  mr.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { MET.sub = b.dataset.sub; if (!MET.on) MET.on = true; buildClicks(); syncMetroUI(); applyMix(); });
+  $$("#mixer .row[data-stem]").forEach(r => { const n = r.dataset.stem;
     // 한 트랙에서 M 과 S 는 같이 켜지지 않음 (Moises 처럼: 하나 켜면 다른 하나 꺼짐)
     r.querySelector(".m").onclick = () => { const m = P.mixer[n]; m.mute = !m.mute; if (m.mute) m.solo = false; applyMix(); };
     r.querySelector(".s").onclick = () => { const m = P.mixer[n]; m.solo = !m.solo; if (m.solo) m.mute = false; applyMix(); };
@@ -864,6 +1006,7 @@ function buildMixer() {
   });
   $("#mixReset").onclick = () => { // M·S 다 풀고 볼륨 기본으로 (S 를 다 누르면 전부 들려서 그대로인 게 맞지만, 하나씩 풀기 번거로움)
     for (const [n, m] of Object.entries(P.mixer)) { Object.assign(m, { vol: VOL0, mute: false, solo: false }); const r = document.querySelector(`#mixer .row[data-stem="${n}"] input`); if (r) r.value = VOL0; }
+    P.metroSolo = false;
     applyMix();
   };
 }
@@ -888,6 +1031,11 @@ $("#bandKey").onclick = async () => {
   catch (e) { toast("저장 실패: " + e.message); }
 };
 async function changeKey(d) {
+  if (WAE) {
+    const n = P.semi + d; if (n < -6 || n > 6) return toast("±6반음까지 바꿀 수 있어요");
+    if (WA.playing) waStop(); P.semi = n; const tok = ++WA.tok; await waParams(); if (tok === WA.tok && P.playing) waStart(WA.off);
+    buildKey(); buildChords(); buildInfo(); if (LYR) renderLyrics(); render(true); tabNote(); return;
+  }
   if (!P.stems) return toast("트랙 준비가 끝나면 키를 바꿀 수 있어요");
   const n = P.semi + d; if (n < -6 || n > 6) return toast("±6반음까지 바꿀 수 있어요");
   const quick = n === 0 || pitchReady[n];
@@ -1399,6 +1547,9 @@ function render(force) {
   highlightTabBar(t); highlightOrig(t); highlightLyrics(t); tabLyricLine(t);
 }
 function core() { // sync, loop — runs on a timer so it keeps working even when frames are throttled
+  if (WAE) { if (!P.song || !WA.playing) return;
+    const lr = loopRange(); if (JSON.stringify(lr) !== JSON.stringify(WA.loopR)) { waStart(waPos()); return; } // 구간 반복을 켜거나 바꿈 → 새 구간으로 다시 시작
+    if (!lr && waPos() >= P.song.duration - 0.02) setPlaying(false); return; }
   if (!P.song || !P.master || !P.playing) return;
   const t = cur();
   const lr = loopRange(); if (lr && t >= lr.b - 0.03) { seek(lr.a); return; }
