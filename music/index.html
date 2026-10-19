@@ -409,7 +409,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19t";
+const BUILD = "2026-10-19u";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -793,13 +793,13 @@ async function fetchAB(url, onp, signal) { // 받은 만큼 진행률 표시하�
   for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onp?.(got, total); }
   const out = new Uint8Array(got); let o = 0; for (const x of parts) { out.set(x, o); o += x.length; } return out.buffer;
 }
-async function loadAB(files, msg) { // files: {이름: 파일} → {이름: ArrayBuffer}
+async function loadAB(files, msg, each) { // files: {이름: 파일} → {이름: ArrayBuffer} (each 가 있으면 받는 대로 each(이름, 데이터) 결과)
   const ctl = P.abort = new AbortController(), got = {}, tot = {}, names = Object.keys(files);
   const show = () => { const g = names.reduce((s, n) => s + (got[n] || 0), 0), t = names.reduce((s, n) => s + (tot[n] || 0), 0);
     $("#loadBar").style.width = (t ? g / t * 100 : 0) + "%"; $("#loadT").textContent = `${msg} ${t ? Math.round(g / t * 100) : 0}%` + (t ? ` · ${(g / 1048576).toFixed(0)}/${(t / 1048576).toFixed(0)}MB` : "");
     if (msg.startsWith("트랙")) waNote(`🎚 악기별 트랙 준비 중 ${t ? Math.round(g / t * 100) : 0}% · 그동안은 전체 소리로 재생돼요`, t ? g / t : 0); };
   $("#loadMsg").hidden = false; show();
-  try { const abs = await Promise.all(names.map(n => fetchAB(fileUrl(P.song.id, files[n]), (g, t) => { got[n] = g; tot[n] = t; show(); }, ctl.signal)));
+  try { const abs = await Promise.all(names.map(n => fetchAB(fileUrl(P.song.id, files[n]), (g, t) => { got[n] = g; tot[n] = t; show(); }, ctl.signal).then(ab => each ? each(n, ab) : ab)));
     return Object.fromEntries(names.map((n, i) => [n, abs[i]])); }
   finally { if (P.abort === ctl) $("#loadMsg").hidden = true; }
 }
@@ -821,10 +821,8 @@ async function waLoad(s) { // 곡 열기: mix 먼저 → 재생 가능, 트랙 6
     const m = await loadAB({ mix: P.mixFile }, "곡 받는 중"); if (gen !== WA.gen) return;
     WA.bufs.mix = await waDecode(m.mix, P.mixFile); if (gen !== WA.gen) return;
     P.master = WA; P.ready = true; $("#play").disabled = false; waVol();
-    const abs = await loadAB(P.files, "트랙 준비 중"); if (gen !== WA.gen) return;
-    $("#loadMsg").hidden = false; $("#loadT").textContent = "트랙 푸는 중…"; waNote("🎚 거의 다 됐어요 · 트랙 푸는 중", 1);
-    const bufs = {}; for (const n of Object.keys(abs)) { bufs[n] = await waDecode(abs[n], P.files[n]); if (gen !== WA.gen) return; }
-    $("#loadMsg").hidden = true;
+    const bufs = await loadAB(P.files, "트랙 준비 중", (n, ab) => gen === WA.gen ? waDecode(ab, P.files[n]) : null); // 받는 대로 바로 풂(동시에)
+    if (gen !== WA.gen) return;
     Object.assign(WA.bufs, bufs); WA.stems = true; P.stems = true;
     if (WA.playing) waStart(waPos(), true); // 같은 시각에 mix → 트랙들
     WA.bufs.mix = null; // 메모리 돌려줌
