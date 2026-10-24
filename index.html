@@ -453,7 +453,7 @@ async function towerApi(path, body) {
       opt.headers = { "Content-Type": "application/json", "X-Bridge-Token": catToken };
       opt.body = JSON.stringify(body);
     }
-    const r = await fetch(TOWER + path, opt);
+    let r; try { r = await fetch(TOWER + path, opt); } catch (_) { r = await fetch("http://127.0.0.1:8999" + path, opt); }
     const j = await r.json().catch(() => ({}));
     if (!r.ok || j.ok === false) throw new Error(j.error || ("HTTP " + r.status));
     return j;
