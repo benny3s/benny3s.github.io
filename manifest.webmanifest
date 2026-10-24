@@ -1,0 +1,53 @@
+{
+  "id": "/?source=pwa",
+  "name": "Benny 포털",
+  "short_name": "Benny",
+  "description": "Benny의 프로젝트 모음 · 통합 런처 및 관제 포털",
+  "lang": "ko",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f5f2",
+  "theme_color": "#287047",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "베니브릿지",
+      "short_name": "베니브릿지",
+      "url": "/bridge/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "내 PC · AI 관제",
+      "short_name": "PC·관제",
+      "url": "/?tab=pc",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "약속 잡자",
+      "short_name": "약속 잡자",
+      "url": "/when/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

@@ -4,9 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<meta name="theme-color" content="#f7f7f5">
+<meta name="theme-color" content="#287047">
 <title>Benny</title>
 <meta name="description" content="Benny의 프로젝트 모음">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Benny">
 <style>
 /* 항상 라이트 — 약속 잡자·밴드매니저와 같게 (2026-10-01 Benny: "라이트 모드로 안돼?") */
 :root{
@@ -210,6 +217,7 @@ body.admin #adminEnterBtn{display:none}
       <p class="sub">만들어 둔 것들 모아놓은 곳</p>
     </div>
     <div class="hdr-right">
+      <button class="btn" id="installBtn" type="button" style="font-size:12px;padding:5px 10px;border-color:#cce0d4;background:var(--accent-soft);color:var(--accent)" title="홈 화면·바탕화면에 앱으로 설치">📲 앱 설치</button>
       <div class="viewsw" role="group" aria-label="보기 방식">
         <button type="button" data-view="full" title="자세히 보기" aria-label="자세히 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="4.5" rx="1.2"/><rect x="2" y="9" width="12" height="4.5" rx="1.2"/></svg></button><button type="button" data-view="simple" title="간단히 보기" aria-label="간단히 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></button>
       </div>
@@ -253,6 +261,18 @@ body.admin #adminEnterBtn{display:none}
       <button class="btn primary" type="submit" id="go">들어가기</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="installDlg">
+  <h2>📲 앱으로 설치하기</h2>
+  <div style="font-size:13px;color:var(--muted);line-height:1.55;display:grid;gap:8px">
+    <div><b style="color:var(--ink)">📱 갤럭시 (Chrome / 삼성 인터넷)</b><br>우측 상단(또는 하단) 메뉴 <b>⋮</b> → <b>앱 설치</b> 또는 <b>홈 화면에 추가</b></div>
+    <div><b style="color:var(--ink)">🍎 아이폰 (Safari)</b><br>하단 <b>공유(□↑)</b> 버튼 → <b>홈 화면에 추가</b></div>
+    <div><b style="color:var(--ink)">💻 PC (Chrome / Edge)</b><br>주소창 오른쪽 끝 <b>모니터+화살표(설치) 아이콘</b> 클릭</div>
+  </div>
+  <div class="row">
+    <button class="btn primary" type="button" id="installDlgClose">확인</button>
+  </div>
 </dialog>
 
 <script>
@@ -484,7 +504,11 @@ function adminTools(p, idx) {
    PC 쪽 내용은 전부 런타임에 관제판(TOWER) /api/catalog 응답으로만 그린다 — 이 파일엔 경로·폴더명을 두지 않는다. */
 const TAB_KEY = "portalAdminTab";
 let tab = "portal";
-try { const t = sessionStorage.getItem(TAB_KEY); if (["portal", "pc", "sched", "edit"].includes(t)) tab = t; } catch (e) {}
+try {
+  const qt = new URLSearchParams(location.search).get("tab");
+  const t = qt || sessionStorage.getItem(TAB_KEY);
+  if (["portal", "pc", "sched", "edit"].includes(t)) tab = t;
+} catch (e) {}
 function syncTabs() {
   document.body.dataset.tab = tab;
   document.querySelectorAll("#tabs [data-tab]").forEach(b => {
@@ -1022,6 +1046,46 @@ try {
     });
   }
 } catch (e) {}
+
+/* ── PWA 앱 설치 (홈 화면 / 바탕화면에 앱으로 다운로드) */
+const installBtn = document.getElementById("installBtn");
+const installDlg = document.getElementById("installDlg");
+let deferredInstallPrompt = null;
+function checkStandalone() {
+  const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+  if (standalone && installBtn) installBtn.style.display = "none";
+}
+checkStandalone();
+if (window.matchMedia) {
+  try { window.matchMedia("(display-mode: standalone)").addEventListener("change", checkStandalone); } catch (e) {}
+}
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (installBtn) installBtn.style.display = "";
+});
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  if (installBtn) installBtn.style.display = "none";
+});
+if (installBtn) {
+  installBtn.addEventListener("click", async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      try { await deferredInstallPrompt.userChoice; } catch (e) {}
+      deferredInstallPrompt = null;
+    } else if (installDlg && installDlg.showModal) {
+      installDlg.showModal();
+    }
+  });
+}
+const installDlgClose = document.getElementById("installDlgClose");
+if (installDlgClose) installDlgClose.onclick = () => installDlg.close();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
