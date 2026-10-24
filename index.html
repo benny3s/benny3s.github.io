@@ -469,7 +469,7 @@ function loadCatalog(force) {
   catLoading = towerApi("/api/catalog")
     .then(j => {
       if (j.token) catToken = j.token;
-      cat = { projects: Array.isArray(j.projects) ? j.projects : [], schedules: j.schedules || {} };
+      cat = { projects: Array.isArray(j.projects) ? j.projects : [], schedules: j.schedules || {}, usage: j.usage_stats || null };
       catNote = "불러옴 " + new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
     })
     .catch(e => { if (cat) catNote = "새로고침 실패: " + e.message; else catErr = e.message; })
@@ -515,9 +515,79 @@ function allGroups() {
   });
 }
 
+function renderAiTowerBar(head) {
+  const wrap = el("div", "pcard");
+  wrap.style.cssText = "background:#faf7f1;border-color:#e4dccf;gap:8px";
+  const top = el("div", "top");
+  top.append(el("span", "name", "🤖 AI 통합 관제 · 토큰/구독 절약 현황 (llm-bridge)"), el("span", "chip s-github", "단일 통로"));
+  wrap.appendChild(top);
+  const sub = cat && cat.usage && cat.usage.sub_saved;
+  if (sub) {
+    const usd = v => "$" + Number(v || 0).toFixed(2);
+    const line = el("p", "desc");
+    line.textContent = "💰 구독·무료 절약(API 환산): 이번 달 " + usd(sub.month_usd) + " · 오늘 " + usd(sub.today_usd)
+      + (cat.usage.month_usd ? "  |  유료 API 실지출: " + usd(cat.usage.month_usd) : "  |  유료 API 실지출: $0.00");
+    wrap.appendChild(line);
+    if (Array.isArray(sub.models) && sub.models.length) {
+      const mrow = el("div", "fchips");
+      sub.models.slice(0, 6).forEach(m => {
+        const tk = Math.round(((m.tokens_in || 0) + (m.tokens_out || 0)) / 100) / 10;
+        mrow.appendChild(el("span", "chip", m.provider + "/" + m.model + " · " + m.calls + "회 · " + tk + "k토큰 · " + usd(m.usd)));
+      });
+      wrap.appendChild(mrow);
+    }
+  }
+  const bar = el("div", "ctool");
+  const inp = el("input"); inp.type = "text";
+  inp.placeholder = "AI에게 포털·프로젝트 관리 시키기 (예: 미등록 폴더 중 정리할 후보 알려줘)";
+  const sel = document.createElement("select");
+  sel.style.cssText = "padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit;font-size:12.5px";
+  [["", "자동 라우팅 (Groq/DeepSeek)"], ["groq", "Groq 초고속 무료"], ["ollama", "Ollama DeepSeek"], ["claude-cli", "Claude 구독 (Sonnet/Opus)"]].forEach(([v, t]) => {
+    const o = document.createElement("option"); o.value = v; o.textContent = t; sel.appendChild(o);
+  });
+  const bAsk = el("button", "btn primary", "AI 실행"); bAsk.type = "button";
+  const bAutoNote = el("button", "btn", "✨ 빈 설명 자동 추천"); bAutoNote.type = "button";
+  bar.append(inp, sel, bAsk, bAutoNote);
+  const out = el("p", "msgline");
+  out.style.whiteSpace = "pre-wrap";
+  const runAsk = async (promptText, taskType, ctxObj) => {
+    if (!promptText && !ctxObj) return;
+    bAsk.disabled = true; bAutoNote.disabled = true; setMsg(out, "🤖 llm-bridge AI가 분석 중입니다…");
+    try {
+      const res = await towerApi("/api/ai/assist", {
+        task: taskType || "portal_admin",
+        prompt: promptText,
+        provider: sel.value || undefined,
+        context: ctxObj || {
+          total_projects: cat.projects.length,
+          unregistered: cat.projects.filter(p => !p.registered && !p.is_nda).map(p => p.folder_name),
+          groups: allGroups()
+        }
+      });
+      setMsg(out, "🤖 [" + (res.provider || "ai") + "/" + (res.model || "") + "] " + (res.reply || ""), "ok");
+    } catch (e) {
+      setMsg(out, "AI 호출 실패: " + e.message, "err");
+    } finally { bAsk.disabled = false; bAutoNote.disabled = false; }
+  };
+  bAsk.onclick = () => runAsk(inp.value.trim(), "portal_admin");
+  inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); runAsk(inp.value.trim(), "portal_admin"); } };
+  bAutoNote.onclick = () => {
+    const target = cat.projects.find(p => !p.is_nda && (!p.note || !p.note.trim()));
+    if (!target) { setMsg(out, "설명이 비어 있는 프로젝트가 없어요!", "ok"); return; }
+    runAsk(
+      "프로젝트 '" + (target.label || target.name) + "' (폴더: " + target.folder_name + ", 분류: " + (target.group || "기타") + ")의 포털 카드용 한 줄 한국어 설명을 45자 이내로 작성해 주세요.",
+      "portal_project_note",
+      { name: target.name, folder: target.folder_name, group: target.group }
+    );
+  };
+  wrap.append(bar, out);
+  head.appendChild(wrap);
+}
+
 function renderPc() {
   const head = el("div");
   head.style.cssText = "display:grid;gap:10px";
+  renderAiTowerBar(head);
   const bar = el("div", "ctool");
   const q = el("input"); q.type = "search"; q.placeholder = "이름·설명·별칭·폴더명 검색"; q.value = pcFilter.q;
   q.setAttribute("aria-label", "프로젝트 검색");
