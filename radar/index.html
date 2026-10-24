@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f7f7f5">
+<title>AI 레이더</title>
+<meta name="description" content="매주 GitHub · Hugging Face · 유튜브 쇼츠에서 뜨는 AI 정리">
+<style>
+/* 포털(benny3s.github.io)과 같은 라이트 톤 — 2026-10-24 Benny: "github.io 만 볼 거라 거기에" */
+:root{
+  color-scheme:light;
+  --bg:#f7f7f5; --card:#fff; --line:#e4e4e0; --ink:#1b1b19; --muted:#6e6e67;
+  --accent:#2f7d4f; --shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
+  --good:#2f7d4f; --goodbg:#e3f1e8; --watch:#8a6a12; --watchbg:#fbf1d6; --bad:#a3361b; --badbg:#fde3e1;
+  --new:#2b5fb4; --newbg:#e3ecfb;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;
+  padding:0 16px 60px;-webkit-text-size-adjust:100%}
+.wrap{max-width:820px;margin:0 auto}
+a{color:inherit}
+header{padding-block:36px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mark{width:42px;height:42px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;text-decoration:none}
+.ttl{flex:1;min-width:0}
+h1{margin:0;font-size:24px;line-height:1.2;letter-spacing:-.03em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:13px}
+select{font:inherit;font-size:13.5px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.headline{background:linear-gradient(135deg,#2f7d4f,#1f5c3a);color:#fff;border-radius:18px;padding:18px 20px;margin-bottom:24px;
+  box-shadow:0 2px 4px rgba(20,20,10,.05),0 12px 28px rgba(20,20,10,.1)}
+.headline .k{font-size:11.5px;font-weight:600;opacity:.75}
+.headline p{margin:4px 0 0;font-size:16.5px;font-weight:700;letter-spacing:-.02em;line-height:1.5}
+.sec{margin:0 0 26px}
+.sec h2{font-size:13px;font-weight:700;color:var(--muted);margin:0 2px 10px;display:flex;align-items:baseline;gap:8px}
+.sec h2 small{font-weight:500;font-size:12px;opacity:.85}
+.list{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
+.card .top{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.card .nm{font-weight:700;font-size:15px;letter-spacing:-.015em;text-decoration:none;word-break:break-word;flex:1;min-width:0}
+.card .nm:hover{text-decoration:underline}
+.card .d{margin:5px 0 0;color:var(--muted);font-size:13.5px;line-height:1.55}
+.card .why{margin:6px 0 0;font-size:13.5px;line-height:1.55}
+.meta{margin:7px 0 0;display:flex;flex-wrap:wrap;gap:5px 12px;color:var(--muted);font-size:12px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#f1efe9;color:var(--muted);white-space:nowrap}
+.tag.good{background:var(--goodbg);color:var(--good)}
+.tag.watch{background:var(--watchbg);color:var(--watch)}
+.tag.bad{background:var(--badbg);color:var(--bad)}
+.tag.new{background:var(--newbg);color:var(--new)}
+.try{border:2px solid var(--accent)}
+.try .how{margin:8px 0 0;font-size:13.5px;line-height:1.6;white-space:pre-line}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media(min-width:620px){.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.empty{color:var(--muted);font-size:13.5px;padding:8px 2px}
+.gone{color:var(--muted);font-size:13px;line-height:1.7}
+footer{margin-top:30px;color:var(--muted);font-size:12px;line-height:1.7}
+.err{background:var(--badbg);color:var(--bad);border-radius:12px;padding:14px 16px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="mark" href="../" aria-label="Benny 첫 화면">📡</a>
+    <div class="ttl">
+      <h1>AI 레이더</h1>
+      <p class="sub" id="sub">매주 월요일 아침 · GitHub · Hugging Face · 유튜브 쇼츠</p>
+    </div>
+    <select id="week" aria-label="주 고르기"></select>
+  </header>
+  <main id="main"><p class="empty">불러오는 중…</p></main>
+  <footer>
+    숫자로 확인된 것(별 · 좋아요 · 다운로드)을 먼저 보고, 쇼츠는 화제성만 봅니다.
+    쇼츠 주장은 GitHub · HF 에서 직접 확인해 <b>맞음 / 부풀림 / 확인 안 됨</b> 으로 표시합니다.<br>
+    “내 PC” = RTX 5060 Ti 16GB 기준 (OK: 그대로 · 양자화: 4bit 면 가능 · 어려움: 너무 큼).
+  </footer>
+</div>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const main = $("#main"), sel = $("#week");
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = String(text); return e; }
+function safeUrl(u) { try { const x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : ""; } catch (e) { return ""; } }
+function link(text, url, cls) {
+  const u = safeUrl(url);
+  const a = el(u ? "a" : "span", cls, text);
+  if (u) { a.href = u; a.target = "_blank"; a.rel = "noopener"; }
+  return a;
+}
+function num(n) {
+  if (n == null || n === "") return "";
+  n = Number(n); if (!isFinite(n)) return "";
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + "k";
+  return String(n);
+}
+// 새로 등장 / N주 연속 / 다시 등장
+function statusTag(it) {
+  const s = it.status, k = Number(it.streak || 0);
+  if (s === "new") return el("span", "tag new", "새로");
+  if (s === "rising" || k >= 2) return el("span", "tag good", (k >= 2 ? k + "주 연속" : "계속 상승"));
+  if (s === "again") return el("span", "tag", "다시 등장");
+  return null;
+}
+const VERDICT = { "진짜": "good", "써 볼 만함": "good", "지켜보기": "watch", "과장": "bad",
+                  "맞음": "good", "부풀림": "bad", "확인 안 됨": "watch" };
+const MYPC = { ok: ["good", "내 PC OK"], quant: ["watch", "내 PC 양자화"], no: ["bad", "내 PC 어려움"] };
+
+function card(it, opts) {
+  const c = el("div", "card");
+  const top = el("div", "top");
+  top.appendChild(link(it.title || it.name || it.id || "", it.url, "nm"));
+  const st = statusTag(it); if (st) top.appendChild(st);
+  if (it.verdict) top.appendChild(el("span", "tag " + (VERDICT[it.verdict] || ""), it.verdict));
+  if (it.my_pc && MYPC[it.my_pc]) top.appendChild(el("span", "tag " + MYPC[it.my_pc][0], MYPC[it.my_pc][1]));
+  if (it.check) top.appendChild(el("span", "tag " + (VERDICT[it.check] || ""), it.check));
+  c.appendChild(top);
+  if (it.desc) c.appendChild(el("p", "d", it.desc));
+  if (it.why) c.appendChild(el("p", "why", it.why));
+  if (it.claim) c.appendChild(el("p", "why", "쇼츠 주장: " + it.claim));
+  if (it.check_note) c.appendChild(el("p", "d", "확인: " + it.check_note));
+  const m = el("div", "meta");
+  const add = (label, v) => { if (v != null && v !== "") m.appendChild(el("span", "", label + v)); };
+  (opts && opts.meta || []).forEach(([label, key, fmt]) => add(label, fmt ? fmt(it[key]) : it[key]));
+  if (m.childNodes.length) c.appendChild(m);
+  return c;
+}
+
+function section(title, hint, items, opts) {
+  const s = el("section", "sec");
+  const h = el("h2", "", title); if (hint) h.appendChild(el("small", "", hint));
+  s.appendChild(h);
+  const box = el("div", (opts && opts.grid) ? "grid2" : "list");
+  if (!items || !items.length) box.appendChild(el("p", "empty", "이번 주는 없음"));
+  else items.forEach(it => box.appendChild(card(it, opts)));
+  s.appendChild(box);
+  return s;
+}
+
+function render(d) {
+  main.textContent = "";
+  $("#sub").textContent = (d.week || "") + " 주 · 매주 월요일 아침 자동 정리";
+  if (d.headline) {
+    const h = el("div", "headline"); h.appendChild(el("div", "k", "이번 주 한 줄"));
+    h.appendChild(el("p", "", d.headline)); main.appendChild(h);
+  }
+  main.appendChild(section("핵심 5개", "여러 곳에서 같이 뜬 것 먼저", d.top, { meta: [["출처 ", "source"]] }));
+
+  if (d.try && d.try.title) {
+    const s = el("section", "sec"); s.appendChild(el("h2", "", "이번 주 써 볼 것 1개"));
+    const c = el("div", "card try");
+    const top = el("div", "top"); top.appendChild(link(d.try.title, d.try.url, "nm")); c.appendChild(top);
+    if (d.try.why) c.appendChild(el("p", "why", d.try.why));
+    if (d.try.how) c.appendChild(el("p", "how", d.try.how));
+    if (d.try.link_project) c.appendChild(el("div", "meta", "연결: " + d.try.link_project));
+    s.appendChild(c); main.appendChild(s);
+  }
+
+  main.appendChild(section("GitHub 급상승", "이번 주 늘어난 별 순", d.github, { meta: [
+    ["★ ", "stars", num], ["이번 주 +", "stars_week", num], ["", "lang"], ["", "tag"]] }));
+  main.appendChild(section("Hugging Face 모델", "trending", d.hf_models, { meta: [
+    ["♥ ", "likes", num], ["↓ ", "downloads", num], ["", "params"], ["", "tag"]] }));
+  main.appendChild(section("Hugging Face Spaces", "써 볼 수 있는 데모", d.hf_spaces, { grid: true, meta: [["♥ ", "likes", num]] }));
+  main.appendChild(section("논문", "HF daily · trending", d.papers, { meta: [["▲ ", "upvotes", num]] }));
+  main.appendChild(section("쇼츠 화제", "조회수 빠른 순 · 주장은 직접 확인", d.shorts, { meta: [
+    ["", "channel"], ["조회 ", "views", num], ["", "lang"]] }));
+
+  if (d.gone && d.gone.length) {
+    const s = el("section", "sec"); s.appendChild(el("h2", "", "지난주에 있다가 빠진 것"));
+    s.appendChild(el("p", "gone", d.gone.join(" · "))); main.appendChild(s);
+  }
+  if (d.notes) { const s = el("section", "sec"); s.appendChild(el("h2", "", "메모")); s.appendChild(el("p", "gone", d.notes)); main.appendChild(s); }
+}
+
+async function getJSON(p) { const r = await fetch(p + "?t=" + Date.now(), { cache: "no-store" }); if (!r.ok) throw new Error(p + " " + r.status); return r.json(); }
+
+async function loadWeek(w) {
+  try { render(await getJSON("data/" + w + ".json")); }
+  catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "이 주 자료를 못 불러왔어요: " + e.message)); }
+}
+
+(async () => {
+  let idx;
+  try { idx = await getJSON("data/index.json"); }
+  catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "아직 정리된 주가 없어요.")); return; }
+  const weeks = (idx.weeks || []).filter(w => /^\d{4}-\d{2}-\d{2}$/.test(w));
+  if (!weeks.length) { main.textContent = ""; main.appendChild(el("div", "err", "아직 정리된 주가 없어요.")); return; }
+  weeks.forEach((w, i) => { const o = el("option", "", w + (i === 0 ? " (최신)" : "")); o.value = w; sel.appendChild(o); });
+  const want = (location.hash || "").slice(1);
+  const first = weeks.includes(want) ? want : weeks[0];
+  sel.value = first;
+  sel.onchange = () => { history.replaceState(null, "", "#" + sel.value); loadWeek(sel.value); };
+  loadWeek(first);
+})();
+</script>
+</body>
+</html>

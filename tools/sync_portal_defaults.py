@@ -46,7 +46,14 @@ def main():
     if not m:
         sys.exit("index.html 에 DEFAULT_ITEMS 표시(START/END)가 없음")
 
-    block = "const DEFAULT_ITEMS = [\n" + ",\n".join(js_item(it) for it in items) + "\n];"
+    # 코드에만 있는 새 항목(아직 관리자 모드로 저장 안 한 것)은 지우지 않고 뒤에 남긴다 (2026-10-24 AI 레이더)
+    ids = {it.get("id") for it in items}
+    lines = [js_item(it) for it in items]
+    for line in m.group(1).splitlines():
+        mm = re.match(r'\s*\{ id: "([^"]+)"', line)
+        if mm and mm.group(1) not in ids:
+            lines.append(line.rstrip().rstrip(","))
+    block = "const DEFAULT_ITEMS = [\n" + ",\n".join(lines) + "\n];"
     if m.group(1) == block:
         print("same")
         return "same"

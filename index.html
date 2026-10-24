@@ -184,7 +184,8 @@ const DEFAULT_ITEMS = [
   { id: "item1791622306672", emoji: "🎮", name: "게임", desc: "직접 학습시킨 AI와 겨루는 게임 · 친구랑 같이", url: "https://benny3s.github.io/game/", hidden: false },
   { id: "ai", emoji: "🤖", name: "AI 공부방", desc: "강화학습 · 초파리 뇌 · 반도체 설계 실습 기록", url: "https://benny3s.github.io/ai/", hidden: true },
   { id: "shorts", emoji: "🎬", name: "AI 실험 쇼츠", desc: "초파리 뇌로 움직이는 로봇 개 · 벽돌깨기 · 스타1 (비공개 영상관)", url: "https://claude.ai/artifact/WC33rPqhYLhdUcq4PqrJi2", hidden: true },
-  { id: "music", emoji: "🎸", name: "Music Lab", desc: "유튜브 링크로 음원 분리 · 코드 · 기타 타브 · 연습 플레이어 (PC 필요)", url: "https://benny3s.github.io/music/", hidden: false }
+  { id: "music", emoji: "🎸", name: "Music Lab", desc: "유튜브 링크로 음원 분리 · 코드 · 기타 타브 · 연습 플레이어 (PC 필요)", url: "https://benny3s.github.io/music/", hidden: false },
+  { id: "radar", emoji: "📡", name: "AI 레이더", desc: "매주 뜨는 AI — GitHub · Hugging Face · 쇼츠 과장 확인", url: "https://benny3s.github.io/radar/", hidden: false }
 ];
 /* DEFAULT_ITEMS:END */
 const FB = {
@@ -224,9 +225,9 @@ function host(u) { return String(u || "").replace(/^https?:\/\//, ""); }
    맨 위 공개 항목 = 대표 카드(순서는 관리자 ↑↓). 나머지는 항목의 group(관리자 '묶음' 칸) → 없으면 아래 기본 묶음 → '그 밖에'.
    DEFAULT_ITEMS 블록은 자동으로 덮이니 기본 묶음·색은 여기 따로 둔다. */
 const GROUP_DEFAULT = { band: "친구랑 같이", when: "친구랑 같이", trip: "친구랑 같이", wishtag: "친구랑 같이",
-  item1791622306672: "실험실", music: "실험실", ai: "실험실", shorts: "실험실" };
+  item1791622306672: "실험실", music: "실험실", ai: "실험실", shorts: "실험실", radar: "실험실" };
 const TINT = { bridge: "#e3f1e8", band: "#fde9dc", when: "#e3ecfb", trip: "#fbf1d6", wishtag: "#fbe4ec",
-  item1791622306672: "#ece6fb", music: "#fde3e1", ai: "#e2f3f4", shorts: "#efe7dc" };
+  item1791622306672: "#ece6fb", music: "#fde3e1", ai: "#e2f3f4", shorts: "#efe7dc", radar: "#e3ecfb" };
 const TINTS = ["#e3f1e8", "#fde9dc", "#e3ecfb", "#fbf1d6", "#fbe4ec", "#ece6fb", "#fde3e1", "#e2f3f4"];
 function tint(p) {
   if (TINT[p.id]) return TINT[p.id];
