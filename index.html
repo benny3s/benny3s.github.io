@@ -323,7 +323,10 @@ function towerGlance() {
   const ctl = new AbortController(); setTimeout(() => ctl.abort(), 5000);
   fetch(TOWER + "/api/glance", { cache: "no-store", signal: ctl.signal }).then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(g => {
-      const parts = [g.running ? "● 지금 실행 중 " + g.running : "쉬는 중", "오늘 " + g.today + "회"];
+      const parts = [];
+      if (g.claude_working != null) parts.push("Claude 작업 중 " + g.claude_working + " · 내 차례 " + g.claude_waiting);
+      if (g.max_pct != null) parts.push("Max " + g.max_pct + "%");
+      parts.push(g.running ? "● 일꾼 호출 중 " + g.running : "일꾼 쉬는 중", "오늘 " + g.today + "회");
       if (g.fails) parts.push("⚠ 실패 " + g.fails);
       if (g.resting) parts.push("쉬는 일꾼 " + g.resting);
       line.textContent = parts.join(" · ");
