@@ -185,7 +185,8 @@ const DEFAULT_ITEMS = [
   { id: "ai", emoji: "🤖", name: "AI 공부방", desc: "강화학습 · 초파리 뇌 · 반도체 설계 실습 기록", url: "https://benny3s.github.io/ai/", hidden: true },
   { id: "shorts", emoji: "🎬", name: "AI 실험 쇼츠", desc: "초파리 뇌로 움직이는 로봇 개 · 벽돌깨기 · 스타1 (비공개 영상관)", url: "https://claude.ai/artifact/WC33rPqhYLhdUcq4PqrJi2", hidden: true },
   { id: "music", emoji: "🎸", name: "Music Lab", desc: "유튜브 링크로 음원 분리 · 코드 · 기타 타브 · 연습 플레이어 (PC 필요)", url: "https://benny3s.github.io/music/", hidden: false },
-  { id: "radar", emoji: "📡", name: "AI 레이더", desc: "매주 뜨는 AI — GitHub · Hugging Face · 쇼츠 과장 확인", url: "https://benny3s.github.io/radar/", hidden: false }
+  { id: "radar", emoji: "📡", name: "AI 레이더", desc: "매주 뜨는 AI — GitHub · Hugging Face · 쇼츠 과장 확인", url: "https://benny3s.github.io/radar/", hidden: false },
+  { id: "tower", emoji: "🛰️", name: "관제판", desc: "AI 일꾼 관제판 — 세션별 호출 · 일꾼 순서 · 작업 맡기기 (내 폰·PC 에서만, Tailscale)", url: "https://desktop-ijcbddr.tail4df4c9.ts.net:8443/", hidden: true }
 ];
 /* DEFAULT_ITEMS:END */
 const FB = {
@@ -225,9 +226,9 @@ function host(u) { return String(u || "").replace(/^https?:\/\//, ""); }
    맨 위 공개 항목 = 대표 카드(순서는 관리자 ↑↓). 나머지는 항목의 group(관리자 '묶음' 칸) → 없으면 아래 기본 묶음 → '그 밖에'.
    DEFAULT_ITEMS 블록은 자동으로 덮이니 기본 묶음·색은 여기 따로 둔다. */
 const GROUP_DEFAULT = { band: "친구랑 같이", when: "친구랑 같이", trip: "친구랑 같이", wishtag: "친구랑 같이",
-  item1791622306672: "실험실", music: "실험실", ai: "실험실", shorts: "실험실", radar: "실험실" };
+  item1791622306672: "실험실", music: "실험실", ai: "실험실", shorts: "실험실", radar: "실험실", tower: "실험실" };
 const TINT = { bridge: "#e3f1e8", band: "#fde9dc", when: "#e3ecfb", trip: "#fbf1d6", wishtag: "#fbe4ec",
-  item1791622306672: "#ece6fb", music: "#fde3e1", ai: "#e2f3f4", shorts: "#efe7dc", radar: "#e3ecfb" };
+  item1791622306672: "#ece6fb", music: "#fde3e1", ai: "#e2f3f4", shorts: "#efe7dc", radar: "#e3ecfb", tower: "#e2f3f4" };
 const TINTS = ["#e3f1e8", "#fde9dc", "#e3ecfb", "#fbf1d6", "#fbe4ec", "#ece6fb", "#fde3e1", "#e2f3f4"];
 function tint(p) {
   if (TINT[p.id]) return TINT[p.id];
@@ -308,9 +309,27 @@ function render() {
     card.appendChild(top);
     const d = document.createElement("p"); d.className = "desc"; d.textContent = p.desc || ""; card.appendChild(d);
     const h = document.createElement("p"); h.className = "host"; h.textContent = host(p.url); card.appendChild(h);
+    if (p.id === "tower") card.appendChild(towerGlance());
     card.appendChild(adminTools(p, idx));
     listEl.appendChild(card);
   });
+}
+
+/* 관제판 카드: PC 관제판의 요약 숫자 (2026-10-24 Benny). Tailscale 에 붙은 내 기기에서만 응답이 오고,
+   다른 곳에서는 조용히 "PC 연결 안 됨". 숫자만 받음 (세션 이름 X). */
+const TOWER = "https://desktop-ijcbddr.tail4df4c9.ts.net:8443";
+function towerGlance() {
+  const line = el("p", "desc tower-live", "관제판 확인 중…");
+  const ctl = new AbortController(); setTimeout(() => ctl.abort(), 5000);
+  fetch(TOWER + "/api/glance", { cache: "no-store", signal: ctl.signal }).then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(g => {
+      const parts = [g.running ? "● 지금 실행 중 " + g.running : "쉬는 중", "오늘 " + g.today + "회"];
+      if (g.fails) parts.push("⚠ 실패 " + g.fails);
+      if (g.resting) parts.push("쉬는 일꾼 " + g.resting);
+      line.textContent = parts.join(" · ");
+    })
+    .catch(() => { line.textContent = "PC 관제판 연결 안 됨 (Tailscale·PC 꺼짐)"; });
+  return line;
 }
 
 function mark() { dirty = true; document.getElementById("dirty").textContent = "· 저장 안 됨"; }
