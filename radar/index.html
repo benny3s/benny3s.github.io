@@ -30,6 +30,7 @@ h1{margin:0;font-size:24px;line-height:1.2;letter-spacing:-.03em}
 
 .tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
+.tabs[hidden]{display:none}
 .tabs button{flex-shrink:0;font:inherit;font-size:14px;font-weight:700;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -89,7 +90,7 @@ footer{margin-top:28px;color:var(--muted);font-size:12px;line-height:1.75}
       <p class="sub" id="sub">월 · 목 아침 자동 정리</p>
     </div>
   </header>
-  <nav class="tabs" id="tabs" role="tablist" aria-label="주제"></nav>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="주제" hidden></nav>
   <main id="main"><p class="empty">불러오는 중…</p></main>
   <footer>
     한 항목은 카드 하나 — 조사할 때마다 숫자·설명만 새로 바뀝니다.
@@ -230,28 +231,111 @@ function draw() {
 
 async function getJSON(p) { const r = await fetch(p + "?t=" + Date.now(), { cache: "no-store" }); if (!r.ok) throw new Error(p + " " + r.status); return r.json(); }
 
+/* ── 관리자 전용 (2026-10-26 Benny: "레이더 관리자 로그인만 보이게")
+   자료는 GitHub 에 암호화돼 올라가고(merge.py), 푸는 개인 키는 Firestore radar/key — 관리자만 읽음.
+   로그인은 포털·베니브릿지와 같은 Firebase 로그인(같은 주소)이라 포털에서 관리자면 바로 열림. */
+const FB = { apiKey: "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs", authDomain: "benny-meeting.firebaseapp.com",
+  projectId: "benny-meeting", storageBucket: "benny-meeting.firebasestorage.app", messagingSenderId: "925758544707",
+  appId: "1:925758544707:web:a0c55e596ae0b15e7fadf6" };
+const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+let fb = null, PRIV = null;
+function loadScript(src) { return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
+async function ensureFirebase() {
+  if (fb) return fb;
+  await loadScript(SDK + "firebase-app-compat.js");
+  await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)));
+  fb = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
+  return fb;
+}
+async function isAdmin() {
+  const a = await ensureFirebase();
+  const u = await new Promise(ok => {
+    const t = setTimeout(() => ok(null), 8000);
+    const off = a.auth().onAuthStateChanged(x => { clearTimeout(t); off(); ok(x); }, () => { clearTimeout(t); ok(null); });
+  });
+  if (!u) return false;
+  try { return (await u.getIdTokenResult()).claims.admin === 1; } catch (e) { return false; }
+}
+const ub64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const OAEP = { name: "RSA-OAEP", hash: "SHA-256" };
+// 개인 키 받기. 처음이면 키 한 쌍을 만들어 개인 키(radar/key, 관리자만)·공개 키(radar/pub, merge.py 가 읽음)를 저장
+async function loadKey() {
+  const db = (await ensureFirebase()).firestore();
+  const snap = await db.doc("radar/key").get();
+  if (snap.exists) { PRIV = await crypto.subtle.importKey("jwk", JSON.parse(snap.data().jwk), OAEP, false, ["decrypt"]); return "ok"; }
+  const kp = await crypto.subtle.generateKey({ ...OAEP, modulusLength: 3072, publicExponent: new Uint8Array([1, 0, 1]) }, true, ["encrypt", "decrypt"]);
+  const [priv, pub] = await Promise.all([crypto.subtle.exportKey("jwk", kp.privateKey), crypto.subtle.exportKey("jwk", kp.publicKey)]);
+  const now = firebase.firestore.FieldValue.serverTimestamp();
+  const b = db.batch();
+  b.set(db.doc("radar/key"), { jwk: JSON.stringify(priv), updatedAt: now });
+  b.set(db.doc("radar/pub"), { jwk: JSON.stringify({ kty: pub.kty, n: pub.n, e: pub.e, alg: pub.alg }), updatedAt: now });
+  await b.commit();
+  PRIV = kp.privateKey;
+  return "made";
+}
+async function decrypt(box) {
+  const raw = await crypto.subtle.decrypt(OAEP, PRIV, ub64(box.k));
+  const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub64(box.iv) }, key, ub64(box.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+function lockScreen(msg) {
+  tabsEl.hidden = true; main.textContent = "";
+  $("#sub").textContent = "관리자 전용";
+  const c = el("form", "card"); c.style.maxWidth = "420px";
+  c.appendChild(el("p", "why", "🔒 관리자 로그인 후에 보여요."));
+  if (msg) c.appendChild(el("p", "d", msg));
+  const pw = el("input"); pw.type = "password"; pw.autocomplete = "current-password"; pw.placeholder = "관리자 비밀번호";
+  pw.style.cssText = "width:100%;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-top:10px";
+  const b = el("button", "", "들어가기"); b.type = "submit";
+  b.style.cssText = "margin-top:10px;font:inherit;font-weight:700;padding:8px 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer";
+  const m = el("p", "d", "");
+  c.append(pw, b, m);
+  c.onsubmit = async e => {
+    e.preventDefault(); if (!pw.value) return; m.textContent = "확인 중…";
+    try {
+      const a = await ensureFirebase();
+      const res = await a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: pw.value });
+      await a.auth().signInWithCustomToken(res.data.token);
+      pw.value = ""; start();
+    } catch (err) { m.textContent = (err && err.message) || "들어가지 못했어요."; }
+  };
+  main.appendChild(c); pw.focus();
+}
+
 async function show(t) {
   cur = t; filter = "all";
   [...tabsEl.children].forEach(b => b.setAttribute("aria-selected", String(b.dataset.t === t)));
   if (location.hash.slice(1) !== t) history.replaceState(null, "", "#" + t);
   if (!(t in DATA)) {
     main.textContent = ""; main.appendChild(el("p", "empty", "불러오는 중…"));
-    try { DATA[t] = await getJSON("data/" + t + ".json"); } catch (e) { DATA[t] = null; }
+    try { DATA[t] = await decrypt(await getJSON("data/" + t + ".enc.json")); } catch (e) { DATA[t] = null; }
   }
   if (cur === t) draw();
 }
 
-(async () => {
+async function start() {
+  main.textContent = ""; main.appendChild(el("p", "empty", "관리자 확인 중…"));
+  let ok = false;
+  try { ok = await isAdmin(); } catch (e) { lockScreen("로그인 도구를 못 불러왔어요: " + e.message); return; }
+  if (!ok) { lockScreen(); return; }
+  let made = false;
+  try { made = (await loadKey()) === "made"; }
+  catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "열쇠를 못 받았어요: " + e.message)); return; }
   try { CONF = await getJSON("topics.json"); }
   catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "설정을 못 불러왔어요: " + e.message)); return; }
+  if (made) { main.textContent = ""; main.appendChild(el("div", "err", "처음이라 열쇠를 만들었어요 — 다음 조사(월·목 아침)부터 여기에 보입니다.")); return; }
+  tabsEl.hidden = false; tabsEl.textContent = "";
   CONF.order.forEach(t => {
     const c = CONF.topics[t], b = el("button", "", c.emoji + " " + c.name);
     b.dataset.t = t; b.setAttribute("role", "tab"); b.onclick = () => show(t); tabsEl.appendChild(b);
   });
   const want = location.hash.slice(1);
   show(CONF.order.includes(want) ? want : CONF.order[0]);
-  addEventListener("hashchange", () => { const h = location.hash.slice(1); if (CONF.order.includes(h) && h !== cur) show(h); });
-})();
+}
+addEventListener("hashchange", () => { const h = location.hash.slice(1); if (CONF && PRIV && CONF.order.includes(h) && h !== cur) show(h); });
+start();
 </script>
 </body>
 </html>
