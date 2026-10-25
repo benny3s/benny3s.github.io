@@ -1,0 +1,812 @@
+{
+ "topic": "ai",
+ "updated": "2026-10-24",
+ "generated": "2026-10-24T09:30:00+09:00",
+ "runs": 1,
+ "headline": "에이전트 도구 폭주 속, 로컬 음성·이미지 오픈 모델이 실속",
+ "try": {
+  "title": "pollen-robotics/microduck",
+  "url": "https://github.com/pollen-robotics/microduck",
+  "why": "강화학습으로 걷는 작은 두 발 오리 로봇이 이번 주 쇼츠에서 크게 돌았고, 저장소도 별 1만 개를 넘었습니다. rl-12 Go1 걷기와 같은 '시뮬에서 걷기 학습' 문제를 다리 2개로 바꿔 볼 기회입니다.",
+  "how": "git clone https://github.com/pollen-robotics/microduck 후 README 의 시뮬(MuJoCo 모델) 부분부터 봅니다.\n처음엔 로봇 모델만 MuJoCo 뷰어로 띄워 관절 수·무게를 Go1 과 비교합니다.\n잘 되면 rl-12 의 PPO 설정을 옮겨 '넘어지지 않고 앞으로 가기' 보상으로 짧게 학습해, 뒤뚱거리며 걷는 영상이 나오면 성공입니다.",
+  "link_project": "강화학습 rl-12 로봇 걷기"
+ },
+ "shorts": [
+  {
+   "title": "The Open Source Model Beating Claude Now Runs on a 4GB Laptop for Free",
+   "url": "https://www.youtube.com/shorts/irXFtcohTco",
+   "channel": "InsiderForce",
+   "views": 516395,
+   "lang": "en",
+   "claim": "AirLLM 으로 Kimi·DeepSeek 급 거대 모델을 4GB 노트북에서 무료로 돌린다",
+   "check": "부풀림",
+   "check_note": "AirLLM(별 4만) 은 실제지만 층을 하나씩 올려 돌려 답 하나에 1~3분, 실사용 수준은 아님"
+  },
+  {
+   "title": "EdenLive: Open-Source Real-Time Generative Rendering from Any Visual Reference",
+   "url": "https://www.youtube.com/shorts/NbWLqOfP3XI",
+   "channel": "Tripo AI",
+   "views": 272259,
+   "lang": "en",
+   "claim": "5B 모델이 RTX 5090 한 장에서 720p 24fps 실시간 생성 렌더링, 오픈소스 공개",
+   "check": "맞음",
+   "check_note": "GitHub VAST-AI-Research/EdenLive·HF 가중치 공개 확인, 속도는 자체 발표"
+  },
+  {
+   "title": "How a $600 GPU Outsmarts AI Data Centers",
+   "url": "https://www.youtube.com/shorts/_3ZpGyDGDCs",
+   "channel": "Zeff Rao",
+   "views": 19125,
+   "lang": "en",
+   "claim": "Strata 엔진으로 12GB 그래픽카드에서 125B 모델을 초당 94토큰",
+   "check": "부풀림",
+   "check_note": "94토큰은 RTX 5070·Q2 양자화·짧은 대화 기준 자체 수치, RAM 32~64GB 필요"
+  },
+  {
+   "title": "744B Parameter AI Runs on a Laptop Without GPU? Meet Calibri’s Game-Changing",
+   "url": "https://www.youtube.com/shorts/je7V65Sywkc",
+   "channel": "Arjun Malhorta",
+   "views": 7413,
+   "lang": "en",
+   "claim": "GLM 5.2(744B) 를 GPU 없는 노트북에서 매끄럽게 대화",
+   "check": "부풀림",
+   "check_note": "실제 이름 Colibri, 디스크 370GB·초당 0.05~1토큰 정도라 '매끄럽다'는 과장"
+  },
+  {
+   "title": "젠슨 황이 직접 선보인 AI 오리 로봇의 정체 🦆",
+   "url": "https://www.youtube.com/shorts/zCMRsYgAd8E",
+   "channel": "홈시그널",
+   "views": 137714,
+   "lang": "ko",
+   "claim": "젠슨 황이 소개한 강화학습 오픈소스 오리 로봇",
+   "check": "확인 안 됨",
+   "check_note": "로봇(pollen-robotics/microduck, 별 1만) 은 실제, 젠슨 황 발표 부분은 확인 못 함"
+  }
+ ],
+ "notes": "첫 주라 비교할 지난 JSON 이 없어 모두 new. vidIQ 3번 호출(15 크레딧, 남은 135). 조코딩 'ElevenLabs 따라잡은 오픈소스' 쇼츠는 모델 이름이 제목·설명에 없어 뺐음. GitHub 새 저장소 상위의 보안 취약점(PoC) 저장소와 TV 정리 도구는 AI 와 무관해 제외.",
+ "categories": [
+  "에이전트·코딩",
+  "LLM·로컬 추론",
+  "이미지·영상",
+  "음성·음악",
+  "강화학습·로봇",
+  "논문"
+ ],
+ "changes": [
+  {
+   "id": "github:morluto/rea",
+   "title": "morluto/rea",
+   "url": "https://github.com/morluto/rea",
+   "category": "에이전트·코딩",
+   "change": "new"
+  },
+  {
+   "id": "github:stablyai/orca",
+   "title": "stablyai/orca",
+   "url": "https://github.com/stablyai/orca",
+   "category": "에이전트·코딩",
+   "change": "new"
+  },
+  {
+   "id": "github:anomalyco/opencode",
+   "title": "anomalyco/opencode",
+   "url": "https://github.com/anomalyco/opencode",
+   "category": "에이전트·코딩",
+   "change": "new"
+  },
+  {
+   "id": "github:anthropics/claude-plugins-official",
+   "title": "anthropics/claude-plugins-official",
+   "url": "https://github.com/anthropics/claude-plugins-official",
+   "category": "에이전트·코딩",
+   "change": "new"
+  },
+  {
+   "id": "github:akitaonrails/ai-memory",
+   "title": "akitaonrails/ai-memory",
+   "url": "https://github.com/akitaonrails/ai-memory",
+   "category": "에이전트·코딩",
+   "change": "new"
+  },
+  {
+   "id": "github:hkuds/cli-anything",
+   "title": "HKUDS/CLI-Anything",
+   "url": "https://github.com/HKUDS/CLI-Anything",
+   "category": "에이전트·코딩",
+   "change": "new"
+  },
+  {
+   "id": "github:vllm-project/vllm",
+   "title": "vllm-project/vllm",
+   "url": "https://github.com/vllm-project/vllm",
+   "category": "LLM·로컬 추론",
+   "change": "new"
+  },
+  {
+   "id": "hf:deepseek-ai/deepseek-v4.1-flash-1017",
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "category": "LLM·로컬 추론",
+   "change": "new"
+  },
+  {
+   "id": "hf:recursivesi/flint",
+   "title": "RecursiveSI/flint",
+   "url": "https://huggingface.co/RecursiveSI/flint",
+   "category": "LLM·로컬 추론",
+   "change": "new"
+  },
+  {
+   "id": "hf:xhtoken/spark-x2.6-4b",
+   "title": "XHToken/Spark-X2.6-4B",
+   "url": "https://huggingface.co/XHToken/Spark-X2.6-4B",
+   "category": "LLM·로컬 추론",
+   "change": "new"
+  },
+  {
+   "id": "hf:qwen/qwen3.8-27b",
+   "title": "Qwen/Qwen3.8-27B",
+   "url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "category": "LLM·로컬 추론",
+   "change": "new"
+  },
+  {
+   "id": "hf:spaces/dlouapre/nlp-before-llms",
+   "title": "dlouapre/nlp-before-llms (Space)",
+   "url": "https://huggingface.co/spaces/dlouapre/nlp-before-llms",
+   "category": "LLM·로컬 추론",
+   "change": "new"
+  },
+  {
+   "id": "github:lyogavin/airllm",
+   "title": "작은 PC 로 거대 MoE 돌리기 (Strata·Colibri·AirLLM)",
+   "url": "https://github.com/lyogavin/airllm",
+   "category": "LLM·로컬 추론",
+   "change": "new"
+  },
+  {
+   "id": "github:heygen-com/hyperframes",
+   "title": "heygen-com/hyperframes",
+   "url": "https://github.com/heygen-com/hyperframes",
+   "category": "이미지·영상",
+   "change": "new"
+  },
+  {
+   "id": "github:comfy-org/comfyui",
+   "title": "Comfy-Org/ComfyUI",
+   "url": "https://github.com/Comfy-Org/ComfyUI",
+   "category": "이미지·영상",
+   "change": "new"
+  },
+  {
+   "id": "hf:black-forest-labs/flux-3-image-klein",
+   "title": "black-forest-labs/flux-3-image-klein",
+   "url": "https://huggingface.co/black-forest-labs/flux-3-image-klein",
+   "category": "이미지·영상",
+   "change": "new"
+  },
+  {
+   "id": "hf:openmoss-team/moss-image-sft",
+   "title": "OpenMOSS-Team/MOSS-Image-SFT",
+   "url": "https://huggingface.co/OpenMOSS-Team/MOSS-Image-SFT",
+   "category": "이미지·영상",
+   "change": "new"
+  },
+  {
+   "id": "hf:lightricks/ltx-2.5",
+   "title": "Lightricks/LTX-2.5",
+   "url": "https://huggingface.co/Lightricks/LTX-2.5",
+   "category": "이미지·영상",
+   "change": "new"
+  },
+  {
+   "id": "github:debpalash/voicestudio",
+   "title": "debpalash/VoiceStudio",
+   "url": "https://github.com/debpalash/VoiceStudio",
+   "category": "음성·음악",
+   "change": "new"
+  },
+  {
+   "id": "hf:fishaudio/drama-3",
+   "title": "fishaudio/drama-3",
+   "url": "https://huggingface.co/fishaudio/drama-3",
+   "category": "음성·음악",
+   "change": "new"
+  },
+  {
+   "id": "hf:papers/2610.31329",
+   "title": "WeVisOne-VL: Unified Visual Perception from Objects to Pixels",
+   "url": "https://huggingface.co/papers/2610.31329",
+   "category": "논문",
+   "change": "new"
+  },
+  {
+   "id": "hf:papers/2610.30181",
+   "title": "Deep Search in Real-World Web Environments",
+   "url": "https://huggingface.co/papers/2610.30181",
+   "category": "논문",
+   "change": "new"
+  },
+  {
+   "id": "hf:papers/2610.08699",
+   "title": "nanoMuse: An Open-Source Personal Agent for Every Device You Own",
+   "url": "https://huggingface.co/papers/2610.08699",
+   "category": "논문",
+   "change": "new"
+  },
+  {
+   "id": "hf:papers/2610.14224",
+   "title": "Harness^2: Recursive Agent Harnessing for an Open World",
+   "url": "https://huggingface.co/papers/2610.14224",
+   "category": "논문",
+   "change": "new"
+  },
+  {
+   "id": "hf:papers/2610.28698",
+   "title": "Scaling in Games: Continued Pre-Training For Embodied Agents In Diverse Virtual Worlds",
+   "url": "https://huggingface.co/papers/2610.28698",
+   "category": "논문",
+   "change": "new"
+  }
+ ],
+ "items": [
+  {
+   "id": "hf:openmoss-team/moss-image-sft",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 649 · ↓ 7.7k"
+    }
+   ],
+   "category": "이미지·영상",
+   "title": "OpenMOSS-Team/MOSS-Image-SFT",
+   "url": "https://huggingface.co/OpenMOSS-Team/MOSS-Image-SFT",
+   "desc": "글자·레이아웃에 강한 오픈 이미지 모델, Apache-2.0",
+   "why": "글자가 많은 이미지·레이아웃에 강한 오픈 이미지 모델. HF 모델(Base·SFT·Comfy 판)·Spaces·기술 보고서(추천 96)가 한 주에 같이 올라왔고 Apache-2.0 입니다.",
+   "verdict": "진짜",
+   "tags": [
+    "이미지"
+   ],
+   "metric": "♥ 649 · ↓ 7.7k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:black-forest-labs/flux-3-image-klein",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 655 · ↓ 106k"
+    }
+   ],
+   "category": "이미지·영상",
+   "title": "black-forest-labs/flux-3-image-klein",
+   "url": "https://huggingface.co/black-forest-labs/flux-3-image-klein",
+   "desc": "FLUX 3 작은 판, 생성·편집·박스 지정",
+   "why": "5.6B 오픈 가중치로 생성·편집·박스 지정까지 됩니다. ComfyUI 판 다운로드 53만으로 숫자가 확실하고 16GB 그래픽카드에 들어가는 크기입니다.",
+   "verdict": "진짜",
+   "tags": [
+    "5.6B",
+    "이미지"
+   ],
+   "my_pc": "ok",
+   "metric": "♥ 655 · ↓ 106k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:debpalash/voicestudio",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 83k · 주간 +13k"
+    }
+   ],
+   "category": "음성·음악",
+   "title": "debpalash/VoiceStudio",
+   "url": "https://github.com/debpalash/VoiceStudio",
+   "desc": "로컬 음성 복제·더빙·받아쓰기·오디오북",
+   "why": "음성 복제·더빙·받아쓰기를 내 PC 에서 한 번에 하는 도구로, 이번 주 GitHub 에서 가장 많이 오른 AI 저장소(주간 +12.5K). Fish Audio Drama 3 같은 오픈 TTS 도 같이 떠서 '로컬 음성' 흐름이 뚜렷합니다.",
+   "verdict": "써 볼 만함",
+   "tags": [
+    "Python",
+    "음성"
+   ],
+   "metric": "★ 83k · 주간 +13k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:morluto/rea",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 373k · 주간 +88k"
+    }
+   ],
+   "category": "에이전트·코딩",
+   "title": "morluto/rea",
+   "url": "https://github.com/morluto/rea",
+   "desc": "에이전트로 앱 동작·네이티브 바이너리 역분석",
+   "why": "에이전트로 앱 동작부터 바이너리까지 역분석하는 도구. 주간 +88K 로 압도적이고 따라 만든 leanrea·REA-Prompts 까지 새 저장소 상위에 올랐지만, 오른 속도에 비해 실제 쓰임은 아직 확인 전입니다.",
+   "verdict": "지켜보기",
+   "tags": [
+    "TypeScript",
+    "에이전트"
+   ],
+   "metric": "★ 373k · 주간 +88k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:comfy-org/comfyui",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 142k · 주간 +4.5k"
+    }
+   ],
+   "category": "이미지·영상",
+   "title": "Comfy-Org/ComfyUI",
+   "url": "https://github.com/Comfy-Org/ComfyUI",
+   "desc": "노드 방식 이미지·영상 생성 GUI·백엔드",
+   "tags": [
+    "Python",
+    "이미지"
+   ],
+   "metric": "★ 142k · 주간 +4.5k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:papers/2610.30181",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "▲ 151"
+    }
+   ],
+   "category": "논문",
+   "title": "Deep Search in Real-World Web Environments",
+   "url": "https://huggingface.co/papers/2610.30181",
+   "desc": "실제 웹에서 여러 단계 검색 에이전트 평가, 큰 격차",
+   "metric": "▲ 151",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:hkuds/cli-anything",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 57k · 주간 +3.3k"
+    }
+   ],
+   "category": "에이전트·코딩",
+   "title": "HKUDS/CLI-Anything",
+   "url": "https://github.com/HKUDS/CLI-Anything",
+   "desc": "아무 프로그램이나 CLI 로 감싸 에이전트가 쓰게 함",
+   "tags": [
+    "Python",
+    "에이전트"
+   ],
+   "metric": "★ 57k · 주간 +3.3k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:papers/2610.14224",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "▲ 118"
+    }
+   ],
+   "category": "논문",
+   "title": "Harness^2: Recursive Agent Harnessing for an Open World",
+   "url": "https://huggingface.co/papers/2610.14224",
+   "desc": "에이전트 실행 틀 자체를 되풀이해 고쳐 성능 향상",
+   "metric": "▲ 118",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:lightricks/ltx-2.5",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 9.0k · ↓ 2.0M"
+    }
+   ],
+   "category": "이미지·영상",
+   "title": "Lightricks/LTX-2.5",
+   "url": "https://huggingface.co/Lightricks/LTX-2.5",
+   "desc": "이미지→영상 생성, 누적 다운로드 200만",
+   "tags": [
+    "영상"
+   ],
+   "metric": "♥ 9.0k · ↓ 2.0M",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:qwen/qwen3.8-27b",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 18k · ↓ 7.7M"
+    }
+   ],
+   "category": "LLM·로컬 추론",
+   "title": "Qwen/Qwen3.8-27B",
+   "url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "desc": "Qwen3.8 중형, 이미지 입력, 꾸준한 인기",
+   "tags": [
+    "27B",
+    "LLM"
+   ],
+   "my_pc": "quant",
+   "metric": "♥ 18k · ↓ 7.7M",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:recursivesi/flint",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 686 · ↓ 1.9k"
+    }
+   ],
+   "category": "LLM·로컬 추론",
+   "title": "RecursiveSI/flint",
+   "url": "https://huggingface.co/RecursiveSI/flint",
+   "desc": "코딩 에이전트용 MoE, SWE-bench Verified 74.2% (자체 발표)",
+   "tags": [
+    "MoE 39.8B-A2.5B",
+    "코딩"
+   ],
+   "my_pc": "no",
+   "metric": "♥ 686 · ↓ 1.9k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:papers/2610.28698",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "▲ 60"
+    }
+   ],
+   "category": "논문",
+   "title": "Scaling in Games: Continued Pre-Training For Embodied Agents In Diverse Virtual Worlds",
+   "url": "https://huggingface.co/papers/2610.28698",
+   "desc": "여러 게임 세계 추가 학습으로 몸 가진 에이전트 향상",
+   "metric": "▲ 60",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:papers/2610.31329",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "▲ 221"
+    }
+   ],
+   "category": "논문",
+   "title": "WeVisOne-VL: Unified Visual Perception from Objects to Pixels",
+   "url": "https://huggingface.co/papers/2610.31329",
+   "desc": "검출·분할을 한 모델 토큰 예측으로 통합",
+   "metric": "▲ 221",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:xhtoken/spark-x2.6-4b",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 410 · ↓ 1.1k"
+    }
+   ],
+   "category": "LLM·로컬 추론",
+   "title": "XHToken/Spark-X2.6-4B",
+   "url": "https://huggingface.co/XHToken/Spark-X2.6-4B",
+   "desc": "기기 안에서 도는 작은 에이전트용 LLM",
+   "tags": [
+    "4B",
+    "LLM"
+   ],
+   "my_pc": "ok",
+   "metric": "♥ 410 · ↓ 1.1k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:akitaonrails/ai-memory",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 13k · 주간 +3.4k"
+    }
+   ],
+   "category": "에이전트·코딩",
+   "title": "akitaonrails/ai-memory",
+   "url": "https://github.com/akitaonrails/ai-memory",
+   "desc": "코딩 CLI 용 장기 기억, 다른 회사 도구로 넘겨 주기",
+   "tags": [
+    "Rust",
+    "에이전트"
+   ],
+   "metric": "★ 13k · 주간 +3.4k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:anomalyco/opencode",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 221k · 주간 +6.8k"
+    }
+   ],
+   "category": "에이전트·코딩",
+   "title": "anomalyco/opencode",
+   "url": "https://github.com/anomalyco/opencode",
+   "desc": "오픈소스 코딩 에이전트",
+   "tags": [
+    "TypeScript",
+    "코딩"
+   ],
+   "metric": "★ 221k · 주간 +6.8k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:anthropics/claude-plugins-official",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 44k · 주간 +4.2k"
+    }
+   ],
+   "category": "에이전트·코딩",
+   "title": "anthropics/claude-plugins-official",
+   "url": "https://github.com/anthropics/claude-plugins-official",
+   "desc": "Claude Code 공식 플러그인 모음",
+   "tags": [
+    "Python",
+    "코딩"
+   ],
+   "metric": "★ 44k · 주간 +4.2k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:deepseek-ai/deepseek-v4.1-flash-1017",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 2.6k · ↓ 58k"
+    }
+   ],
+   "category": "LLM·로컬 추론",
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "desc": "DeepSeek V4.1 Flash 10월 판, 이미지 입력 가능, MIT",
+   "tags": [
+    "LLM"
+   ],
+   "metric": "♥ 2.6k · ↓ 58k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:spaces/dlouapre/nlp-before-llms",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 77"
+    }
+   ],
+   "category": "LLM·로컬 추론",
+   "title": "dlouapre/nlp-before-llms (Space)",
+   "url": "https://huggingface.co/spaces/dlouapre/nlp-before-llms",
+   "desc": "n-gram 부터 attention 까지, LLM 이전 NLP 읽을거리",
+   "metric": "♥ 77",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:fishaudio/drama-3",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "♥ 947 · ↓ 17k"
+    }
+   ],
+   "category": "음성·음악",
+   "title": "fishaudio/drama-3",
+   "url": "https://huggingface.co/fishaudio/drama-3",
+   "desc": "여러 인물 대화·목소리 복제 TTS, 한국어 지원",
+   "tags": [
+    "MoE 35B-A3B",
+    "음성"
+   ],
+   "my_pc": "no",
+   "metric": "♥ 947 · ↓ 17k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:heygen-com/hyperframes",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 71k · 주간 +5.6k"
+    }
+   ],
+   "category": "이미지·영상",
+   "title": "heygen-com/hyperframes",
+   "url": "https://github.com/heygen-com/hyperframes",
+   "desc": "HTML 로 쓰면 영상으로 렌더, 에이전트용",
+   "tags": [
+    "TypeScript",
+    "영상"
+   ],
+   "metric": "★ 71k · 주간 +5.6k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "hf:papers/2610.08699",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "▲ 119"
+    }
+   ],
+   "category": "논문",
+   "title": "nanoMuse: An Open-Source Personal Agent for Every Device You Own",
+   "url": "https://huggingface.co/papers/2610.08699",
+   "desc": "내 기기 여러 대에서 도는 오픈 개인 비서 에이전트",
+   "metric": "▲ 119",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:stablyai/orca",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 104k · 주간 +9.5k"
+    }
+   ],
+   "category": "에이전트·코딩",
+   "title": "stablyai/orca",
+   "url": "https://github.com/stablyai/orca",
+   "desc": "여러 코딩 에이전트를 데스크톱·폰·원격에서 함께 돌림",
+   "tags": [
+    "TypeScript",
+    "코딩"
+   ],
+   "metric": "★ 104k · 주간 +9.5k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:vllm-project/vllm",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": "★ 95k · 주간 +1.4k"
+    }
+   ],
+   "category": "LLM·로컬 추론",
+   "title": "vllm-project/vllm",
+   "url": "https://github.com/vllm-project/vllm",
+   "desc": "빠르고 메모리 아끼는 LLM 추론·서빙 엔진",
+   "tags": [
+    "Python",
+    "추론"
+   ],
+   "metric": "★ 95k · 주간 +1.4k",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  },
+  {
+   "id": "github:lyogavin/airllm",
+   "first_seen": "2026-10-24",
+   "trail": [
+    {
+     "d": "2026-10-24",
+     "m": ""
+    }
+   ],
+   "category": "LLM·로컬 추론",
+   "title": "작은 PC 로 거대 MoE 돌리기 (Strata·Colibri·AirLLM)",
+   "url": "https://github.com/lyogavin/airllm",
+   "why": "자주 쓰는 expert 만 GPU 에 두고 나머지는 RAM·SSD 에서 꺼내 쓰는 방식이 쇼츠 3개와 논문(SSD 에서 35B MoE 서빙)에 함께 나왔습니다. 원리는 맞지만 쇼츠 속 속도·성능은 대부분 부풀려졌습니다.",
+   "verdict": "과장",
+   "last_seen": "2026-10-24",
+   "status": "new",
+   "count": 1,
+   "tried": false
+  }
+ ],
+ "archive": []
+}

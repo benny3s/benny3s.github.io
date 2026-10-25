@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f7f7f5">
-<title>AI 레이더</title>
-<meta name="description" content="매주 GitHub · Hugging Face · 유튜브 쇼츠에서 뜨는 AI 정리">
+<title>레이더</title>
+<meta name="description" content="AI · 칩 설계 · 화장품 · 돈 되는 것 — 주 2회 정리하는 살아 있는 목록">
 <style>
-/* 포털(benny3s.github.io)과 같은 라이트 톤 — 2026-10-24 Benny: "github.io 만 볼 거라 거기에" */
+/* 포털과 같은 라이트 톤. 2026-10-25 Benny: 주마다 쌓지 말고 "살아 있는 목록", 주제 4개 탭 */
 :root{
   color-scheme:light;
   --bg:#f7f7f5; --card:#fff; --line:#e4e4e0; --ink:#1b1b19; --muted:#6e6e67;
   --accent:#2f7d4f; --shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
   --good:#2f7d4f; --goodbg:#e3f1e8; --watch:#8a6a12; --watchbg:#fbf1d6; --bad:#a3361b; --badbg:#fde3e1;
-  --new:#2b5fb4; --newbg:#e3ecfb;
+  --new:#2b5fb4; --newbg:#e3ecfb; --hot:#b4472b; --hotbg:#fde9dc;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
@@ -22,39 +22,61 @@ body{margin:0;background:var(--bg);color:var(--ink);
   padding:0 16px 60px;-webkit-text-size-adjust:100%}
 .wrap{max-width:820px;margin:0 auto}
 a{color:inherit}
-header{padding-block:36px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header{padding-block:32px 14px;display:flex;align-items:center;gap:12px}
 .mark{width:42px;height:42px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;text-decoration:none}
 .ttl{flex:1;min-width:0}
 h1{margin:0;font-size:24px;line-height:1.2;letter-spacing:-.03em}
 .sub{margin:2px 0 0;color:var(--muted);font-size:13px}
-select{font:inherit;font-size:13.5px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
-.headline{background:linear-gradient(135deg,#2f7d4f,#1f5c3a);color:#fff;border-radius:18px;padding:18px 20px;margin-bottom:24px;
+
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex-shrink:0;font:inherit;font-size:14px;font-weight:700;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.headline{background:linear-gradient(135deg,#2f7d4f,#1f5c3a);color:#fff;border-radius:18px;padding:16px 20px;margin-bottom:18px;
   box-shadow:0 2px 4px rgba(20,20,10,.05),0 12px 28px rgba(20,20,10,.1)}
 .headline .k{font-size:11.5px;font-weight:600;opacity:.75}
-.headline p{margin:4px 0 0;font-size:16.5px;font-weight:700;letter-spacing:-.02em;line-height:1.5}
-.sec{margin:0 0 26px}
-.sec h2{font-size:13px;font-weight:700;color:var(--muted);margin:0 2px 10px;display:flex;align-items:baseline;gap:8px}
+.headline p{margin:3px 0 0;font-size:16.5px;font-weight:700;letter-spacing:-.02em;line-height:1.5}
+
+.sec{margin:0 0 22px}
+.sec h2{font-size:13px;font-weight:700;color:var(--muted);margin:0 2px 9px;display:flex;align-items:baseline;gap:8px}
 .sec h2 small{font-weight:500;font-size:12px;opacity:.85}
-.list{display:flex;flex-direction:column;gap:10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
-.card .top{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
-.card .nm{font-weight:700;font-size:15px;letter-spacing:-.015em;text-decoration:none;word-break:break-word;flex:1;min-width:0}
+.list{display:flex;flex-direction:column;gap:9px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow);min-width:0;scroll-margin-top:12px}
+.card.flash{border-color:var(--accent);box-shadow:0 0 0 3px var(--goodbg)}
+.card .top{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap}
+.card .nm{font-weight:700;font-size:15px;letter-spacing:-.015em;text-decoration:none;word-break:break-word;flex:1 1 60%;min-width:0}
 .card .nm:hover{text-decoration:underline}
-.card .d{margin:5px 0 0;color:var(--muted);font-size:13.5px;line-height:1.55}
+.card .d{margin:4px 0 0;color:var(--muted);font-size:13.5px;line-height:1.55}
 .card .why{margin:6px 0 0;font-size:13.5px;line-height:1.55}
-.meta{margin:7px 0 0;display:flex;flex-wrap:wrap;gap:5px 12px;color:var(--muted);font-size:12px}
+.meta{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:3px 12px;color:var(--muted);font-size:12px}
 .tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#f1efe9;color:var(--muted);white-space:nowrap}
-.tag.good{background:var(--goodbg);color:var(--good)}
-.tag.watch{background:var(--watchbg);color:var(--watch)}
-.tag.bad{background:var(--badbg);color:var(--bad)}
-.tag.new{background:var(--newbg);color:var(--new)}
+.tag.good{background:var(--goodbg);color:var(--good)} .tag.watch{background:var(--watchbg);color:var(--watch)}
+.tag.bad{background:var(--badbg);color:var(--bad)} .tag.new{background:var(--newbg);color:var(--new)}
+.tag.hot{background:var(--hotbg);color:var(--hot)}
+
+.changes{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 15px;box-shadow:var(--shadow)}
+.changes .row{display:flex;gap:8px;align-items:baseline;padding:4px 0;font-size:13.5px;line-height:1.6}
+.changes .row + .row{border-top:1px dashed var(--line)}
+.changes .lb{flex-shrink:0;font-weight:700;min-width:84px}
+.changes .its{min-width:0}
+.changes .its a{text-decoration:none;border-bottom:1px solid #d6d5cf;cursor:pointer}
+.changes .its a:hover{border-color:var(--ink)}
+
 .try{border:2px solid var(--accent)}
 .try .how{margin:8px 0 0;font-size:13.5px;line-height:1.6;white-space:pre-line}
-.grid2{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
-@media(min-width:620px){.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.empty{color:var(--muted);font-size:13.5px;padding:8px 2px}
-.gone{color:var(--muted);font-size:13px;line-height:1.7}
-footer{margin-top:30px;color:var(--muted);font-size:12px;line-height:1.7}
+
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.filters button{font:inherit;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+.filters button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink)}
+
+details.arch{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 15px}
+details.arch summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
+details.arch .list{margin-top:10px}
+.empty{color:var(--muted);font-size:13.5px;padding:6px 2px}
+.note{color:var(--muted);font-size:13px;line-height:1.7}
+footer{margin-top:28px;color:var(--muted);font-size:12px;line-height:1.75}
 .err{background:var(--badbg);color:var(--bad);border-radius:12px;padding:14px 16px;font-size:14px}
 </style>
 </head>
@@ -63,135 +85,172 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;line-height:1.7}
   <header>
     <a class="mark" href="../" aria-label="Benny 첫 화면">📡</a>
     <div class="ttl">
-      <h1>AI 레이더</h1>
-      <p class="sub" id="sub">매주 월요일 아침 · GitHub · Hugging Face · 유튜브 쇼츠</p>
+      <h1>레이더</h1>
+      <p class="sub" id="sub">월 · 목 아침 자동 정리</p>
     </div>
-    <select id="week" aria-label="주 고르기"></select>
   </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="주제"></nav>
   <main id="main"><p class="empty">불러오는 중…</p></main>
   <footer>
-    숫자로 확인된 것(별 · 좋아요 · 다운로드)을 먼저 보고, 쇼츠는 화제성만 봅니다.
-    쇼츠 주장은 GitHub · HF 에서 직접 확인해 <b>맞음 / 부풀림 / 확인 안 됨</b> 으로 표시합니다.<br>
-    “내 PC” = RTX 5060 Ti 16GB 기준 (OK: 그대로 · 양자화: 4bit 면 가능 · 어려움: 너무 큼).
+    한 항목은 카드 하나 — 조사할 때마다 숫자·설명만 새로 바뀝니다.
+    🆕 새로 · 🔥 상승 중(연속 등장) · 📌 자리 잡음(약 4주 이상) · 💤 식는 중(최근 안 보임) · 약 3주 안 보이면 보관함.<br>
+    쇼츠·수익 주장은 원 자료로 확인해 <b>맞음 / 부풀림 / 확인 안 됨</b> 으로 표시합니다.
+    “내 PC” = RTX 5060 Ti 16GB 기준. 투자 권유가 아니라 동향 정리입니다.
   </footer>
 </div>
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
-const main = $("#main"), sel = $("#week");
+const main = $("#main"), tabsEl = $("#tabs");
+let CONF = null, cur = null, filter = "all";
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = String(text); return e; }
 function safeUrl(u) { try { const x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : ""; } catch (e) { return ""; } }
 function link(text, url, cls) {
-  const u = safeUrl(url);
-  const a = el(u ? "a" : "span", cls, text);
+  const u = safeUrl(url), a = el(u ? "a" : "span", cls, text);
   if (u) { a.href = u; a.target = "_blank"; a.rel = "noopener"; }
   return a;
 }
-function num(n) {
-  if (n == null || n === "") return "";
-  n = Number(n); if (!isFinite(n)) return "";
-  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + "k";
-  return String(n);
-}
-// 새로 등장 / N주 연속 / 다시 등장
-function statusTag(it) {
-  const s = it.status, k = Number(it.streak || 0);
-  if (s === "new") return el("span", "tag new", "새로");
-  if (s === "rising" || k >= 2) return el("span", "tag good", (k >= 2 ? k + "주 연속" : "계속 상승"));
-  if (s === "again") return el("span", "tag", "다시 등장");
-  return null;
-}
-const VERDICT = { "진짜": "good", "써 볼 만함": "good", "지켜보기": "watch", "과장": "bad",
+const md = s => String(s || "").slice(5).replace("-", "/");          // 2026-10-24 → 10/24
+const ST = { new: ["new", "🆕 새로"], back: ["", "↩ 다시"], rising: ["hot", "🔥 상승"], settled: ["good", "📌 자리 잡음"], cooling: ["", "💤 식는 중"], archived: ["", "보관"] };
+const VERDICT = { "진짜": "good", "중요": "good", "써 볼 만함": "good", "지켜보기": "watch", "참고": "", "과장": "bad",
                   "맞음": "good", "부풀림": "bad", "확인 안 됨": "watch" };
 const MYPC = { ok: ["good", "내 PC OK"], quant: ["watch", "내 PC 양자화"], no: ["bad", "내 PC 어려움"] };
+const cardId = id => "it-" + String(id).replace(/[^\w-]/g, "_");
 
-function card(it, opts) {
-  const c = el("div", "card");
+function card(it) {
+  const c = el("div", "card"); c.id = cardId(it.id);
   const top = el("div", "top");
-  top.appendChild(link(it.title || it.name || it.id || "", it.url, "nm"));
-  const st = statusTag(it); if (st) top.appendChild(st);
+  top.appendChild(link(it.title || it.id, it.url, "nm"));
+  if (ST[it.status]) top.appendChild(el("span", "tag " + ST[it.status][0], ST[it.status][1]));
   if (it.verdict) top.appendChild(el("span", "tag " + (VERDICT[it.verdict] || ""), it.verdict));
-  if (it.my_pc && MYPC[it.my_pc]) top.appendChild(el("span", "tag " + MYPC[it.my_pc][0], MYPC[it.my_pc][1]));
   if (it.check) top.appendChild(el("span", "tag " + (VERDICT[it.check] || ""), it.check));
+  if (it.my_pc && MYPC[it.my_pc]) top.appendChild(el("span", "tag " + MYPC[it.my_pc][0], MYPC[it.my_pc][1]));
+  if (it.tried) top.appendChild(el("span", "tag good", "✓ 써 봄"));
   c.appendChild(top);
   if (it.desc) c.appendChild(el("p", "d", it.desc));
   if (it.why) c.appendChild(el("p", "why", it.why));
-  if (it.claim) c.appendChild(el("p", "why", "쇼츠 주장: " + it.claim));
+  if (it.claim) c.appendChild(el("p", "why", "주장: " + it.claim));
   if (it.check_note) c.appendChild(el("p", "d", "확인: " + it.check_note));
   const m = el("div", "meta");
-  const add = (label, v) => { if (v != null && v !== "") m.appendChild(el("span", "", label + v)); };
-  (opts && opts.meta || []).forEach(([label, key, fmt]) => add(label, fmt ? fmt(it[key]) : it[key]));
+  if (it.metric) m.appendChild(el("span", "", it.metric));
+  (it.tags || []).slice(0, 3).forEach(t => m.appendChild(el("span", "", t)));
+  if (it.first_seen) m.appendChild(el("span", "", "처음 " + md(it.first_seen) + (it.count > 1 ? " · " + it.count + "번째" : "")));
+  if (it.status === "cooling" && it.last_seen) m.appendChild(el("span", "", "마지막 " + md(it.last_seen)));
   if (m.childNodes.length) c.appendChild(m);
   return c;
 }
-
-function section(title, hint, items, opts) {
-  const s = el("section", "sec");
-  const h = el("h2", "", title); if (hint) h.appendChild(el("small", "", hint));
-  s.appendChild(h);
-  const box = el("div", (opts && opts.grid) ? "grid2" : "list");
-  if (!items || !items.length) box.appendChild(el("p", "empty", "이번 주는 없음"));
-  else items.forEach(it => box.appendChild(card(it, opts)));
-  s.appendChild(box);
-  return s;
+function shortCard(s) {
+  return card({ title: s.title, url: s.url, check: s.check, claim: s.claim, check_note: s.check_note,
+                metric: [s.channel, s.views ? "조회 " + Number(s.views).toLocaleString("ko-KR") : "", s.lang].filter(Boolean).join(" · ") });
 }
 
-function render(d) {
+function jump(id) {
+  const t = document.getElementById(cardId(id));
+  if (!t) return;
+  if (filter !== "all") { filter = "all"; draw(); return jump(id); }
+  t.scrollIntoView({ behavior: "smooth", block: "center" });
+  t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1600);
+}
+
+function drawChanges(d) {
+  const groups = [["new", "🆕 새로"], ["back", "↩ 다시"], ["settled", "📌 자리 잡음"], ["archived", "💤 빠짐"]];
+  const box = el("div", "changes"); let any = false;
+  groups.forEach(([k, label]) => {
+    const cs = (d.changes || []).filter(c => c.change === k);
+    if (!cs.length) return; any = true;
+    const r = el("div", "row"); r.appendChild(el("span", "lb", label + " " + cs.length));
+    const its = el("span", "its");
+    cs.slice(0, 12).forEach((c, i) => {
+      if (i) its.appendChild(document.createTextNode(" · "));
+      const a = el("a", "", c.title);
+      if (k === "archived") { const u = safeUrl(c.url); if (u) { a.href = u; a.target = "_blank"; a.rel = "noopener"; } }
+      else { a.href = "#" + cur; a.onclick = e => { e.preventDefault(); jump(c.id); }; }
+      its.appendChild(a);
+    });
+    if (cs.length > 12) its.appendChild(document.createTextNode(" 외 " + (cs.length - 12)));
+    r.appendChild(its); box.appendChild(r);
+  });
+  if (!any) box.appendChild(el("p", "empty", "이번엔 바뀐 것 없음 — 숫자만 갱신"));
+  return box;
+}
+
+let DATA = {};
+function draw() {
+  const d = DATA[cur], cfg = CONF.topics[cur];
   main.textContent = "";
-  $("#sub").textContent = (d.week || "") + " 주 · 매주 월요일 아침 자동 정리";
-  if (d.headline) {
-    const h = el("div", "headline"); h.appendChild(el("div", "k", "이번 주 한 줄"));
-    h.appendChild(el("p", "", d.headline)); main.appendChild(h);
-  }
-  main.appendChild(section("핵심 5개", "여러 곳에서 같이 뜬 것 먼저", d.top, { meta: [["출처 ", "source"]] }));
+  $("#sub").textContent = cfg.desc + (d ? " · " + md(d.updated) + " 갱신 · " + d.runs + "회차" : "");
+  if (!d) { main.appendChild(el("div", "err", "아직 첫 조사 전이에요 — 다음 월·목 아침에 채워집니다.")); return; }
+
+  if (d.headline) { const h = el("div", "headline"); h.appendChild(el("div", "k", "이번 회차 한 줄")); h.appendChild(el("p", "", d.headline)); main.appendChild(h); }
+
+  let s = el("section", "sec"); s.appendChild(el("h2", "", "이번에 바뀐 것")); s.appendChild(drawChanges(d)); main.appendChild(s);
 
   if (d.try && d.try.title) {
-    const s = el("section", "sec"); s.appendChild(el("h2", "", "이번 주 써 볼 것 1개"));
-    const c = el("div", "card try");
-    const top = el("div", "top"); top.appendChild(link(d.try.title, d.try.url, "nm")); c.appendChild(top);
+    s = el("section", "sec"); s.appendChild(el("h2", "", cfg.try_label || "해 볼 것"));
+    const c = el("div", "card try"), top = el("div", "top");
+    top.appendChild(link(d.try.title, d.try.url, "nm")); c.appendChild(top);
     if (d.try.why) c.appendChild(el("p", "why", d.try.why));
     if (d.try.how) c.appendChild(el("p", "how", d.try.how));
     if (d.try.link_project) c.appendChild(el("div", "meta", "연결: " + d.try.link_project));
     s.appendChild(c); main.appendChild(s);
   }
 
-  main.appendChild(section("GitHub 급상승", "이번 주 늘어난 별 순", d.github, { meta: [
-    ["★ ", "stars", num], ["이번 주 +", "stars_week", num], ["", "lang"], ["", "tag"]] }));
-  main.appendChild(section("Hugging Face 모델", "trending", d.hf_models, { meta: [
-    ["♥ ", "likes", num], ["↓ ", "downloads", num], ["", "params"], ["", "tag"]] }));
-  main.appendChild(section("Hugging Face Spaces", "써 볼 수 있는 데모", d.hf_spaces, { grid: true, meta: [["♥ ", "likes", num]] }));
-  main.appendChild(section("논문", "HF daily · trending", d.papers, { meta: [["▲ ", "upvotes", num]] }));
-  main.appendChild(section("쇼츠 화제", "조회수 빠른 순 · 주장은 직접 확인", d.shorts, { meta: [
-    ["", "channel"], ["조회 ", "views", num], ["", "lang"]] }));
+  const fl = el("div", "filters");
+  [["all", "전체"], ["new", "🆕 새로"], ["rising", "🔥 상승"], ["settled", "📌 자리 잡음"], ["cooling", "💤 식는 중"]].forEach(([k, label]) => {
+    const n = k === "all" ? d.items.length : d.items.filter(i => i.status === k || (k === "new" && i.status === "back")).length;
+    const b = el("button", "", label + " " + n); b.setAttribute("aria-pressed", String(filter === k));
+    b.onclick = () => { filter = k; draw(); }; fl.appendChild(b);
+  });
+  main.appendChild(fl);
 
-  if (d.gone && d.gone.length) {
-    const s = el("section", "sec"); s.appendChild(el("h2", "", "지난주에 있다가 빠진 것"));
-    s.appendChild(el("p", "gone", d.gone.join(" · "))); main.appendChild(s);
+  const pass = i => filter === "all" || i.status === filter || (filter === "new" && i.status === "back");
+  const cats = (d.categories || []).concat(["기타"]);
+  let shown = 0;
+  cats.forEach(cat => {
+    const its = d.items.filter(i => (i.category || "기타") === cat && pass(i));
+    if (!its.length) return; shown += its.length;
+    s = el("section", "sec"); const h = el("h2", "", cat); h.appendChild(el("small", "", its.length + "개")); s.appendChild(h);
+    const box = el("div", "list"); its.forEach(i => box.appendChild(card(i))); s.appendChild(box); main.appendChild(s);
+  });
+  if (!shown) main.appendChild(el("p", "empty", "이 표시에 해당하는 항목이 없어요."));
+
+  if (cfg.shorts_label && d.shorts && d.shorts.length) {
+    s = el("section", "sec"); const h = el("h2", "", cfg.shorts_label); h.appendChild(el("small", "", "이번 회차만")); s.appendChild(h);
+    const box = el("div", "list"); d.shorts.forEach(x => box.appendChild(shortCard(x))); s.appendChild(box); main.appendChild(s);
   }
-  if (d.notes) { const s = el("section", "sec"); s.appendChild(el("h2", "", "메모")); s.appendChild(el("p", "gone", d.notes)); main.appendChild(s); }
+  if (d.archive && d.archive.length) {
+    s = el("section", "sec"); const det = el("details", "arch");
+    det.appendChild(el("summary", "", "보관함 " + d.archive.length + "개 — 한동안 안 보인 것"));
+    const box = el("div", "list"); d.archive.forEach(i => box.appendChild(card(i))); det.appendChild(box);
+    s.appendChild(det); main.appendChild(s);
+  }
+  if (d.notes) { s = el("section", "sec"); s.appendChild(el("h2", "", "조사 메모")); s.appendChild(el("p", "note", d.notes)); main.appendChild(s); }
 }
 
 async function getJSON(p) { const r = await fetch(p + "?t=" + Date.now(), { cache: "no-store" }); if (!r.ok) throw new Error(p + " " + r.status); return r.json(); }
 
-async function loadWeek(w) {
-  try { render(await getJSON("data/" + w + ".json")); }
-  catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "이 주 자료를 못 불러왔어요: " + e.message)); }
+async function show(t) {
+  cur = t; filter = "all";
+  [...tabsEl.children].forEach(b => b.setAttribute("aria-selected", String(b.dataset.t === t)));
+  if (location.hash.slice(1) !== t) history.replaceState(null, "", "#" + t);
+  if (!(t in DATA)) {
+    main.textContent = ""; main.appendChild(el("p", "empty", "불러오는 중…"));
+    try { DATA[t] = await getJSON("data/" + t + ".json"); } catch (e) { DATA[t] = null; }
+  }
+  if (cur === t) draw();
 }
 
 (async () => {
-  let idx;
-  try { idx = await getJSON("data/index.json"); }
-  catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "아직 정리된 주가 없어요.")); return; }
-  const weeks = (idx.weeks || []).filter(w => /^\d{4}-\d{2}-\d{2}$/.test(w));
-  if (!weeks.length) { main.textContent = ""; main.appendChild(el("div", "err", "아직 정리된 주가 없어요.")); return; }
-  weeks.forEach((w, i) => { const o = el("option", "", w + (i === 0 ? " (최신)" : "")); o.value = w; sel.appendChild(o); });
-  const want = (location.hash || "").slice(1);
-  const first = weeks.includes(want) ? want : weeks[0];
-  sel.value = first;
-  sel.onchange = () => { history.replaceState(null, "", "#" + sel.value); loadWeek(sel.value); };
-  loadWeek(first);
+  try { CONF = await getJSON("topics.json"); }
+  catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "설정을 못 불러왔어요: " + e.message)); return; }
+  CONF.order.forEach(t => {
+    const c = CONF.topics[t], b = el("button", "", c.emoji + " " + c.name);
+    b.dataset.t = t; b.setAttribute("role", "tab"); b.onclick = () => show(t); tabsEl.appendChild(b);
+  });
+  const want = location.hash.slice(1);
+  show(CONF.order.includes(want) ? want : CONF.order[0]);
+  addEventListener("hashchange", () => { const h = location.hash.slice(1); if (CONF.order.includes(h) && h !== cur) show(h); });
 })();
 </script>
 </body>

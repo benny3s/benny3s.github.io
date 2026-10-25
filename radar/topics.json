@@ -1,0 +1,29 @@
+{
+  "order": ["ai", "chip", "beauty", "money"],
+  "topics": {
+    "ai": {
+      "name": "AI", "emoji": "🤖",
+      "desc": "GitHub · Hugging Face · 유튜브 쇼츠에서 뜨는 AI",
+      "categories": ["에이전트·코딩", "LLM·로컬 추론", "이미지·영상", "음성·음악", "강화학습·로봇", "논문"],
+      "try_label": "써 볼 것 1개", "shorts_label": "쇼츠 화제 · 주장 확인"
+    },
+    "chip": {
+      "name": "칩 설계", "emoji": "🔬",
+      "desc": "반도체 설계 · EDA · 공정 · AI 칩 공개 뉴스",
+      "categories": ["업계·기업", "EDA·설계 방법", "공정·패키징", "AI 칩·HBM", "오픈소스 하드웨어", "학회·논문"],
+      "try_label": "공부해 볼 것 1개", "shorts_label": ""
+    },
+    "beauty": {
+      "name": "화장품", "emoji": "💄",
+      "desc": "업계 동향 · 신제품 · 실적",
+      "categories": ["업계 동향", "신제품", "실적·기업", "유통·채널", "성분·기술", "해외 시장"],
+      "try_label": "눈여겨볼 것 1개", "shorts_label": ""
+    },
+    "money": {
+      "name": "돈 되는 것", "emoji": "💰",
+      "desc": "아이디어 · 시장 동향 · 사람들은 어떻게 하는지",
+      "categories": ["아이디어", "시장 동향", "사람들 사례", "AI로 버는 법", "도구·플랫폼"],
+      "try_label": "작게 해 볼 것 1개", "shorts_label": "쇼츠 화제 · 수익 주장 확인"
+    }
+  }
+}
