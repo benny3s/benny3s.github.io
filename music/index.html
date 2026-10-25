@@ -156,6 +156,22 @@ body.no-add [data-perm=add],body.no-edit [data-perm=edit],body.no-study [data-pe
 .lyr .ch span{position:absolute;top:0;white-space:nowrap}
 .lyr .tx{font-size:17px;line-height:1.35}
 .lyr .gap{font-size:12px;color:#4b535b;padding:4px 10px}
+/* 가사+코드 흐름 (2026-10-25): 섹션 제목 · 코드는 부르는 글자 위 · 간주는 마디 칸 · 지금 코드 강조 */
+.lyr .lsec{font-size:12.5px;font-weight:700;color:var(--mute);padding:14px 10px 4px;margin-top:6px;border-top:1px solid var(--line);cursor:pointer}
+.lyr .lsec:first-child{border-top:0;margin-top:0;padding-top:4px}
+.lyr .lsec small{font-weight:400;color:#5d656e;margin-left:6px}
+.lyr .cl .u{display:inline-flex;flex-direction:column;vertical-align:bottom}
+.lyr .cl .u>b{font-size:12.5px;font-weight:800;color:var(--accent);min-height:18px;line-height:18px;padding-right:8px;white-space:nowrap}
+.lyr .cl .u>span{white-space:pre}
+.lyr i{font-style:normal;border-radius:4px;padding:0 3px;margin-left:-3px}
+.lyr i+i{margin-left:5px}
+.lyr i.cont,.lyr i.weak{opacity:.5}
+.lyr i.on{background:var(--accent);color:#06201b;opacity:1}
+.lyr .inst .ib{display:flex;flex-wrap:wrap;row-gap:4px}
+.lyr .inst .ib span{min-width:62px;padding:1px 8px;border-left:1px solid var(--line);font-size:13.5px;font-weight:800;color:var(--accent);line-height:20px}
+.lyr .inst .ib span:last-child{border-right:1px solid var(--line)}
+.lyr .inst .ib span.on{background:#14332e}
+.lyr .inst .ib span.mute{color:#4b535b;font-weight:400}
 
 /* transport */
 .transport{position:sticky;top:56px;background:rgba(11,13,15,.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:6px 0 10px;z-index:15;margin-bottom:12px}
@@ -447,7 +463,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-19x";
+const BUILD = "2026-10-25a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -612,6 +628,20 @@ function tChord(ch, t) {
   const pc = (NOTE_PC[m[1]] + P.semi + 120) % 12;
   const flats = FLAT_KEYS.has(t != null ? keyAt(t) : tKey()), N = flats ? FLAT : SHARP;
   return N[pc] + m[2].replace(/\/([A-G][#b]?)$/, (_, b) => "/" + N[(NOTE_PC[b] + P.semi + 120) % 12]); // AM7/G# 의 베이스도
+}
+// 글 속 코드 이름을 지금 키로 (해설 — 2026-10-25 Benny "키를 바꿨는데 해설은 그대로"). 로마 숫자는 키와 상관없어 그대로.
+// #/♭ 은 (키 바꾼) 곡의 키들 중 그 음이 들어 있는 키의 표기로 (Dm 곡의 A# → B♭, A→B♭ 전조 곡 +5 의 B♭ → E♭)
+const CHORD_RE = /(?<![A-Za-z0-9#♯♭])([A-G])([#b♯♭]?)((?:maj|min|dim|aug|sus|add|M|m|°|ø|\+|[0-9]|[b#♭♯](?=[0-9]))*)(?:\/([A-G])([#b♯♭]?))?(?![A-Za-z0-9#♯♭])/g;
+const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function tText(str) {
+  if (!str || !P.song) return str;
+  const K = [...new Set([P.song.key, ...(P.song.keys || []).map(x => x.key)])].map(parseKey).filter(Boolean).map(k => {
+    const pc = (k.pc + P.semi + 120) % 12, tonic = k.minor ? (pc + 3) % 12 : pc;
+    return { flat: FLAT_KEYS.has(keyName(pc, k.minor)), sc: [0, 2, 4, 5, 7, 9, 11].map(x => (tonic + x) % 12) };
+  });
+  const sp = (l, a) => { const pc = (LETTER_PC[l] + (/[#♯]/.test(a) ? 1 : /[b♭]/.test(a) ? -1 : 0) + P.semi + 120) % 12;
+    if (SHARP[pc] === FLAT[pc]) return SHARP[pc]; const k = K.find(k => k.sc.includes(pc)) || K[0]; return (k?.flat ? FLAT[pc] : SHARP[pc]).replace("b", "♭"); };
+  return String(str).replace(CHORD_RE, (m, l, a, q, bl, ba) => sp(l, a) + q + (bl ? "/" + sp(bl, ba) : ""));
 }
 
 /* ---------------- chord diagrams ---------------- */
@@ -1128,7 +1158,7 @@ async function changeKey(d) {
   if (WAE) {
     const n = P.semi + d; if (n < -6 || n > 6) return toast("±6반음까지 바꿀 수 있어요");
     if (WA.playing) waStop(); P.semi = n; const tok = ++WA.tok; await waParams(); if (tok === WA.tok && P.playing) waStart(WA.off);
-    buildKey(); buildChords(); buildInfo(); if (LYR) renderLyrics(); render(true); tabNote(); return;
+    buildKey(); buildChords(); buildInfo(); if (LESSON) renderLesson(); render(true); tabNote(); return;
   }
   if (!P.stems) return toast("트랙 준비가 끝나면 키를 바꿀 수 있어요");
   const n = P.semi + d; if (n < -6 || n > 6) return toast("±6반음까지 바꿀 수 있어요");
@@ -1145,7 +1175,7 @@ async function changeKey(d) {
       a.src = u; a.preservesPitch = true; a.playbackRate = P.rate;
       a.addEventListener("canplay", res, { once: true }); setTimeout(res, 4000);
     })));
-    P.semi = n; pitchReady[n] = true; seek(t); applyMix(); buildKey(); buildChords(); buildInfo(); if (LYR) renderLyrics(); render(true); tabNote();
+    P.semi = n; pitchReady[n] = true; seek(t); applyMix(); buildKey(); buildChords(); buildInfo(); if (LESSON) renderLesson(); render(true); tabNote();
     if (was) setPlaying(true);
   } catch (e) { toast("키 변경 실패: " + e.message); }
   done();
@@ -1241,6 +1271,7 @@ function buildChords() {
     goTo(P.bars[k].start);
   });
   lastBar = -2; lastIdx = -2;
+  if (LYR) renderLyrics(); // 가사 위 코드도 같은 코드표·키·구조로 (키 변경·코드 출처·구조 고치기)
 }
 function buildStrip() {
   const d = P.song.duration; const S = secs();
@@ -1323,20 +1354,20 @@ function lessonGo(t0) { // 해설에서 그 위치로 가기만 (구간 반복�
 const shortOf = x => x.short || String(x.text || "").split(/(?<=[.!?다요])\s/)[0]; // 예전 해설(short 없음)은 첫 문장
 function renderLesson() {
   const L = LESSON || {}, box = $("#lessonBox");
-  const head = `<div class="tabbar"><span class="small mute" style="flex:1">${L.busy ? "AI 선생님이 해설을 쓰는 중… (30초쯤)" : L.none ? "아직 해설이 없어요" : `AI 해설 · 근거: ${esc(L.chord_source || "")} 코드 · 마디 번호는 ${L.bar_basis === "score" ? "원본 악보" : "코드표"} 기준`}</span>` +
+  const head = `<div class="tabbar"><span class="small mute" style="flex:1">${L.busy ? "AI 선생님이 해설을 쓰는 중… (30초쯤)" : L.none ? "아직 해설이 없어요" : `AI 해설 · 근거: ${esc(L.chord_source || "")} 코드 · 마디 번호는 ${L.bar_basis === "score" ? "원본 악보" : "코드표"} 기준${P.semi ? ` · <b style="color:var(--warn)">코드 이름은 지금 키(${esc(tKey())}) 기준</b>` : ""}`}</span>` +
     (L.busy ? "" : `<button class="btn xs" id="lessonMake" data-perm="study">${L.none ? "🎓 해설 만들기" : "다시 만들기"}</button>`) + `</div>` +
     (L.error ? `<div class="small" style="color:var(--err)">실패: ${esc(L.error)}</div>` : "");
   if (L.none || !L.summary) { box.innerHTML = head; bindLesson(); return; }
   const go = x => x.t0 != null ? `<button class="btn xs go" data-t0="${x.t0}" title="그 위치로">▶</button>` : "";
   const bars = x => `${x.bar_from}${x.bar_to !== x.bar_from ? "~" + x.bar_to : ""}마디`;
   // 한 줄(제목 + 짧은 요약)만 보이고, 누르면 자세히 (2026-10-19 Benny "글자가 너무 많아")
-  const item = (ttl, sh, more, x) => `<div class="kp"><div class="row"><div class="tx"><div class="ttl">${ttl}<span class="chev">▾</span></div><div class="sh">${esc(sh)}</div></div>${x ? go(x) : ""}</div><div class="more">${more}</div></div>`;
+  const item = (ttl, sh, more, x) => `<div class="kp"><div class="row"><div class="tx"><div class="ttl">${ttl}<span class="chev">▾</span></div><div class="sh">${esc(tText(sh))}</div></div>${x ? go(x) : ""}</div><div class="more">${more}</div></div>`;
   box.innerHTML = head + `<div class="lsn">
-    <div class="sum">${esc(L.summary)}</div>
-    ${(L.key_points || []).map(k => item(`${esc(k.title)} <span class="bars">${bars(k)}</span>`, shortOf(k),
-      `<div>${esc(k.text)}</div>${k.practice ? `<div class="pr">이론 포인트: ${esc(k.practice)}</div>` : ""}`, k)).join("")}
-    ${(L.sections || []).length ? `<h4>구간별</h4>` + L.sections.map(x => item(`${esc(x.name)}`, shortOf(x), `<div>${esc(x.text)}</div>`, null)).join("") : ""}
-    ${(L.practice_plan || []).length ? `<h4>연습 순서</h4>` + L.practice_plan.map((p, i) => item(`${i + 1}. ${bars(p)} · ${p.speed}%`, shortOf({ text: p.tip }), `<div>${esc(p.tip)}</div>`, p)).join("") : ""}
+    <div class="sum">${esc(tText(L.summary))}</div>
+    ${(L.key_points || []).map(k => item(`${esc(tText(k.title))} <span class="bars">${bars(k)}</span>`, shortOf(k),
+      `<div>${esc(tText(k.text))}</div>${k.practice ? `<div class="pr">이론 포인트: ${esc(tText(k.practice))}</div>` : ""}`, k)).join("")}
+    ${(L.sections || []).length ? `<h4>구간별</h4>` + L.sections.map(x => item(`${esc(tText(x.name))}`, shortOf(x), `<div>${esc(tText(x.text))}</div>`, null)).join("") : ""}
+    ${(L.practice_plan || []).length ? `<h4>연습 순서</h4>` + L.practice_plan.map((p, i) => item(`${i + 1}. ${bars(p)} · ${p.speed}%`, shortOf({ text: p.tip }), `<div>${esc(tText(p.tip))}</div>`, p)).join("") : ""}
     <div class="foot">코드·화성 분석은 계산으로, 문장은 AI(${esc(L.model || "")})가 썼어요. 틀린 설명이 있으면 알려 주세요.</div></div>`;
   bindLesson();
 }
@@ -1365,14 +1396,87 @@ function renderLyrics() {
     `<button class="btn xs" id="lyrPaste" data-perm="edit">가사 붙여넣기</button>` + (src === "user" ? `<button class="btn xs" id="lyrUndo" data-perm="edit">자동 가사로</button>` : "");
   $("#lyrPaste").onclick = () => { $("#lyrText").value = L.map(l => l.text).join("\n"); $("#lyrDlg").showModal(); };
   if ($("#lyrUndo")) $("#lyrUndo").onclick = async () => { await api(`/api/songs/${P.song.id}/lyrics`, jsonOpt("PUT", { clear: true })); loadLyrics(); };
+  lyrRows = []; lastLyr = -2; lastLyrCi = -2; lastLyrBar = -2;
   if (!L.length) { $("#lyrBox").innerHTML = `<div class="empty" style="padding:18px">${LYR?.busy ? "잠시만요…" : "가사를 찾지 못했어요. 위의 <b>가사 붙여넣기</b>로 넣어 주세요."}</div>`; return; }
+  if (L.some(l => l.t == null) || !P.bars?.length) return renderLyricsPlain(L);
+  renderLyricsFlow(L);
+}
+// 가사+코드 흐름 (2026-10-25 Benny "Moises 처럼 곡 진행별로 가사+코드 흐름"):
+// 섹션 제목 → 가사 줄(코드는 실제로 부르는 글자 위, 받아쓰기 단어 시간 vt 로) → 노래 없는 2마디 이상은 마디 칸(| E | D |) → 지금 코드·마디 강조
+let lyrRows = [], lastLyrCi = -2, lastLyrBar = -2;
+function lyrVoice(l, end) { // 줄 안에서 실제로 부르는 시간 조각들. 받아쓰기 시간이 없으면 줄 시작부터 글자 수만큼
+  const V = [];
+  for (const [a0, b0] of LYR.vt || []) { const a = Math.max(a0, l.t), b = Math.min(b0, end); if (b - a < 0.02) continue;
+    const p = V.at(-1); if (p && a - p[1] < 0.15) p[1] = Math.max(p[1], b); else V.push([a, b]); }
+  if (V.reduce((s, [a, b]) => s + b - a, 0) < 0.6) { const n = l.text.replace(/\s/g, "").length; return [[l.t, Math.min(end, l.t + Math.max(1.2, n * 0.3))]]; }
+  return V;
+}
+function renderLyricsFlow(L) {
+  const s = P.song, B = P.bars, C = s.chords, S = secs();
+  const vt = L.map((l, i) => { const end = L[i + 1]?.t ?? Math.min(s.duration, l.e + 2); const V = lyrVoice(l, end); return { V, a: V[0][0], b: V.at(-1)[1] }; });
+  // 노래 없는 마디: 부르는 시간이 마디의 30% 미만. 2마디 이상 이어지거나 첫 줄 앞·끝 줄 뒤면 간주 칸으로
+  const sung = B.map(b => vt.some(v => v.V.some(([a, e]) => Math.min(e, b.end) - Math.max(a, b.start) > 0.3 * (b.end - b.start))));
+  const hasCh = b => C.some(c => c.chord !== "N" && c.end > b.start + 0.05 && c.start < b.end - 0.05);
+  const inst = new Set(); let k = 0;
+  while (k < B.length) { if (sung[k]) { k++; continue; } let j = k; while (j < B.length && !sung[j]) j++;
+    if (j - k >= 2 || B[k].start < L[0].t || B[j - 1].end > vt.at(-1).b) for (let x = k; x < j; x++) inst.add(x); k = j; }
+  for (let x = 0; x < B.length && inst.has(x) && !hasCh(B[x]); x++) inst.delete(x); // 맨 앞 소리 없는 마디
+  for (let x = B.length - 1; x >= 0 && inst.has(x) && !hasCh(B[x]); x--) inst.delete(x); // 맨 뒤 소리 없는 마디
+  const ci = i => { const c = C[i]; return `<i data-ci="${i}"${c.src === "auto" && !c.sure ? ' class="weak"' : ""}>${esc(tChord(c.chord, c.start))}</i>`; };
+  // 코드 바뀜마다 한 번씩: 간주 마디면 간주 칸, 아니면 그 시각을 가진 줄 (다음 줄 0.6초 앞부터는 다음 줄 첫 글자)
+  const own = L.map(() => []);
+  C.forEach((c, i) => { if (c.chord === "N" || inst.has(barAt(c.start + 0.01))) return;
+    let o = 0; for (let x = 0; x < L.length; x++) if (L[x].t - 0.6 <= c.start) o = x; own[o].push(i); });
+  const rows = [];
+  L.forEach((l, i) => {
+    const text = l.text, n = text.length, V = vt[i].V, tot = V.reduce((q, [a, b]) => q + b - a, 0);
+    const hangul = /[가-힣]/.test(text), chars = [...text].map((_, x) => x).filter(x => !/\s/.test(text[x]));
+    const at = new Map(), add = (pos, html) => at.set(pos, (at.get(pos) || "") + html);
+    own[i].forEach(j => { const c = C[j];
+      if (c.start <= V[0][0] + 0.12) return add(0, ci(j));
+      if (c.start > vt[i].b + 0.25) return add(n, ci(j)); // 노래 끝난 뒤 바뀌는 코드는 줄 끝에
+      let acc = 0; for (const [a, b] of V) { if (c.start <= a) break; acc += Math.min(c.start, b) - a; }
+      let pos = chars[Math.min(chars.length - 1, Math.floor(acc / tot * chars.length + 0.3))] ?? 0;
+      if (!hangul) while (pos > 0 && !/\s/.test(text[pos - 1])) pos--; // 영어는 단어 첫 글자에
+      add(pos, ci(j)); });
+    if (!at.has(0)) { const k0 = chordAt(l.t + 0.05); if (k0 >= 0 && C[k0].chord !== "N") add(0, ci(k0).replace(' class="weak"', "").replace("<i ", '<i class="cont" ')); } // 이어서 울리는 코드
+    const cuts = [...new Set([0, ...[...at.keys()].filter(p => p < n), ...chars.filter(x => x > 0 && /\s/.test(text[x - 1]))])].sort((a, b) => a - b);
+    let html = cuts.map((p, x) => `<span class="u"><b>${at.get(p) || ""}</b><span>${esc(text.slice(p, cuts[x + 1] ?? n))}</span></span>`).join("");
+    if (at.has(n)) html += `<span class="u"><b>${at.get(n)}</b><span> </span></span>`;
+    rows.push({ a: l.t, sec: l.t + 1.0, go: Math.max(0, l.t - 0.3), html: `<div class="tx cl">${html}</div>` });
+  });
+  // 간주 칸: 4마디씩, 섹션 경계에서 끊음
+  const secStart = new Set(S.map(x => nearestBar(x.start)));
+  let run = [];
+  const flush = () => { if (!run.length) return; const b0 = B[run[0]];
+    rows.push({ a: b0.start, sec: b0.start + 0.05, go: b0.start, inst: true, html: `<div class="ib">` + run.map(x => { const b = B[x];
+      const names = []; C.forEach((c, i) => { if (c.chord !== "N" && c.end > b.start + 0.05 && c.start < b.end - 0.05 && names.at(-1)?.n !== c.chord) names.push({ n: c.chord, i }); });
+      return `<span data-k="${x}"${names.length ? "" : ' class="mute"'}>${names.map(z => ci(z.i)).join("") || "·"}</span>`; }).join("") + `</div>` });
+    run = []; };
+  for (let x = 0; x < B.length; x++) { if (!inst.has(x) || run.length >= 4 || (run.length && (secStart.has(x) || run.at(-1) !== x - 1))) flush(); if (inst.has(x)) run.push(x); }
+  flush();
+  rows.sort((a, b) => a.a - b.a);
+  let html = "", prev = -2;
+  rows.forEach((r, i) => { r.b = rows[i + 1]?.a ?? s.duration;
+    let si = secAt(r.sec); if (si < 0 && S.length && r.sec < S[0].start) si = 0; // 첫 섹션 앞 못갖춘마디는 첫 섹션에
+    if (si >= 0 && si !== prev) { const x = S[si], b1 = nearestBar(x.start), b2 = Math.max(b1, nearestBar(x.end) - 1);
+      html += `<div class="lsec" data-s="${si}">${esc(x.name)}<small>${barLabel(b1)}~${barLabel(b2)}마디</small></div>`; }
+    prev = si;
+    html += `<div class="ln${r.inst ? " inst" : ""}" data-r="${i}">${r.html}</div>`; });
+  lyrRows = rows;
+  $("#lyrBox").innerHTML = html;
+  $$("#lyrBox .ln").forEach(el => el.onclick = () => goTo(lyrRows[+el.dataset.r].go));
+  $$("#lyrBox .ib span[data-k]").forEach(el => el.onclick = e => { e.stopPropagation(); goTo(P.bars[+el.dataset.k].start); });
+  $$("#lyrBox .lsec").forEach(el => el.onclick = () => goTo(S[+el.dataset.s].start + 0.01));
+}
+function renderLyricsPlain(L) { // 시간 없는 가사(옛 형식) — 예전처럼 줄 위에 시간 비율로
   const C = P.song.chords.filter(c => c.chord !== "N");
   let html = "";
   L.forEach((l, i) => {
     const prevEnd = i ? L[i - 1].e : 0;
     if (l.t != null && l.t - prevEnd > 8) html += `<div class="gap">· · · ${fmt(prevEnd)}–${fmt(l.t)} 연주 · · ·</div>`;
     let ch = "";
-    if (l.t != null) { // 줄 시간 안에서 코드가 시작되는 자리에 코드 이름 (줄 시작에 이미 울리는 코드는 맨 앞)
+    if (l.t != null) {
       const span = Math.max(0.5, l.e - l.t); let lastPos = -99;
       C.forEach(c => { if (c.end <= l.t + 0.1 || c.start >= l.e - 0.1) return;
         const pos = Math.max(0, (c.start - l.t) / span * 100); if (pos - lastPos < 9) return; lastPos = pos;
@@ -1380,16 +1484,29 @@ function renderLyrics() {
     }
     html += `<div class="ln" data-i="${i}">${ch ? `<div class="ch">${ch}</div>` : ""}<div class="tx">${esc(l.text)}</div></div>`;
   });
-  $("#lyrBox").innerHTML = html; lastLyr = -2;
+  $("#lyrBox").innerHTML = html;
   $$("#lyrBox .ln").forEach(el => el.onclick = () => { const l = L[+el.dataset.i]; if (l.t != null) goTo(Math.max(0, l.t - 0.3)); });
 }
 function highlightLyrics(t) {
   if (!LYR?.lines?.length || $("#pLyrics").hidden) return;
+  const box = $("#lyrBox");
+  if (lyrRows.length) {
+    let k = -1; for (let i = 0; i < lyrRows.length && lyrRows[i].a <= t + 0.15; i++) k = i;
+    if (k !== lastLyr) { lastLyr = k;
+      $$("#lyrBox .ln.cur").forEach(el => el.classList.remove("cur"));
+      const el = document.querySelector(`#lyrBox .ln[data-r="${k}"]`);
+      if (el) { el.classList.add("cur"); if (P.playing) box.scrollTo({ top: el.offsetTop - box.offsetTop - box.clientHeight / 3, behavior: "smooth" }); } }
+    const c = chordAt(t);
+    if (c !== lastLyrCi) { lastLyrCi = c; $$("#lyrBox i.on").forEach(x => x.classList.remove("on")); $$(`#lyrBox i[data-ci="${c}"]`).forEach(x => x.classList.add("on")); }
+    const bk = barAt(t);
+    if (bk !== lastLyrBar) { lastLyrBar = bk; $$("#lyrBox .ib span.on").forEach(x => x.classList.remove("on")); const el = document.querySelector(`#lyrBox .ib span[data-k="${bk}"]`); if (el) el.classList.add("on"); }
+    return;
+  }
   const L = LYR.lines; let k = -1; for (let i = 0; i < L.length; i++) { if (L[i].t != null && L[i].t <= t + 0.15) k = i; }
   if (k >= 0 && t > L[k].e + 4) k = -1;
   if (k === lastLyr) return; lastLyr = k;
   $$("#lyrBox .ln").forEach(el => el.classList.toggle("cur", +el.dataset.i === k));
-  const el = document.querySelector(`#lyrBox .ln[data-i="${k}"]`), box = $("#lyrBox");
+  const el = document.querySelector(`#lyrBox .ln[data-i="${k}"]`);
   if (el && P.playing) box.scrollTo({ top: el.offsetTop - box.offsetTop - box.clientHeight / 3, behavior: "smooth" });
 }
 $("#lyrCancel").onclick = () => $("#lyrDlg").close();
