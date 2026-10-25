@@ -176,12 +176,17 @@ function drawChanges(d) {
   return box;
 }
 
-let DATA = {};
+let DATA = {}, BOX = {};
+// 월·목 조사라 간격은 최대 4일 — 5일 넘으면 조사가 멈춘 것 (2026-10-26)
+const STALE_DAYS = 5;
+const ageDays = s => s ? Math.floor((Date.now() - Date.parse(s + "T00:00:00+09:00")) / 864e5) : 0;
 function draw() {
   const d = DATA[cur], cfg = CONF.topics[cur];
   main.textContent = "";
   $("#sub").textContent = cfg.desc + (d ? " · " + md(d.updated) + " 갱신 · " + d.runs + "회차" : "");
   if (!d) { main.appendChild(el("div", "err", "아직 첫 조사 전이에요 — 다음 월·목 아침에 채워집니다.")); return; }
+  const age = ageDays(d.updated);
+  if (age > STALE_DAYS) main.appendChild(el("div", "err", "⚠ " + age + "일째 갱신이 멈췄어요 — 앱의 예약 작업 '레이더: " + cfg.name + "' 실행 기록을 확인해 주세요."));
 
   if (d.headline) { const h = el("div", "headline"); h.appendChild(el("div", "k", "이번 회차 한 줄")); h.appendChild(el("p", "", d.headline)); main.appendChild(h); }
 
@@ -310,7 +315,7 @@ async function show(t) {
   if (location.hash.slice(1) !== t) history.replaceState(null, "", "#" + t);
   if (!(t in DATA)) {
     main.textContent = ""; main.appendChild(el("p", "empty", "불러오는 중…"));
-    try { DATA[t] = await decrypt(await getJSON("data/" + t + ".enc.json")); } catch (e) { DATA[t] = null; }
+    try { DATA[t] = await decrypt(BOX[t] || await getJSON("data/" + t + ".enc.json")); } catch (e) { DATA[t] = null; }
   }
   if (cur === t) draw();
 }
@@ -333,6 +338,11 @@ async function start() {
   });
   const want = location.hash.slice(1);
   show(CONF.order.includes(want) ? want : CONF.order[0]);
+  // 탭마다 갱신 날짜만 먼저 보고(암호화 파일의 updated 는 평문) 멈춘 주제에 ⚠
+  CONF.order.forEach(async t => {
+    try { BOX[t] = await getJSON("data/" + t + ".enc.json"); } catch (e) { return; }
+    if (ageDays(BOX[t].updated) > STALE_DAYS) { const b = tabsEl.querySelector('[data-t="' + t + '"]'); if (b) b.textContent += " ⚠"; }
+  });
 }
 addEventListener("hashchange", () => { const h = location.hash.slice(1); if (CONF && PRIV && CONF.order.includes(h) && h !== cur) show(h); });
 start();
