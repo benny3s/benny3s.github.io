@@ -1261,7 +1261,7 @@ function ensureFirebase() {
   if (loading) return loading;
   loading = (async () => {
     await loadScript(SDK + "firebase-app-compat.js");
-    await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)));
+    await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)).concat([loadScript("/admin-login.js?v=20261027a")]));   // 관리자 새 기기 확인 (2026-10-27)
     // 기본 앱 + 기본(브라우저에 남는) 로그인 = 베니브릿지(같은 주소·같은 프로젝트)와 로그인 공유
     const a = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
     app = a;
@@ -1299,6 +1299,7 @@ async function isAdminSession() {
     });
     if (!u) return false;
     const r = await u.getIdTokenResult();
+    if (r.claims.admin === 1 && window.bennyAdminEnroll) window.bennyAdminEnroll(a);   // 로그인돼 있던 이 기기를 믿을 기기로
     return r.claims.admin === 1;
   } catch (e) { return false; }
 }
@@ -1318,8 +1319,8 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   msg.textContent = "확인 중…";
   try {
     const a = await ensureFirebase();
-    const res = await a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: pw });
-    await a.auth().signInWithCustomToken(res.data.token);
+    const tok = await window.bennyAdminLogin(a, pw);   // 처음 보는 기기면 베니 폰·PC 허용 또는 문자 인증을 기다림
+    await a.auth().signInWithCustomToken(tok);
     document.getElementById("pw").value = "";
     dlg.close();
     enterAdmin();

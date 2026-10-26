@@ -248,7 +248,7 @@ function loadScript(src) { return new Promise((ok, bad) => { const s = document.
 async function ensureFirebase() {
   if (fb) return fb;
   await loadScript(SDK + "firebase-app-compat.js");
-  await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)));
+  await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)).concat([loadScript("/admin-login.js?v=20261027a")]));   // 관리자 새 기기 확인 (2026-10-27)
   fb = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
   return fb;
 }
@@ -301,8 +301,8 @@ function lockScreen(msg) {
     e.preventDefault(); if (!pw.value) return; m.textContent = "확인 중…";
     try {
       const a = await ensureFirebase();
-      const res = await a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: pw.value });
-      await a.auth().signInWithCustomToken(res.data.token);
+      const tok = await window.bennyAdminLogin(a, pw.value);   // 처음 보는 기기면 베니 폰·PC 허용 또는 문자 인증을 기다림
+      await a.auth().signInWithCustomToken(tok);
       pw.value = ""; start();
     } catch (err) { m.textContent = (err && err.message) || "들어가지 못했어요."; }
   };
