@@ -210,7 +210,8 @@ body.admin .tabs{display:flex}
 .titem-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13.5px;font-weight:700}
 .titem-ul{margin:2px 0 0;padding-left:18px;font-size:13px;color:var(--ink); line-height:1.45}
 .titem-ul li{margin-bottom:2px}
-.titem-now{font-size:12px;color:var(--muted);font-weight:500;flex-basis:100%}
+.titem-now{font-size:12px;color:var(--muted);font-weight:500}
+summary .titem-now{flex-basis:100%;order:3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 /* 접는 칸 (10-27) — 제목 줄만 보이고 누르면 펼침 */
 details.titem>summary,details.fold>summary{list-style:none;cursor:pointer}
 details.titem>summary::-webkit-details-marker,details.fold>summary::-webkit-details-marker{display:none}
@@ -669,14 +670,12 @@ function renderTodoBoard(head, runAiFn) {
       /* 접힌 한 줄(이름·상태·지금) → 눌러야 할 일 목록·버튼 (10-27 Benny "너무 복잡하다") */
       const item = el("details", "titem" + (t.kind === "blocked" ? " blocked" : ""));
       const top = el("summary", "titem-top");
-      top.append(
-        el("span", null, (t.emoji || "📁") + " " + t.project_label),
-        el("span", "chip " + (t.kind === "blocked" ? "nda" : "s-github"), t.badge)
-      );
-      if (t.updated_at) top.appendChild(el("span", "chip", t.updated_at));
-      if (t.git_dirty_count) top.appendChild(el("span", "chip warn", "미커밋 " + t.git_dirty_count));
-      if (t.now_hint) top.appendChild(el("div", "titem-now", "📌 " + t.now_hint));
+      /* 접힌 줄 = 🔴/🟡 + 이름 + 지금 한 줄. 날짜·미커밋은 펼친 안쪽으로 (10-27) */
+      top.append(el("span", null, (t.kind === "blocked" ? "🔴 " : "🟡 ") + (t.emoji || "📁") + " " + t.project_label));
+      if (t.now_hint) top.appendChild(el("div", "titem-now", t.now_hint));
       item.appendChild(top);
+      const meta = [t.badge, t.updated_at, t.git_dirty_count ? "미커밋 " + t.git_dirty_count : ""].filter(Boolean).join(" · ");
+      if (meta) item.appendChild(el("div", "titem-now", meta));
       const ul = el("ul", "titem-ul");
       (t.items || []).forEach(line => ul.appendChild(el("li", null, line)));
       item.appendChild(ul);
