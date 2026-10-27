@@ -452,6 +452,12 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
     <div style="display:flex;justify-content:flex-end"><button class="btn pri">들어가기</button></div>
   </form>
 </dialog>
+<dialog id="autoDlg">
+  <h3 style="margin:0 0 4px">⚙ 자동 분석 — <span id="autoBand"></span></h3>
+  <div class="small mute" style="margin-bottom:10px">밴드매니저에서 고른 상태의 곡은 PC 가 알아서 음원 분리·분석해요 (10분마다 확인). 나머지는 합주곡 줄의 ＋ 분석으로 언제든 넣을 수 있어요.</div>
+  <div id="autoList"></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn sm" id="autoClose">닫기</button></div>
+</dialog>
 <dialog id="permDlg">
   <h3 style="margin:0 0 4px">🔐 친구(밴드 PIN)가 할 수 있는 일</h3>
   <div class="small mute" style="margin-bottom:10px">관리자(Benny 비번)는 전부 할 수 있어요. 듣기·연습(재생·코드·가사·악보·해설 보기)은 친구도 항상 돼요.</div>
@@ -478,7 +484,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-27b";
+const BUILD = "2026-10-27c";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -593,7 +599,7 @@ async function ping() {
 let jobsTimer = null;
 /* 밴드 폴더 (10-27 Benny "밴드매니저랑 연결, 폴더별로"): Benny 는 [전체][밴드…] 칩, 친구는 자기 밴드만(서버가 걸러 줌).
    폴더가 밴드면 위에 밴드매니저 합주곡(서버 /api/setlist 가 유튜브 영상·제목으로 짝지음) → 짝 있는 곡은 ▶, 없으면 ＋ 분석 */
-let BANDS = LS.get("bands", []), FOLDER = LS.get("folder", ""), LIB = [], SETL = null;
+let BANDS = LS.get("bands", []), FOLDER = LS.get("folder", ""), LIB = [], SETL = null, JOBS_NOW = [];
 const curBand = () => isAdmin() ? FOLDER : (AUTH?.band || "");
 async function loadLib() {
   if (!online) { $("#lib").innerHTML = ""; return; }
@@ -621,15 +627,22 @@ function renderSetlist() {
   const box = $("#setlist"), items = SETL?.band === curBand() ? SETL.items : null;
   if (!items) { box.innerHTML = ""; return; }
   const byId = Object.fromEntries(LIB.map(s => [s.id, s]));
-  box.innerHTML = `<h2 style="margin:22px 0 0">합주곡 <span class="small mute" style="font-weight:400">· 밴드매니저와 같이 움직여요</span></h2>` +
+  const bd = BANDS.find(x => x.key === curBand()), auto = bd?.auto || [];
+  const AUTO_NAME = { "연습중": "합주곡", "후보": "투표곡", "보류": "보류" };
+  const autoTxt = auto.length ? auto.map(x => AUTO_NAME[x]).join("·") + " 자동 분석" : "자동 분석 꺼짐";
+  const busyYt = new Set(JOBS_NOW.filter(j => j.state === "queued" || j.state === "running").map(j => (String(j.url || "").match(/[?&]v=([\w-]{11})/) || [])[1]).filter(Boolean));
+  box.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:22px 0 0"><h2 style="margin:0">합주곡</h2>
+    <span class="small mute">밴드매니저와 같이 움직여요 · ${esc(autoTxt)}</span>${isAdmin() ? `<button class="linkbtn small" id="autoBtn" style="margin-left:auto">⚙ 자동 분석</button>` : ""}</div>` +
     (items.length ? `<div class="setl">` + items.map((it, i) => {
       const s = it.ml_id && byId[it.ml_id];
       const act = s ? `<span class="chip">키 <b>${esc(s.key || "-")}</b></span>`
+        : it.yts.some(y => busyYt.has(y)) ? `<span class="small mute">⏳ 분석 중</span>`
         : it.yts.length ? `<button class="btn xs" data-add="${i}" data-perm="add">＋ 분석</button>` : `<span class="small mute">링크 없음</span>`;
       return `<div class="sr${s ? " hit" : ""}" data-i="${i}" data-yt="${esc(it.yts.join(" "))}"><span class="st${it.status === "연습중" ? " on" : ""}">${esc(it.status || "-")}</span>
         <div class="t"><b>${esc(it.title)}</b><span>${esc(it.artist)}</span></div>${act}</div>`;
     }).join("") + `</div>` : `<div class="empty">밴드매니저에 합주곡이 아직 없어요.</div>`);
   $$("#setlist .sr.hit").forEach(el => el.onclick = () => openSong(items[+el.dataset.i].ml_id));
+  if ($("#autoBtn")) $("#autoBtn").onclick = () => openAuto(bd);
   $$("#setlist [data-add]").forEach(el => el.onclick = async e => {
     e.stopPropagation(); const it = items[+el.dataset.add]; el.disabled = true;
     try { await api("/api/jobs", jsonOpt("POST", { url: "https://www.youtube.com/watch?v=" + it.yts[0], band: curBand(), bm_title: it.title, bm_artist: it.artist }));
@@ -637,6 +650,20 @@ function renderSetlist() {
     catch (err) { toast("실패: " + err.message); el.disabled = false; }
   });
 }
+/* 자동 분석 설정 (Benny 만) — 밴드마다 어떤 상태의 합주곡을 자동으로 넣을지. 기본 연습중 (10-27 Benny "기본은 연습곡, 추가 수정도 가능하게") */
+function openAuto(bd) {
+  if (!bd) return;
+  $("#autoBand").textContent = bd.name;
+  const opts = [["연습중", "합주곡 (연습중)"], ["후보", "투표곡 (후보)"], ["보류", "보류"]];
+  $("#autoList").innerHTML = opts.map(([k, n]) => `<label class="pr"><span class="t">${esc(n)}</span><input type="checkbox" data-k="${k}" ${(bd.auto || []).includes(k) ? "checked" : ""} style="width:22px;height:22px"></label>`).join("");
+  $$("#autoList input").forEach(i => i.onchange = async () => {
+    const st = $$("#autoList input").filter(x => x.checked).map(x => x.dataset.k);
+    try { const r = await api(`/api/bands/${bd.key}/auto`, jsonOpt("PUT", { statuses: st })); bd.auto = r.auto; LS.set("bands", BANDS); renderSetlist(); toast(st.length ? "저장했어요 · 바로 확인해서 없는 곡은 분석을 시작해요" : "자동 분석을 껐어요"); setTimeout(loadJobs, 3000); }
+    catch (e) { toast("저장 실패: " + e.message); i.checked = !i.checked; }
+  });
+  $("#autoDlg").showModal();
+}
+$("#autoClose").onclick = () => $("#autoDlg").close();
 /* 밴드매니저에서 온 주소 #yt/<영상 id> → 그 곡 열기, 아직 없으면 합주곡 줄 표시 */
 function goYt() {
   const m = location.hash.match(/^#yt\/([\w-]{11})/); if (!m) return;
@@ -665,6 +692,8 @@ function renderLib(list) { // 목록은 기기에 기억해 두고 먼저 보여
 async function loadJobs() {
   if (!online) return;
   const jobs = (await api("/api/jobs")).filter(j => j.state !== "done" || Date.now() / 1000 - j.updated < 8);
+  const was = JOBS_NOW.filter(j => j.state === "queued" || j.state === "running").length;
+  JOBS_NOW = jobs; if (was !== jobs.filter(j => j.state === "queued" || j.state === "running").length) renderSetlist();   // 합주곡 줄 ⏳ 분석 중 표시
   $("#jobs").innerHTML = jobs.map(j => {
     const si = STEP_ORDER.indexOf(j.step);
     const steps = STEP_ORDER.slice(0, 5).map((s, i) => `<i class="${i < si || j.state === "done" ? "on" : i === si && j.state === "running" ? "cur" : ""}"></i>`).join("");
