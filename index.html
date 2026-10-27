@@ -201,7 +201,8 @@ body.admin .tabs{display:flex}
 .ssum{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
 .ssum b{color:var(--ink)}
 .todo-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
-@media(min-width:680px){.todo-grid{grid-template-columns:1.35fr 1fr}}
+@media(min-width:680px){.todo-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}}
+.tbox,.titem,details.titem>summary{min-width:0}
 .tbox{background:var(--card);border:1px solid #d5e5dc;border-radius:15px;padding:14px 16px;box-shadow:var(--shadow);display:grid;gap:10px;align-content:start}
 .tbox-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .tbox-ttl{font-size:14.5px;font-weight:800;letter-spacing:-.02em;color:var(--ink);display:flex;align-items:center;gap:6px}
@@ -925,7 +926,7 @@ function renderAiTowerBar(head) {
 
 function renderPc() {
   const head = el("div");
-  head.style.cssText = "display:grid;gap:12px";
+  head.style.cssText = "display:grid;grid-template-columns:minmax(0,1fr);gap:12px";   // 긴 줄이 폰 화면 밖으로 안 넘치게
 
   // 1. 지금 내가 할 일 보드 (프로젝트 할 일 + 개인 할 일)
   renderTodoBoard(head);
