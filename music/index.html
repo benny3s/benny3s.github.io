@@ -54,6 +54,19 @@ h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
 .song .meta{padding:10px 12px}
 .song .ttl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+/* 밴드 폴더 · 밴드매니저 합주곡 (10-27) */
+.bandbar{display:flex;gap:6px;flex-wrap:wrap;margin:22px 0 4px}
+.bandbar button{font:inherit;font-size:13px;font-weight:600;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--mute);cursor:pointer}
+.bandbar button.on{background:var(--acc,#1db954);border-color:transparent;color:#fff}
+.setl{display:grid;gap:6px;margin:10px 0 6px}
+.setl .sr{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.setl .sr.hit{cursor:pointer}
+.setl .sr.flash{outline:2px solid var(--acc,#1db954)}
+.setl .sr .t{flex:1;min-width:0}
+.setl .sr .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.setl .sr .t span{font-size:12px;color:var(--mute)}
+.setl .st{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--chip);color:var(--mute);flex:0 0 auto}
+.setl .st.on{color:#1a7f45;background:#e3f4ea}
 .chip{font-size:12px;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--mute)}
 .chip b{color:var(--text);font-weight:600}
 .empty{padding:30px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:12px}
@@ -317,7 +330,9 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
       크롬에서 "로컬 네트워크 접근" 허용을 물으면 <b>허용</b>을 눌러 주세요. 그래도 안 되면 PC에서 <a href="http://127.0.0.1:8765/" target="_blank">127.0.0.1:8765</a> 로 바로 열 수 있어요.</div>
     </div>
     <div class="jobs" id="jobs"></div>
-    <h2 style="margin-top:26px">내 곡</h2>
+    <div class="bandbar" id="bandBar" hidden></div>
+    <div id="setlist"></div>
+    <h2 style="margin-top:26px" id="libH">내 곡</h2>
     <div class="lib" id="lib"></div>
   </section>
 
@@ -426,12 +441,12 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
   </section>
 </main>
 <footer id="foot"></footer>
-<p class="more"><a href="https://benny3s.github.io/" target="_blank">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
+<p class="more" id="moreLink" hidden><a href="https://benny3s.github.io/" target="_blank">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
 
 <dialog id="loginDlg">
   <form id="loginForm">
     <h3 style="margin-top:0">🎸 Music Lab</h3>
-    <p class="small mute">밴드 PIN 또는 Benny 관리자 비밀번호를 넣어 주세요. 한 번 들어오면 이 기기에서는 기억돼요.</p>
+    <p class="small mute">밴드매니저 합주곡의 <b>🎧 연습</b> 버튼으로 들어오면 비밀번호 없이 들어와요. 아니면 밴드 PIN 또는 Benny 관리자 비밀번호를 넣어 주세요. 한 번 들어오면 이 기기에서는 기억돼요.</p>
     <input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호">
     <div class="small" id="loginErr" style="color:var(--err);min-height:20px;margin-top:6px"></div>
     <div style="display:flex;justify-content:flex-end"><button class="btn pri">들어가기</button></div>
@@ -463,7 +478,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-27a";
+const BUILD = "2026-10-27b";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -506,7 +521,11 @@ async function api(path, opt = {}) {
   if (!r.ok) { let m = r.status + ""; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
   return r.json();
 }
-function applyRole() { $("#who").textContent = AUTH ? (isAdmin() ? "Benny" : "밴드") : ""; applyPerms(); }
+function applyRole() {
+  $("#who").textContent = AUTH ? (isAdmin() ? "Benny" : (BANDS.find(b => b.key === AUTH.band)?.name || "밴드")) : "";
+  $("#moreLink").hidden = !isAdmin();   // 친구에게는 다른 프로젝트 안 보이게 (10-27, 밴드매니저와 같이)
+  applyPerms();
+}
 // 기능별 권한 (서버 /api/perms, 관리자가 켜고 끔). 화면은 권한 없는 버튼을 숨기고, 서버도 같은 표로 막음
 let PERMS = LS.get("perms", null);
 const can = k => isAdmin() || !!PERMS?.perms?.[k];
@@ -539,6 +558,15 @@ $("#loginForm").onsubmit = async e => {
   catch (err) { $("#loginErr").textContent = err.message; }
 };
 $("#logout").onclick = () => { AUTH = null; LS.set("auth", null); location.hash = ""; location.reload(); };
+/* 밴드매니저 🎧 버튼으로 들어옴(?bm=밴드 id) → 그 밴드로 로그인. Benny(관리자)는 그대로. 주소에서는 지움 (10-27) */
+async function bmLogin() {
+  const q = new URLSearchParams(location.search), bm = q.get("bm");
+  if (!bm) return;
+  q.delete("bm"); try { history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); } catch {}
+  if (isAdmin()) return;
+  try { AUTH = await api("/api/login", jsonOpt("POST", { bm })); LS.set("auth", AUTH); LS.set("libCache", null); if ($("#loginDlg").open) $("#loginDlg").close(); }
+  catch (e) { toast("밴드 링크로 들어오지 못했어요 — " + e.message); }
+}
 
 /* ---------------- connection ---------------- */
 async function ping() {
@@ -563,18 +591,75 @@ async function ping() {
 
 /* ---------------- home ---------------- */
 let jobsTimer = null;
+/* 밴드 폴더 (10-27 Benny "밴드매니저랑 연결, 폴더별로"): Benny 는 [전체][밴드…] 칩, 친구는 자기 밴드만(서버가 걸러 줌).
+   폴더가 밴드면 위에 밴드매니저 합주곡(서버 /api/setlist 가 유튜브 영상·제목으로 짝지음) → 짝 있는 곡은 ▶, 없으면 ＋ 분석 */
+let BANDS = LS.get("bands", []), FOLDER = LS.get("folder", ""), LIB = [], SETL = null;
+const curBand = () => isAdmin() ? FOLDER : (AUTH?.band || "");
 async function loadLib() {
   if (!online) { $("#lib").innerHTML = ""; return; }
+  try { BANDS = await api("/api/bands"); LS.set("bands", BANDS);
+    if (!isAdmin() && !AUTH.band && BANDS.length === 1) { AUTH.band = BANDS[0].key; LS.set("auth", AUTH); }   // 밴드 폴더 전에 로그인한 기기
+    applyRole(); } catch {}
   const list = await api("/api/songs");
   LS.set("libCache", list); renderLib(list);
+  loadSetlist();
+}
+async function loadSetlist() {
+  const b = curBand();
+  if (!b) { SETL = null; renderSetlist(); return; }
+  try { SETL = await api("/api/setlist?band=" + encodeURIComponent(b)); } catch { SETL = null; }
+  renderSetlist(); renderLib(LIB); goYt();
+}
+function renderBandBar() {
+  const bar = $("#bandBar");
+  bar.hidden = !isAdmin() || !BANDS.length;
+  if (bar.hidden) return;
+  bar.innerHTML = [["", "전체"], ...BANDS.map(b => [b.key, b.name])].map(([k, n]) => `<button data-k="${esc(k)}" class="${k === FOLDER ? "on" : ""}">${esc(n)}</button>`).join("");
+  $$("#bandBar button").forEach(x => x.onclick = () => { FOLDER = x.dataset.k; LS.set("folder", FOLDER); renderLib(LIB); loadSetlist(); });
+}
+function renderSetlist() {
+  const box = $("#setlist"), items = SETL?.band === curBand() ? SETL.items : null;
+  if (!items) { box.innerHTML = ""; return; }
+  const byId = Object.fromEntries(LIB.map(s => [s.id, s]));
+  box.innerHTML = `<h2 style="margin:22px 0 0">합주곡 <span class="small mute" style="font-weight:400">· 밴드매니저와 같이 움직여요</span></h2>` +
+    (items.length ? `<div class="setl">` + items.map((it, i) => {
+      const s = it.ml_id && byId[it.ml_id];
+      const act = s ? `<span class="chip">키 <b>${esc(s.key || "-")}</b></span>`
+        : it.yts.length ? `<button class="btn xs" data-add="${i}" data-perm="add">＋ 분석</button>` : `<span class="small mute">링크 없음</span>`;
+      return `<div class="sr${s ? " hit" : ""}" data-i="${i}" data-yt="${esc(it.yts.join(" "))}"><span class="st${it.status === "연습중" ? " on" : ""}">${esc(it.status || "-")}</span>
+        <div class="t"><b>${esc(it.title)}</b><span>${esc(it.artist)}</span></div>${act}</div>`;
+    }).join("") + `</div>` : `<div class="empty">밴드매니저에 합주곡이 아직 없어요.</div>`);
+  $$("#setlist .sr.hit").forEach(el => el.onclick = () => openSong(items[+el.dataset.i].ml_id));
+  $$("#setlist [data-add]").forEach(el => el.onclick = async e => {
+    e.stopPropagation(); const it = items[+el.dataset.add]; el.disabled = true;
+    try { await api("/api/jobs", jsonOpt("POST", { url: "https://www.youtube.com/watch?v=" + it.yts[0], band: curBand(), bm_title: it.title, bm_artist: it.artist }));
+      toast("분석을 시작했어요. 보통 1~3분 걸려요"); loadJobs(); }
+    catch (err) { toast("실패: " + err.message); el.disabled = false; }
+  });
+}
+/* 밴드매니저에서 온 주소 #yt/<영상 id> → 그 곡 열기, 아직 없으면 합주곡 줄 표시 */
+function goYt() {
+  const m = location.hash.match(/^#yt\/([\w-]{11})/); if (!m) return;
+  const s = LIB.find(x => x.yt === m[1]);
+  if (s) { location.hash = ""; openSong(s.id); return; }
+  const it = SETL?.items?.find(x => x.yts.includes(m[1]));
+  if (it?.ml_id) { location.hash = ""; openSong(it.ml_id); return; }
+  const row = [...$$("#setlist .sr")].find(r => r.dataset.yt.split(" ").includes(m[1]));
+  if (row) { location.hash = ""; row.classList.add("flash"); row.scrollIntoView({ block: "center" }); toast("아직 분석 안 한 곡이에요 — ＋ 분석을 눌러 주세요", 4000); }
 }
 function renderLib(list) { // 목록은 기기에 기억해 두고 먼저 보여준 뒤 새로 받아 바꿈 (폰에서 공개 주소 왕복이 느림)
+  LIB = list; renderBandBar();
+  const b = curBand(), hit = new Set((SETL?.band === b ? SETL.items : []).map(x => x.ml_id).filter(Boolean));
+  if (isAdmin() && FOLDER) list = list.filter(s => s.band === FOLDER);
+  list = list.filter(s => !hit.has(s.id));   // 합주곡에 짝지어진 곡은 위 목록에서 열고, 아래엔 나머지만
+  $("#libH").textContent = hit.size ? "그 밖의 곡" : "내 곡";
+  $("#libH").hidden = !!hit.size && !list.length;
   $("#lib").innerHTML = list.length ? list.map(s => `
     <div class="song" data-id="${s.id}">
       <div class="th" style="${s.thumbnail ? `background-image:url('${esc(s.thumbnail)}')` : ""}">${s.thumbnail ? "" : "🎵"}</div>
       <div class="meta"><div class="ttl">${esc(s.title)}</div>
         <div class="chips"><span class="chip">키 <b>${esc(s.key || "-")}</b></span><span class="chip"><b>${Math.round(s.tempo || 0)}</b> BPM</span><span class="chip">${fmt(s.duration)}</span></div>
-      </div></div>`).join("") : `<div class="empty">아직 분석한 곡이 없어요. 위에 유튜브 링크를 넣어 보세요.</div>`;
+      </div></div>`).join("") : hit.size ? "" : `<div class="empty">아직 분석한 곡이 없어요. 위에 유튜브 링크를 넣어 보세요.</div>`;
   $$("#lib .song").forEach(el => el.onclick = () => openSong(el.dataset.id));
 }
 async function loadJobs() {
@@ -600,14 +685,14 @@ $("#addForm").onsubmit = async e => {
   if (!url) return;
   if (!online && !(await ping())) return toast("PC 서버에 연결되지 않았어요");
   $("#addBtn").disabled = true;
-  try { await api("/api/jobs", jsonOpt("POST", { url })); $("#url").value = ""; toast("분석을 시작했어요. 보통 1~3분 걸려요"); loadJobs(); }
+  try { await api("/api/jobs", jsonOpt("POST", { url, band: curBand() })); $("#url").value = ""; toast("분석을 시작했어요. 보통 1~3분 걸려요"); loadJobs(); }
   catch (err) { toast("실패: " + err.message); }
   $("#addBtn").disabled = false;
 };
 $("#file").onchange = async () => {
   const f = $("#file").files[0]; if (!f) return;
   const fd = new FormData(); fd.append("file", f);
-  try { await api("/api/upload", { method: "POST", body: fd }); toast("업로드했어요. 분석을 시작해요"); loadJobs(); }
+  try { await api("/api/upload?band=" + encodeURIComponent(curBand()), { method: "POST", body: fd }); toast("업로드했어요. 분석을 시작해요"); loadJobs(); }
   catch (err) { toast("실패: " + err.message); }
   $("#file").value = "";
 };
@@ -1287,7 +1372,13 @@ function buildInfo() {
       <li><b>많이 나오는 코드</b>: ${top.map(esc).join(", ") || "-"}</li>
       <li><b>기타에서 찾은 음</b>: ${s.guitar_notes || 0}개 ${s.tab ? "→ 타브 초안 있음" : "→ 기타 소리가 작아 타브를 만들지 못했어요"}</li>
     </ul>
-    <div style="margin-top:14px;text-align:right" data-perm="manage"><button class="btn xs" id="songDel">🗑 이 곡 지우기</button></div>`;
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+      ${isAdmin() ? `<label class="small mute">폴더 <select id="songBand">${[["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, n]) => `<option value="${esc(k)}" ${(s.band ?? "ash") === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>` : ""}
+      <span data-perm="manage"><button class="btn xs" id="songDel">🗑 이 곡 지우기</button></span></div>`;
+  if ($("#songBand")) $("#songBand").onchange = async e => {
+    try { await api(`/api/songs/${s.id}/band`, jsonOpt("PUT", { band: e.target.value })); s.band = e.target.value; toast("폴더를 옮겼어요"); }
+    catch (err) { toast("실패: " + err.message); }
+  };
   /* 곡 지우기 — 서버 DELETE 는 있었는데 화면 버튼이 없었음 (2026-10-27 Benny "실수로 추가했는데 삭제가 안돼"). 서버는 trash 로 옮김(30일 보관) */
   $("#songDel").onclick = async () => {
     if (!confirm(`'${s.title}' 곡을 지울까요? (밴드 모두에게서 사라져요 · PC 휴지통에 30일 보관)`)) return;
@@ -2053,7 +2144,7 @@ async function boot() {
   if (cached?.length && !$("#lib .song")) renderLib(cached);
   else if (!$("#lib").children.length) $("#lib").innerHTML = `<div class="empty">PC에 연결해서 곡 목록을 불러오는 중…</div>`;
   await pickServer();
-  await ping(); applyRole(); loadPerms();
+  await ping(); if (online) await bmLogin(); applyRole(); loadPerms();
   if (!online || !AUTH) $("#lib").innerHTML = "";
   if (!AUTH) return;
   const m = location.hash.match(/song=([a-z0-9]+)/);
