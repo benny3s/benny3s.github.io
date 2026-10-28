@@ -1201,21 +1201,26 @@ function statusChip(s) {
 }
 function renderSched() {
   const s = cat.schedules || {};
+  const oj = Array.isArray(s.ops_jobs) ? s.ops_jobs : [];
   const ct = Array.isArray(s.claude_tasks) ? s.claude_tasks : [];
   const wt = Array.isArray(s.win_tasks) ? s.win_tasks : [];
   const st = Array.isArray(s.startup_items) ? s.startup_items : [];
 
   const sum = el("div", "ssum");
-  [["Claude", ct.length], ["Windows 작업", wt.length], ["시작프로그램", st.length]].forEach(([t, n]) => {
+  [["명부", oj.length], ["Claude", ct.length], ["Windows 작업", wt.length], ["시작프로그램", st.length]].forEach(([t, n]) => {
     const sp = el("span", null, t + " "); sp.appendChild(el("b", null, String(n))); sum.appendChild(sp);
   });
   const sp = el("span"); sp.style.flex = "1"; sum.append(sp, refreshBtn());
   listEl.appendChild(sum);
   if (catNote) listEl.appendChild(el("p", "msgline", catNote));
 
+  // 운영 명부 (agent-hub/ops.json) — 관제판 🗺️ 지도와 같은 기준: 결과물이 제때 새로 생겼는지 (10-29)
+  const OPS_CHIP = { ok: ["정상", "s-github"], warn: ["손볼 것", "warn"], bad: ["멈춤", "warn"], todo: ["확인", "warn"], na: ["밖에서 못 봄", "s-local"] };
   const secs = [
-    ["🤖 Claude 예약 작업", "🤖", tintVar("purple"), ct,
-      t => [t.name, t.description || "설명 없음", ["Claude", "s-github"]]],
+    ["📋 운영 명부 (멈추면 지도가 알림)", "📋", tintVar("green"), oj,
+      t => [t.name, [t.when, t.by].filter(Boolean).join(" · ") + (t.detail ? " — " + t.detail : ""), OPS_CHIP[t.state] || ["상태 모름", "warn"]]],
+    ["🤖 Claude 예약 작업 (폴더)", "🤖", tintVar("purple"), ct,
+      t => [t.name, t.description || "설명 없음", t.listed === false ? ["명부에 없음", "warn"] : ["Claude", "s-github"]]],
     ["🗓️ Windows 작업 스케줄러", "🗓️", tintVar("blue"), wt,
       t => [t.name, t.next_run ? "다음 실행 " + t.next_run : "다음 실행 정보 없음", statusChip(t.status)]],
     ["🚀 시작프로그램 (로그인 시 자동 실행)", "🚀", tintVar("yellow"), st,
