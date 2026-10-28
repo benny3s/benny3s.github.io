@@ -4,7 +4,7 @@
 기본 문구는 처음 오는 사람이 서버에 못 닿을 때만 쓰이지만, 둘이 다르면 헷갈리니 GitHub Actions 가
 하루 한 번(또는 버튼으로) 이 스크립트를 돌려 맞춘다 (2026-10-10 Benny).
 
-- portal/config 는 누구나 읽을 수 있어서 비밀번호·열쇠가 필요 없다 (REST + 공개 apiKey)
+- portal/config 는 누구나 읽을 수 있어서 비밀번호·열쇠가 필요 없다 (REST, apiKey 없이)
 - 바뀐 게 있을 때만 index.html 을 고친다 → 워크플로가 그때만 커밋
 - 끝나면 "changed" / "same" 을 출력
 """
@@ -14,9 +14,9 @@ import re
 import sys
 import urllib.request
 
-API_KEY = "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs"   # 웹앱 식별용 공개 키 (index.html 에도 있음)
+# 공개 문서라 apiKey 없이 읽힘 — 웹 키는 사이트 주소(referrer) 제한이 걸려 있어 Actions 에서 쓰면 거절됨 (2026-10-28)
 URL = ("https://firestore.googleapis.com/v1/projects/benny-meeting/databases/(default)"
-       "/documents/portal/config?key=" + API_KEY)
+       "/documents/portal/config")
 START = "/* DEFAULT_ITEMS:START — 아래 목록은 tools/sync_portal_defaults.py 가 서버 문구로 자동으로 맞춘다 */"
 END = "/* DEFAULT_ITEMS:END */"
 KEYS = ["id", "emoji", "name", "desc", "url", "hidden"]
