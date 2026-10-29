@@ -58,7 +58,7 @@ h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
 .bandbar{display:flex;gap:6px;flex-wrap:wrap;margin:22px 0 4px}
 .bandbar button{font:inherit;font-size:13px;font-weight:600;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--mute);cursor:pointer}
 .bandbar button.on{background:var(--acc,#1db954);border-color:transparent;color:#fff}
-.setl{display:grid;gap:6px;margin:10px 0 6px}
+.setl{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin:10px 0 6px} /* 열 폭 고정 — 긴 곡 이름에 줄이 화면보다 16px 넓어지던 것 (10-29) */
 .setl .sr{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .setl .sr.hit{cursor:pointer}
 .setl .sr.flash{outline:2px solid var(--acc,#1db954)}
@@ -67,6 +67,9 @@ h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
 .setl .sr .t span{font-size:12px;color:var(--mute)}
 .setl .st{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--chip);color:var(--mute);flex:0 0 auto}
 .setl .st.on{color:#1a7f45;background:#e3f4ea}
+.nextj{margin:10px 0 2px;padding:10px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:grid;gap:3px;font-size:14px}
+.nextj .dd{color:var(--accent);margin-right:4px}
+.newver{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:70;min-height:42px;padding:0 16px;border-radius:99px;border:1px solid var(--accent);background:#10302b;color:var(--accent);font-weight:700;box-shadow:0 4px 18px rgba(0,0,0,.5)}
 .chip{font-size:12px;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--mute)}
 .chip b{color:var(--text);font-weight:600}
 .empty{padding:30px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:12px}
@@ -82,8 +85,8 @@ h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
 .keyctl span{padding:0 8px;font-size:13px;color:var(--mute);white-space:nowrap}
 .keyctl b{color:var(--text)} .keyctl .sh{color:var(--warn)}
 
-.grid2{display:grid;grid-template-columns:330px 1fr;gap:12px;align-items:start}
-@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.grid2{display:grid;grid-template-columns:330px minmax(0,1fr);gap:12px;align-items:start}
+@media(max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}} /* minmax(0,…): 폰에서 코드 탭(지금 코드 카드 4장 = 570px)이 화면을 옆으로 밀던 것 (10-29) */
 .mixer .row{display:grid;grid-template-columns:12px 84px 34px 34px 1fr;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--line)}
 .mixer .sw{width:10px;height:28px;border-radius:3px}
 .mixer .nm{font-weight:600;font-size:14px}
@@ -92,7 +95,7 @@ h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
 .ms.s.on{background:var(--warn);color:#2a1e00;border-color:var(--warn)}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .row.dim{opacity:.45}
-.mixer.wait #mixer{opacity:.4;pointer-events:none}
+.mixer.wait #mixer .row:not(.met){opacity:.4;pointer-events:none} /* 트랙 받는 중에도 메트로놈 줄은 씀 (메트로놈은 섞인 소리와 같이 돎, 10-29 점검) */
 .mixer .wnote{display:none;font-weight:400;font-size:12px;color:var(--warn);margin-left:6px}
 .mixer h2{flex-wrap:wrap} .mixer.wait .wnote{display:block;flex-basis:100%;order:3;margin:8px 0 2px;padding:8px 10px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);font-size:13px;color:var(--text)}
 .mixer .wnote .wb{display:block;height:4px;margin-top:6px;background:var(--line);border-radius:2px;overflow:hidden} .mixer .wnote .wb i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
@@ -185,6 +188,56 @@ body.no-add [data-perm=add],body.no-edit [data-perm=edit],body.no-study [data-pe
 .lyr .inst .ib span:last-child{border-right:1px solid var(--line)}
 .lyr .inst .ib span.on{background:#14332e}
 .lyr .inst .ib span.mute{color:#4b535b;font-weight:400}
+/* 코드 보기 (2026-10-29 Benny "Moises 에서 코드 보는 게 편함, 가사랑 같이"): 지금·다음 코드 줄 · 난이도 3단계 · 카포 · 글자 크기 · 크게 보기 */
+.lyr{--lyfs:17px}
+.lyr .tx{font-size:var(--lyfs)}
+.lyr .cl .u>b{font-size:calc(var(--lyfs)*.76);min-height:calc(var(--lyfs)*1.06);line-height:calc(var(--lyfs)*1.06)}
+.lyr .inst .ib span{font-size:calc(var(--lyfs)*.8)}
+.lynow{display:flex;gap:8px;align-items:stretch;margin:0 0 8px;overflow:hidden;min-height:58px}
+.lynow .k{flex:0 0 auto;min-width:58px;padding:6px 12px 8px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);text-align:center;position:relative;opacity:.55;font-weight:800;font-size:17px;line-height:1.2;display:flex;flex-direction:column;justify-content:center}
+.lynow .k.cur{opacity:1;border-color:var(--accent);font-size:27px;min-width:86px;box-shadow:0 0 0 1px var(--accent) inset}
+.lynow .k small{font-size:10.5px;font-weight:600;color:var(--mute);letter-spacing:0}
+.lynow .k .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);border-radius:0 0 0 10px}
+.lynow .empty{color:var(--mute);font-size:13px;align-self:center}
+.chvw{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chvw .lbl{font-size:12px;color:var(--mute)}
+.chvw .btn.on{background:#10302b;border-color:var(--accent);color:var(--accent)}
+.chvw .stepper button,.chvp .stepper button{width:auto;min-width:42px;height:38px;padding:0 8px;white-space:nowrap;font-size:13px}
+.chvp{flex-basis:100%;display:grid;gap:8px;padding:10px 12px;margin:2px 0 4px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.chvp .r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chvp .r>span:first-child{min-width:52px;font-size:13px;color:var(--mute)}
+.chvp .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.chvp .seg button{min-height:40px;padding:0 13px;border:0;background:var(--panel);font-weight:600;color:var(--mute)}
+.chvp .seg button+button{border-left:1px solid var(--line)}
+.chvp .seg button.on{background:var(--accent);color:#04241f}
+.chvp .hint{font-size:12px;color:var(--mute);line-height:1.5}
+.lysrc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.lyhead,#lyMini{display:none}
+body.lyfull{overflow:hidden}
+body.lyfull #pLyrics{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;
+  padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+body.lyfull #lyrBox{max-height:none;flex:1;min-height:0}
+body.lyfull .lynow .k.cur{font-size:34px;min-width:104px}
+body.lyfull .lynow .k{font-size:20px}
+body.lyfull .lysrc{display:none}
+body.lyfull .lyhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.lyhead b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+body.lyfull #lyMini{display:flex;align-items:center;justify-content:center;gap:10px;padding-top:10px;border-top:1px solid var(--line);margin-top:6px}
+#lyMini .t{font-variant-numeric:tabular-nums;color:var(--mute);font-size:13px;min-width:84px;text-align:right}
+#lyMini .lp{font-size:12px;color:var(--warn);min-width:84px}
+body.lyfull [data-chv="full"]{display:none}
+/* 폰 손가락 크기 (2026-10-29 점검: 재생 줄 · M/S 가 30~34px → 42px 기준) · 머리글 한 줄 */
+@media (max-width:560px){
+  .transport .btn.sm{min-height:42px}
+  .ms{height:40px;width:42px}
+  .mixer .row{grid-template-columns:12px 72px 42px 42px minmax(0,1fr)}
+  .mixer .row input[type=range]{min-width:0;width:100%} .mixer .metr{min-width:0}
+  .tabs button{min-height:42px}
+  .logo{font-size:16px;white-space:nowrap;gap:5px}
+  .pill{padding:4px 8px;font-size:12px;white-space:nowrap}
+  #logout{white-space:nowrap} .lo-t{display:none} .lo-i{display:inline}
+}
+.lo-i{display:none}
 
 /* transport */
 .transport{position:sticky;top:56px;background:rgba(11,13,15,.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:6px 0 10px;z-index:15;margin-bottom:12px}
@@ -304,7 +357,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 <header class="top"><div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%">
   <div class="logo" id="home">🎸 Music <b>Lab</b></div>
   <div class="pill" id="conn"><span class="dot" id="cdot"></span><span id="ctext">PC 연결 중…</span></div>
-  <button class="linkbtn" id="permBtn" hidden title="친구(PIN)가 할 수 있는 일">권한</button> <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span> · 로그아웃</button>
+  <button class="linkbtn" id="permBtn" hidden title="친구(PIN)가 할 수 있는 일">권한</button> <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span><span class="lo-t"> · 로그아웃</span><span class="lo-i" aria-hidden="true"> ↪</span></button>
 </div></header>
 
 <main class="wrap">
@@ -325,9 +378,10 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
       <div class="alt admin" data-perm="add">또는 <label for="file">내 음원 파일 올리기</label> (mp3 · wav · m4a)<input id="file" type="file" accept="audio/*,video/*" hidden></div>
     </div>
     <div class="card offline" id="offline" hidden style="margin-top:14px">
-      <b>PC 분석 서버에 연결되지 않았어요</b>
-      <div class="small mute" style="margin-top:6px">분석과 재생은 Benny PC에서 돌아가요. PC가 켜져 있는지 확인하고, 바탕화면의 <code>Music Lab Server</code> 아이콘을 실행해 주세요 (PC를 켜면 자동으로 켜져요).
-      크롬에서 "로컬 네트워크 접근" 허용을 물으면 <b>허용</b>을 눌러 주세요. 그래도 안 되면 PC에서 <a href="http://127.0.0.1:8765/" target="_blank">127.0.0.1:8765</a> 로 바로 열 수 있어요.</div>
+      <b>Benny PC 가 잠시 연결되지 않아요</b>
+      <div class="small mute" style="margin-top:6px">분석과 재생은 Benny 집 PC 에서 돌아가요. 다시 연결되면 저절로 이어져요 (15초마다 확인).</div>
+      <div class="small mute" data-perm="manage" style="margin-top:6px">Benny: PC 가 켜져 있는지, 작업 스케줄러 <code>MusicLab Server</code> 가 도는지 확인해 주세요.
+      크롬에서 "로컬 네트워크 접근" 허용을 물으면 <b>허용</b>. 그래도 안 되면 PC 에서 <a href="http://127.0.0.1:8765/" target="_blank">127.0.0.1:8765</a> 로 바로 열 수 있어요.</div>
     </div>
     <div class="jobs" id="jobs"></div>
     <div class="bandbar" id="bandBar" hidden></div>
@@ -383,9 +437,10 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
             <div class="r"><span class="lbl">끝</span><span class="stepper"><button data-l="b-">−</button><b id="lb" style="min-width:34px;text-align:center">-</b><button data-l="b+">+</button></span><span class="grow">마디</span>
               <button class="btn xs" id="lNowB">지금 위치</button></div>
             <div class="r"><span class="lbl">섹션</span><select id="lSec" class="grow"></select></div>
+            <div class="r"><span class="lbl grow">점점 빠르게</span><select id="lTrRule"><option value="1,5">매번 +5%</option><option value="2,5">2번마다 +5%</option><option value="3,5">3번마다 +5%</option><option value="2,10">2번마다 +10%</option></select><span class="sw2 sm" id="lTr"><span class="st">꺼짐</span><span class="tr"></span></span></div>
             <div class="r"><span class="lbl">저장</span><button class="btn xs" id="lSave" data-perm="edit">이 구간 저장 (밴드 공유)</button></div>
             <div id="lSaved"></div>
-            <div class="hint">타임라인을 드래그하거나, 이 창을 연 채 코드표에서 시작 → 끝 마디를 누르세요.</div>
+            <div class="hint">타임라인을 드래그하거나, 이 창을 연 채 코드표에서 시작 → 끝 마디를 누르세요. <b>점점 빠르게</b>를 켜면 지금 속도에서 시작해 반복할 때마다 올라가 100%에서 멈춰요.</div>
           </div></span>
         <span class="tbtn"><button class="btn sm" data-pop="popMetro" id="metroBtn" style="display:none">메트로놈 <span class="v" id="metroV">꺼짐</span></button>
           <div class="pop" id="popMetro" hidden>
@@ -418,6 +473,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
         </div>
         <div id="pInfo" hidden><div id="lessonBox"></div><div id="infoBox" class="teach"></div></div>
         <div id="pChords" hidden>
+          <div class="tabbar chvw" id="chvBar"></div>
           <div id="shapes" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px"></div>
           <div class="tabbar" id="chSrc" hidden></div>
           <div class="now" id="now"></div>
@@ -433,14 +489,19 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
           <input type="file" id="scoreFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl,.pdf" hidden>
         </div>
         <div id="pLyrics" hidden>
-          <div class="tabbar" id="lyrBar"></div>
+          <div class="lyhead"><b id="lyTitle"></b><button class="btn sm" id="lyClose">닫기 ✕</button></div>
+          <div class="tabbar chvw" id="lyrBar"></div>
+          <div class="lynow" id="lyNow"></div>
           <div class="lyr" id="lyrBox"></div>
+          <div class="lysrc" id="lyrSrc"></div>
+          <div id="lyMini"><span class="t" id="lyTime"></span><button class="btn sm" id="lyRew">−5s</button><button class="play" id="lyPlay">▶</button><button class="btn sm" id="lyFwd">+5s</button><span class="lp" id="lyLoop"></span></div>
         </div>
       </div>
     </div>
   </section>
 </main>
 <footer id="foot"></footer>
+<button class="newver" id="newVer" hidden>새 버전이 있어요 · 눌러서 새로고침</button>
 <p class="more" id="moreLink" hidden><a href="https://benny3s.github.io/" target="_blank">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
 
 <dialog id="loginDlg">
@@ -484,7 +545,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-27c";
+const BUILD = "2026-10-29a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -563,7 +624,7 @@ $("#loginForm").onsubmit = async e => {
   try { AUTH = await api("/api/login", jsonOpt("POST", { password: $("#pw").value })); LS.set("auth", AUTH); $("#loginDlg").close(); applyRole(); loadPerms(); boot(); }
   catch (err) { $("#loginErr").textContent = err.message; }
 };
-$("#logout").onclick = () => { AUTH = null; LS.set("auth", null); location.hash = ""; location.reload(); };
+$("#logout").onclick = () => { if (!confirm("로그아웃할까요? 다시 들어오려면 밴드매니저 🎧 링크나 비밀번호가 필요해요.")) return; AUTH = null; LS.set("auth", null); location.hash = ""; location.reload(); };
 /* 밴드매니저 🎧 버튼으로 들어옴(?bm=밴드 id) → 그 밴드로 로그인. Benny(관리자)는 그대로. 주소에서는 지움 (10-27) */
 async function bmLogin() {
   const q = new URLSearchParams(location.search), bm = q.get("bm");
@@ -575,15 +636,21 @@ async function bmLogin() {
 }
 
 /* ---------------- connection ---------------- */
+let BOOTED = false;
+$("#newVer").onclick = () => { const u = new URL(location.href); u.searchParams.set("v", Date.now().toString(36)); location.replace(u.toString()); };
 async function ping() {
+  const was = online;
   try {
     const h = await api("/api/health");
     online = true; $("#cdot").classList.add("on");
     $("#ctext").textContent = "PC 연결됨";
     $("#offline").hidden = true;
-    if (!AUTH) showLogin();
-    // 화면이 서버보다 옛 버전이면(폰·브라우저 캐시) 재생 중이 아닐 때 새로 받음. 같은 버전으로 한 번만 시도(배포 직후 CDN 지연 때 무한 새로고침 방지)
-    if (h.version && h.version > BUILD && !P.playing) {
+    if (!AUTH && !new URLSearchParams(location.search).get("bm")) showLogin(); // 밴드 링크로 왔으면 비번 창을 띄우지 않음 (bmLogin 이 곧 들어감)
+    if (!was && BOOTED) { if (!AUTH) await bmLogin(); if (AUTH && !$("#vHome").hidden) { loadLib().catch(() => {}); loadJobs().catch(() => {}); } } // 끊겼다 다시 연결 → 목록 · 작업 다시 (10-29 점검)
+    // 화면이 서버보다 옛 버전이면(폰·브라우저 캐시) 새로 받음. 같은 버전으로 한 번만 시도(배포 직후 CDN 지연 때 무한 새로고침 방지)
+    // 재생 · 곡 화면 · 열린 창 · 쓰는 중에는 미룸 — 속도 · 키 · 쓰던 글이 사라지던 것 (10-29 점검)
+    if (h.version && h.version > BUILD) $("#newVer").hidden = false; // 곡 화면에서는 저절로 새로고침하지 않으니 띠로 알림
+    if (h.version && h.version > BUILD && !P.playing && !P.song && !document.querySelector("dialog[open]") && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) {
       let tried = null; try { tried = sessionStorage.getItem("upd"); } catch {}
       if (tried !== h.version) { try { sessionStorage.setItem("upd", h.version); } catch {}
         const u = new URL(location.href); u.searchParams.set("v", h.version); location.replace(u.toString()); }
@@ -608,6 +675,7 @@ async function loadLib() {
     applyRole(); } catch {}
   const list = await api("/api/songs");
   LS.set("libCache", list); renderLib(list);
+  goYt(); // 곡 목록에 유튜브 id 가 있으니 합주곡 조회를 기다리지 않고 바로 (Benny '전체' 폴더에서는 아예 안 열리던 것, 10-29 점검)
   loadSetlist();
 }
 async function loadSetlist() {
@@ -624,22 +692,34 @@ function renderBandBar() {
   $$("#bandBar button").forEach(x => x.onclick = () => { FOLDER = x.dataset.k; LS.set("folder", FOLDER); renderLib(LIB); loadSetlist(); });
 }
 function renderSetlist() {
-  const box = $("#setlist"), items = SETL?.band === curBand() ? SETL.items : null;
+  const box = $("#setlist"); let items = SETL?.band === curBand() ? SETL.items : null;
   if (!items) { box.innerHTML = ""; return; }
+  // 다음 합주 (밴드매니저 '예정' 회차, 10-29): 날짜·시간·장소 한 줄 + 그날 할 곡을 맨 위로 🎯
+  const nx = SETL.next, nxIds = new Set(nx?.songs || []);
+  if (nxIds.size) items = items.slice().sort((a, b) => nxIds.has(b.bm_id) - nxIds.has(a.bm_id));
+  let nextHtml = "";
+  if (nx) {
+    const dd0 = new Date(nx.date + "T00:00:00"), t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const dd = Math.round((dd0 - t0) / 86400000), wd = "일월화수목금토"[dd0.getDay()];
+    const when = `${dd0.getMonth() + 1}/${dd0.getDate()}(${wd})${nx.from ? " " + nx.from + (nx.to ? "~" + nx.to : "") : ""}`;
+    const n = items.filter(it => nxIds.has(it.bm_id)).length;
+    nextHtml = `<div class="nextj"><div><b class="dd">${dd === 0 ? "오늘" : dd === 1 ? "내일" : "D-" + dd}</b> 다음 합주 · ${esc(when)}${nx.place ? " · " + esc(nx.place + (nx.room ? " " + nx.room : "")) : ""}</div>` +
+      `<div class="small mute">${n ? `그날 할 곡 ${n}곡을 맨 위에 🎯 로 올렸어요` : "그날 할 곡은 아직 안 정해졌어요 · 연습중 곡을 준비해 주세요"}</div></div>`;
+  }
   const byId = Object.fromEntries(LIB.map(s => [s.id, s]));
   const bd = BANDS.find(x => x.key === curBand()), auto = bd?.auto || [];
   const AUTO_NAME = { "연습중": "합주곡", "후보": "투표곡", "보류": "보류" };
   const autoTxt = auto.length ? auto.map(x => AUTO_NAME[x]).join("·") + " 자동 분석" : "자동 분석 꺼짐";
   const busyYt = new Set(JOBS_NOW.filter(j => j.state === "queued" || j.state === "running").map(j => (String(j.url || "").match(/[?&]v=([\w-]{11})/) || [])[1]).filter(Boolean));
   box.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:22px 0 0"><h2 style="margin:0">합주곡</h2>
-    <span class="small mute">밴드매니저와 같이 움직여요 · ${esc(autoTxt)}</span>${isAdmin() ? `<button class="linkbtn small" id="autoBtn" style="margin-left:auto">⚙ 자동 분석</button>` : ""}</div>` +
+    <span class="small mute">밴드매니저와 같이 움직여요 · ${esc(autoTxt)}</span>${isAdmin() ? `<button class="linkbtn small" id="autoBtn" style="margin-left:auto">⚙ 자동 분석</button>` : ""}</div>` + nextHtml +
     (items.length ? `<div class="setl">` + items.map((it, i) => {
       const s = it.ml_id && byId[it.ml_id];
-      const act = s ? `<span class="chip">키 <b>${esc(s.key || "-")}</b></span>`
+      const act = s ? `<span class="chip">키 <b>${esc(listKey(s))}</b></span>`
         : it.yts.some(y => busyYt.has(y)) ? `<span class="small mute">⏳ 분석 중</span>`
         : it.yts.length ? `<button class="btn xs" data-add="${i}" data-perm="add">＋ 분석</button>` : `<span class="small mute">링크 없음</span>`;
       return `<div class="sr${s ? " hit" : ""}" data-i="${i}" data-yt="${esc(it.yts.join(" "))}"><span class="st${it.status === "연습중" ? " on" : ""}">${esc(it.status || "-")}</span>
-        <div class="t"><b>${esc(it.title)}</b><span>${esc(it.artist)}</span></div>${act}</div>`;
+        <div class="t"><b>${nxIds.has(it.bm_id) ? "🎯 " : ""}${esc(it.title)}</b><span>${esc(it.artist)}</span></div>${act}</div>`;
     }).join("") + `</div>` : `<div class="empty">밴드매니저에 합주곡이 아직 없어요.</div>`);
   $$("#setlist .sr.hit").forEach(el => el.onclick = () => openSong(items[+el.dataset.i].ml_id));
   if ($("#autoBtn")) $("#autoBtn").onclick = () => openAuto(bd);
@@ -667,13 +747,16 @@ $("#autoClose").onclick = () => $("#autoDlg").close();
 /* 밴드매니저에서 온 주소 #yt/<영상 id> → 그 곡 열기, 아직 없으면 합주곡 줄 표시 */
 function goYt() {
   const m = location.hash.match(/^#yt\/([\w-]{11})/); if (!m) return;
+  const clr = () => { try { history.replaceState(null, "", location.pathname + location.search); } catch { location.hash = ""; } }; // #yt 기록을 쌓지 않음 (뒤로가기)
   const s = LIB.find(x => x.yt === m[1]);
-  if (s) { location.hash = ""; openSong(s.id); return; }
+  if (s) { clr(); openSong(s.id); return; }
   const it = SETL?.items?.find(x => x.yts.includes(m[1]));
-  if (it?.ml_id) { location.hash = ""; openSong(it.ml_id); return; }
+  if (it?.ml_id) { clr(); openSong(it.ml_id); return; }
   const row = [...$$("#setlist .sr")].find(r => r.dataset.yt.split(" ").includes(m[1]));
-  if (row) { location.hash = ""; row.classList.add("flash"); row.scrollIntoView({ block: "center" }); toast("아직 분석 안 한 곡이에요 — ＋ 분석을 눌러 주세요", 4000); }
+  if (row) { clr(); row.classList.add("flash"); row.scrollIntoView({ block: "center" }); toast("아직 분석 안 한 곡이에요 — ＋ 분석을 눌러 주세요", 4000); }
 }
+// 목록 · 합주곡 줄의 키 = 밴드 키(⭐ 저장한 키) — 전엔 원키가 보여 친구가 다른 키로 준비했음 (10-29 점검)
+function listKey(s) { const k = parseKey(s.key), n = +s.band_semi || 0; return k && n ? keyName((k.pc + n + 120) % 12, k.minor) : (s.key || "-"); }
 function renderLib(list) { // 목록은 기기에 기억해 두고 먼저 보여준 뒤 새로 받아 바꿈 (폰에서 공개 주소 왕복이 느림)
   LIB = list; renderBandBar();
   const b = curBand(), hit = new Set((SETL?.band === b ? SETL.items : []).map(x => x.ml_id).filter(Boolean));
@@ -685,13 +768,14 @@ function renderLib(list) { // 목록은 기기에 기억해 두고 먼저 보여
     <div class="song" data-id="${s.id}">
       <div class="th" style="${s.thumbnail ? `background-image:url('${esc(s.thumbnail)}')` : ""}">${s.thumbnail ? "" : "🎵"}</div>
       <div class="meta"><div class="ttl">${esc(s.title)}</div>
-        <div class="chips"><span class="chip">키 <b>${esc(s.key || "-")}</b></span><span class="chip"><b>${Math.round(s.tempo || 0)}</b> BPM</span><span class="chip">${fmt(s.duration)}</span></div>
+        <div class="chips"><span class="chip">키 <b>${esc(listKey(s))}</b>${s.band_semi ? ` <span class="mute">원키 ${esc(s.key)}</span>` : ""}</span><span class="chip"><b>${Math.round(s.tempo || 0)}</b> BPM</span><span class="chip">${fmt(s.duration)}</span></div>
       </div></div>`).join("") : hit.size ? "" : `<div class="empty">아직 분석한 곡이 없어요. 위에 유튜브 링크를 넣어 보세요.</div>`;
   $$("#lib .song").forEach(el => el.onclick = () => openSong(el.dataset.id));
 }
 async function loadJobs() {
   if (!online) return;
-  const jobs = (await api("/api/jobs")).filter(j => j.state !== "done" || Date.now() / 1000 - j.updated < 8);
+  let all; try { all = await api("/api/jobs"); } catch { clearTimeout(jobsTimer); jobsTimer = setTimeout(loadJobs, 10000); return; } // 한 번 실패해도 조회가 멈추지 않게 (10-29 점검)
+  const jobs = all.filter(j => j.state !== "done" || Date.now() / 1000 - j.updated < 8);
   const was = JOBS_NOW.filter(j => j.state === "queued" || j.state === "running").length;
   JOBS_NOW = jobs; if (was !== jobs.filter(j => j.state === "queued" || j.state === "running").length) renderSetlist();   // 합주곡 줄 ⏳ 분석 중 표시
   $("#jobs").innerHTML = jobs.map(j => {
@@ -736,13 +820,90 @@ function tKey() { const k = parseKey(P.song.key); return k ? keyName((k.pc + P.s
 // 구간별 키(전조, 서버 keys): 그 시각의 키(키 변경 반영) → 코드 이름을 그 키에 맞는 #/♭ 로 (B♭ 구간에서 A# 대신 B♭)
 function keyAt(t) { const K = P.song.keys || []; const s = K.find(x => x.start <= t && t < x.end) || K[0]; const k = parseKey(s ? s.key : P.song.key); return k ? keyName((k.pc + P.semi + 120) % 12, k.minor) : tKey(); }
 function keysText() { const K = P.song.keys || []; return K.length > 1 ? K.map((s, i) => i ? `${keyAt(s.start + 0.01)} (${fmt(s.start)}~)` : keyAt(0.01)).join(" → ") : tKey(); }
+// 코드 보기 (2026-10-29, Moises 의 코드 난이도 3단계 · 카포 모드): 화면에 보이는 코드 이름만 바꿈 — 소리 · 키 · 해설 글은 그대로
+// lv 0 쉬움(3화음) · 1 보통(7 까지, 베이스 음 뺌) · 2 원래대로 (기기별) / capo = 카포 낀 칸 → 그 자리에서 잡는 모양 (곡마다 · 기기별) / fs = 가사 글자 크기
+const CHV = { lv: LS.get("chLv", 2), capo: 0, fs: LS.get("lyFs", 17), open: false };
+const CHV_LV = ["쉬움", "보통", "원래대로"];
+function simpChord(q, lv) { // q = 근음 뒤 (m7 · M7/G# · 7sus4 · add9 · m7b5 …)
+  if (lv >= 2) return q;
+  const b = q.replace(/\/.*$/, "");
+  const dim = /^(dim|°|ø|m7b5|m7♭5)/.test(b), aug = /^(aug|\+)/.test(b), minor = !dim && /^m(?!aj)/.test(b);
+  const tri = dim ? "dim" : aug ? "aug" : minor ? "m" : "";
+  if (lv === 0) return tri;
+  if (dim) return /^(ø|m7b5|m7♭5)/.test(b) ? "m7b5" : /^dim7|^°7/.test(b) ? "dim7" : "dim";
+  const rest = b.replace(/^(maj|min|m|M)/, "").replace(/add\d+|sus\d?|6\/9/g, "");
+  if (/^(M|maj)(7|9|11|13)/.test(b) || /^m(M|maj)7/.test(b)) return minor ? "mM7" : "M7";
+  if (/(^|[^0-9])(7|9|11|13)/.test(rest)) return tri + "7";
+  return tri;
+}
+function shiftKey(kn, d) { const k = parseKey(kn); return k ? keyName((k.pc + d + 120) % 12, k.minor) : kn; }
 function tChord(ch, t) {
   if (ch === "N") return ch;
   const m = ch.match(/^([A-G][#b]?)(.*)$/); if (!m) return ch;
-  const pc = (NOTE_PC[m[1]] + P.semi + 120) % 12;
-  const flats = FLAT_KEYS.has(t != null ? keyAt(t) : tKey()), N = flats ? FLAT : SHARP;
-  return N[pc] + m[2].replace(/\/([A-G][#b]?)$/, (_, b) => "/" + N[(NOTE_PC[b] + P.semi + 120) % 12]); // AM7/G# 의 베이스도
+  const sh = P.semi - CHV.capo, pc = (NOTE_PC[m[1]] + sh + 120) % 12;
+  const kn = t != null ? keyAt(t) : tKey(), flats = FLAT_KEYS.has(CHV.capo ? shiftKey(kn, -CHV.capo) : kn), N = flats ? FLAT : SHARP;
+  if (CHV.lv < 2) return N[pc] + simpChord(m[2], CHV.lv);
+  return N[pc] + m[2].replace(/\/([A-G][#b]?)$/, (_, b) => "/" + N[(NOTE_PC[b] + sh + 120) % 12]); // AM7/G# 의 베이스도
 }
+// 난이도를 낮추면 이어진 같은 이름(E · E7 → E · E)이 생김 → 앞 코드 번호로 묶어 한 번만 보임 (가사 위 · 지금·다음 줄)
+let CH_REP = [];
+function chordReps() {
+  const C = P.song?.chords || []; CH_REP = C.map((_, i) => i);
+  for (let i = 1; i < C.length; i++) { let p = i - 1;
+    if (C[i].chord !== "N" && C[p].chord !== "N" && C[i].start - C[p].end < 0.08 && tChord(C[i].chord, C[i].start) === tChord(C[p].chord, C[p].start)) CH_REP[i] = CH_REP[p]; }
+  return CH_REP;
+}
+function chvLabel() { return (CHV.lv < 2 ? CHV_LV[CHV.lv] : "") + (CHV.lv < 2 && CHV.capo ? " · " : "") + (CHV.capo ? `카포 ${CHV.capo}` : ""); }
+function upNext(ci, n) { // 지금 코드 + 다음 코드들 (같은 이름이 이어지면 하나로)
+  const C = P.song.chords, out = [];
+  for (let i = Math.max(0, ci); i < C.length && out.length < n; i++) {
+    if ((CH_REP[i] ?? i) !== i || (C[i].chord === "N" && i !== ci)) continue;
+    const nm = tChord(C[i].chord, C[i].start); if (out.length && out.at(-1).nm === nm) continue;
+    out.push({ i, nm });
+  }
+  return out;
+}
+function lastRepEnd(i) { const r = CH_REP[i] ?? i; let j = i; while (j + 1 < CH_REP.length && CH_REP[j + 1] === r) j++; return j; }
+function chvBar(extra) { // 🎚 코드 보기 (가사 · 코드 탭 공용) — 켜진 설정은 버튼 글자로 보임
+  const lab = chvLabel();
+  return `<button class="btn xs ${lab ? "on" : ""}" data-chv="t">🎚 코드 보기${lab ? " · " + esc(lab) : ""} ${CHV.open ? "▴" : "▾"}</button>` + (extra || "") +
+    (CHV.open ? `<div class="chvp">
+      <div class="r"><span>난이도</span><span class="seg">${CHV_LV.map((n, i) => `<button data-chv="lv" data-v="${i}" class="${CHV.lv === i ? "on" : ""}">${n}</button>`).join("")}</span></div>
+      <div class="r"><span>카포</span><span class="stepper"><button data-chv="c-">−</button><b style="min-width:62px;text-align:center">${CHV.capo ? CHV.capo + "번 칸" : "없음"}</b><button data-chv="c+">+</button></span></div>
+      <div class="hint">쉬움 = 3화음만 (C · Am · G) · 보통 = 7 까지 (C7 · Am7 · GM7) · 원래대로 = 텐션 · 베이스 음까지. 카포는 끼운 칸에서 잡는 모양으로 보여 줘요 (소리 · 키는 그대로). 이 기기에만 저장돼요.</div></div>` : "");
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-chv]"); if (!b || !P.song) return;
+  const k = b.dataset.chv;
+  if (k === "t") CHV.open = !CHV.open;
+  else if (k === "lv") { CHV.lv = +b.dataset.v; LS.set("chLv", CHV.lv); }
+  else if (k === "c-" || k === "c+") { CHV.capo = Math.max(0, Math.min(9, CHV.capo + (k === "c+" ? 1 : -1))); LS.set("capo:" + P.song.id, CHV.capo); }
+  else if (k === "f-" || k === "f+") { CHV.fs = Math.max(13, Math.min(34, CHV.fs + (k === "f+" ? 2 : -2))); LS.set("lyFs", CHV.fs); $("#lyrBox").style.setProperty("--lyfs", CHV.fs + "px"); return; }
+  else if (k === "full") return lyFull(!document.body.classList.contains("lyfull"));
+  buildChords(); buildInfo(); render(true);
+});
+// 크게 보기: 가사 + 코드만 화면 가득 (악보대 위 폰처럼), 아래 작은 재생 줄, 보는 동안 화면 안 꺼짐
+let WAKE = null;
+async function wakeOn() { if (WAKE || !navigator.wakeLock) return; try { WAKE = await navigator.wakeLock.request("screen"); WAKE.addEventListener("release", () => { WAKE = null; }); } catch { WAKE = null; } }
+function lyFull(on, quiet) { // quiet = 뒤로가기로 닫힘 · 곡을 바꿔 닫힘 (기록을 되돌리지 않음)
+  const was = document.body.classList.contains("lyfull"); if (was === on) return;
+  document.body.classList.toggle("lyfull", on);
+  if (on) { $("#lyTitle").textContent = P.song?.title || ""; closePops(); lastLyr = -2; lastIdx = -2; render(true); wakeOn();
+    try { history.pushState({ lyfull: 1 }, ""); } catch {} // 폰 뒤로가기 = 크게 보기 닫기
+    const el = $("#lyrBox .ln.cur"), box = $("#lyrBox"); if (el) box.scrollTop = el.offsetTop - box.offsetTop - box.clientHeight / 3; }
+  else { if (!P.playing) { try { WAKE?.release(); } catch {} WAKE = null; }
+    if (!quiet && history.state?.lyfull) { try { history.back(); } catch {} } }
+}
+window.addEventListener("popstate", () => { if (document.body.classList.contains("lyfull")) lyFull(false, true); });
+// 폰 뒤로가기: 곡 화면 → 목록, 목록 주소로 돌아오면 곡 닫기 (전엔 화면은 그대로이고 몇 번 누르면 앱 밖으로 나갔음, 10-29 점검)
+window.addEventListener("hashchange", () => {
+  const m = location.hash.match(/^#song=([a-z0-9]+)/);
+  if (m) { if (P.song?.id !== m[1]) openSong(m[1]).catch(() => {}); return; }
+  if (P.song) goHome(true);
+});
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && document.body.classList.contains("lyfull")) wakeOn(); });
+$("#lyClose").onclick = () => lyFull(false);
+$("#lyRew").onclick = () => $("#rew").click(); $("#lyFwd").onclick = () => $("#fwd").click(); $("#lyPlay").onclick = () => $("#play").click();
 // 글 속 코드 이름을 지금 키로 (해설 — 2026-10-25 Benny "키를 바꿨는데 해설은 그대로"). 로마 숫자는 키와 상관없어 그대로.
 // #/♭ 은 (키 바꾼) 곡의 키들 중 그 음이 들어 있는 키의 표기로 (Dm 곡의 A# → B♭, A→B♭ 전조 곡 +5 의 B♭ → E♭)
 const CHORD_RE = /(?<![A-Za-z0-9#♯♭])([A-G])([#b♯♭]?)((?:maj|min|dim|aug|sus|add|M|m|°|ø|\+|[0-9]|[b#♭♯](?=[0-9]))*)(?:\/([A-G])([#b♯♭]?))?(?![A-Za-z0-9#♯♭])/g;
@@ -899,6 +1060,7 @@ const WAE = (new URLSearchParams(location.search).get("engine") || LS.get("engin
 const WA = { tok: 0, bufs: {}, srcs: [], playing: false, t0: 0, off: 0, lat: 0, baseSemi: 0, gen: 0, stems: false, g: {}, loopR: null };
 const WA_LAT = {};
 function waCtx() {
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {} // 아이폰: 무음 스위치를 켜 둬도 소리 나게 (Safari 16.4+, 10-29 점검)
   if (!P.ac) P.ac = new (window.AudioContext || window.webkitAudioContext)(isMobile ? { sampleRate: 24000, latencyHint: "interactive" } : { latencyHint: "interactive" });
   return P.ac;
 }
@@ -1009,14 +1171,16 @@ async function waLoad(s) { // 곡 열기: mix 먼저 → 재생 가능, 트랙 6
     if (WA.playing) waStart(waPos(), true); // 같은 시각에 mix → 트랙들
     WA.bufs.mix = null; // 메모리 돌려줌
     waVol(); applyMix(); toast("악기별 트랙 준비 끝 · M/S 로 골라 들을 수 있어요");
-  } catch (e) { if (gen === WA.gen && e.name !== "AbortError") toast("곡을 받지 못했어요: " + e.message); }
+  } catch (e) { if (gen === WA.gen && e.name !== "AbortError") toast(P.ready ? "악기별 트랙을 다 받지 못했어요 — 전체 소리로 계속 재생해요 (곡을 다시 열면 다시 받아요)" : "곡을 받지 못했어요: " + e.message, 5000); }
 }
 function cur() { if (WAE) return P.master ? waPos() : P.pos || 0; return P.master ? P.master.currentTime : P.pos || 0; }
 function allEls() { return Object.values(P.audios).concat(P.metroEl ? [P.metroEl] : [], P.mixEl ? [P.mixEl] : []); }
 function seek(t) { t = Math.max(0, Math.min(t, (P.song?.duration || 0) - 0.05)); P.pos = t;
   if (WAE) { if (WA.playing) waStart(t); else WA.off = t; render(true); return; }
   allEls().forEach(a => { try { a.currentTime = t; } catch {} }); render(true); }
+let LAST_GO = 0; // 사용자가 옮긴 시각 — 멈춰 있어도 가사 화면이 그 줄로 따라감
 function goTo(t) { // 사용자가 직접 이동: 반복 중이면 구간 안에서만 움직인다
+  LAST_GO = Date.now();
   const lr = loopRange();
   if (lr && (t < lr.a - 0.05 || t >= lr.b)) { t = Math.min(Math.max(t, lr.a), lr.b - 0.1); toast("구간 반복 중이에요 · 끄려면 🔁 구간에서 끄기", 1800); }
   seek(t);
@@ -1025,6 +1189,9 @@ function setPlaying(on) {
   if (on && !P.ready) return toast("곡을 불러오는 중이에요");
   if (on && !P.playing && MET.count && !P.counting) return countIn();
   P.playing = on; $("#play").textContent = on ? "❚❚" : "▶";
+  if (on) wakeOn(); else if (!document.body.classList.contains("lyfull")) { try { WAKE?.release(); } catch {} } // 재생 중엔 화면 안 꺼짐 (보면대 위 폰)
+  // 곡 끝에서 멈춘 뒤 ▶ = 처음부터 (구간 반복 중이면 구간 처음) — 전엔 끝 위치에서 바로 다시 멈춰 ▶ 가 고장 난 것처럼 보였음 (10-29 점검)
+  if (WAE && on && WA.off >= (P.song?.duration || 0) - 0.1) { const lr = loopRange(); WA.off = lr ? lr.a : 0; }
   if (WAE) { if (on) { P.ac.resume(); waStart(WA.off); } else if (WA.playing) waStop(); return; }
   if (on) { const t = cur(); allEls().forEach(a => { if (Math.abs(a.currentTime - t) > 0.01) try { a.currentTime = t; } catch {} }); }
   allEls().forEach(a => on ? a.play().catch(() => {}) : a.pause());
@@ -1047,7 +1214,7 @@ function applyMix() {
   if (WAE) waVol();
   $("#mVolAll").value = $("#mVolAll2").value = P.mv; $("#mVolAllT").textContent = Math.round(P.mv * 100) + "%"; $(".volb").textContent = P.mv === 0 ? "🔇" : "🔊";
   $(".mixer").classList.toggle("wait", !P.stems);
-  $("#mixReset").hidden = !Object.values(P.mixer).some(m => m.mute || m.solo || Math.abs(m.vol - VOL0) > 0.01); // 바꾼 게 있을 때만 보임
+  $("#mixReset").hidden = !(P.metroSolo || Object.values(P.mixer).some(m => m.mute || m.solo || Math.abs(m.vol - VOL0) > 0.01)); // 바꾼 게 있을 때만 보임 (메트로놈만 듣기도 — 10-29)
   LS.set("mix:" + P.song.id, P.mixer);
 }
 
@@ -1163,7 +1330,7 @@ $$("[data-pop]").forEach(b => b.onclick = e => {
 });
 $$(".pop").forEach(p => p.addEventListener("click", e => e.stopPropagation()));
 document.addEventListener("click", e => { if (e.target.closest("#cgrid, #seek") && !$("#popLoop").hidden) return; closePops(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closePops(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closePops(); lyFull(false); } });
 
 /* speed */
 function setRate(r) {
@@ -1179,9 +1346,12 @@ $("#speedR").oninput = e => setRate(+e.target.value / 100);
 /* ---------------- song ---------------- */
 async function openSong(id) {
   stopAll(); await pickServer();
-  const s = await api("/api/songs/" + id);
+  const t0 = setTimeout(() => toast("곡 여는 중…", 1500), 400); // 느릴 때만 보임
+  let s; try { s = await api("/api/songs/" + id); } catch (e) { toast("곡을 열지 못했어요 — " + e.message); return; } finally { clearTimeout(t0); }
   s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, LS.get("chsrc:" + id, "best"));
-  P.song = s; P.semi = 0; location.hash = "song=" + id;
+  lyFull(false, true); CHV.capo = LS.get("capo:" + id, 0); CH_REP = [];
+  P.metroSolo = false; P.secEdit = false; P.loopPick = null; // 앞 곡의 메트로놈만 듣기 · 구조 고치기가 남아 소리 0 · 실수로 구조가 바뀌던 것 (10-29 점검)
+  P.song = s; P.semi = 0; if (location.hash !== "#song=" + id) { try { history.pushState({ song: id }, "", "#song=" + id); } catch { location.hash = "song=" + id; } }
   $("#vHome").hidden = true; $("#vBook").hidden = true; $("#vWrite").hidden = true; $("#mainnav").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
   $("#sTitle").textContent = s.title;
   $("#sChips").innerHTML = `<span class="chip">키 <b>${esc((s.keys || []).length > 1 ? s.keys.map(x => x.key.replace(/^([A-G])b/, "$1♭")).join(" → ") : s.key)}</b></span><span class="chip"><b>${Math.round(s.tempo)}</b> BPM</span><span class="chip">4/4</span><span class="chip">${fmt(s.duration)}</span>` +
@@ -1204,6 +1374,12 @@ async function openSong(id) {
   render(true);
   const act = LS.get("loopact:" + id, null);
   if (act && act.b < P.bars.length) setLoop(act.a, act.b, false);
+  // 추천 코드표(악보 기준)를 서버가 아직 만드는 중이면 20초 뒤 한 번 더 받아 바꿔 끼움 — 처음 연 사람이 자동 코드표만 보던 것 (10-29 점검)
+  if (!s.chords_best?.length && (s.songsterr?.found || s.videotab?.found)) setTimeout(async () => {
+    if (P.song !== s) return;
+    try { const m = await api("/api/songs/" + id); if (P.song !== s || !m.chords_best?.length) return;
+      s.chords_best = m.chords_best; s.keys_best = m.keys_best; useChordSrc(s, LS.get("chsrc:" + id, "best")); buildChords(); buildInfo(); render(true); toast("추천 코드표가 준비됐어요"); } catch {}
+  }, 20000);
   if (WAE) return waLoad(s);
   let urls;
   try { urls = await loadFiles(P.files, "트랙 준비 중"); } catch (e) { if (P.song === s && e.name !== "AbortError") toast("트랙을 받지 못했어요: " + e.message); return; }
@@ -1359,6 +1535,7 @@ function useChordSrc(s, src) {
   s.chordSrc = pick[0]; s.chords = pick[2](s); s.keys = pick[3](s) || s.keys_auto;
 }
 function buildChords() {
+  chordReps(); $("#chvBar").innerHTML = chvBar(CHV.capo ? `<span class="small" style="color:var(--warn)">카포 ${CHV.capo}번 칸 모양 · 소리는 ${esc(tKey())}</span>` : "");
   const avail = CH_SRC.filter(([k, , g]) => g(P.song)?.length);
   const cs = $("#chSrc"); cs.hidden = avail.length < 2;
   if (!cs.hidden) {
@@ -1424,16 +1601,31 @@ function loopUI() { // 구간 버튼·팝업 스위치·숫자를 한곳에서 (
   setSw($("#lOn"), on); $("#loopBtn").classList.toggle("live", on);
   $("#loopV").textContent = on ? `${barLabel(L.a)}~${barLabel(L.b)}` : "꺼짐";
   $("#la").textContent = on ? barLabel(L.a) : "-"; $("#lb").textContent = on ? barLabel(L.b) : "-";
-  $("#loopNow").innerHTML = on ? `🔁 <b>${barLabel(L.a)}~${barLabel(L.b)}마디</b> 반복 중` : "";
+  $("#loopNow").innerHTML = on ? `🔁 <b>${barLabel(L.a)}~${barLabel(L.b)}마디</b> 반복 중` + (LTR.n ? ` · ${LTR.n + 1}번째` : "") + (LTR.on ? ` · <b style="color:var(--warn)">${Math.round(P.rate * 100)}% → 100%</b>` : "") : "";
+  setSw($("#lTr"), LTR.on); $("#lTrRule").value = LTR.rule;
 }
+// 점점 빠르게 (2026-10-29, Moises 비교 · 점검 제안): 구간이 되감길 때 수를 세고, N번마다 속도 +x% (100% 까지). 되감기는 순간에만 바꿔서 튀지 않음
+const LTR = { on: false, n: 0, rule: LS.get("ltrRule", "2,5"), last: -1 };
+function loopTick() { // core() 에서 25ms 마다 (Web Audio 엔진)
+  const lr = WA.loopR; if (!lr || !WA.playing) { LTR.last = -1; return; }
+  const p = waPos(); const wrapped = LTR.last >= 0 && p < LTR.last - (lr.b - lr.a) * 0.5; LTR.last = p;
+  if (!wrapped) return;
+  LTR.n++;
+  const [every, step] = LTR.rule.split(",").map(Number);
+  if (LTR.on && LTR.n % every === 0 && P.rate < 1) { const r = Math.min(1, Math.round(P.rate * 100 + step) / 100); setRate(r); toast(`속도 ${Math.round(r * 100)}%`, 1200); if (r >= 1) { LTR.on = false; toast("100% 도착 · 점점 빠르게를 껐어요", 2500); } }
+  loopUI();
+}
+$("#lTr").onclick = () => { LTR.on = !LTR.on; LTR.n = 0; if (LTR.on && P.rate >= 1) { setRate(0.7); toast("70% 에서 시작해요 · 속도에서 시작 값을 바꿀 수 있어요", 3000); } if (LTR.on && !P.loop) $("#lOn").click(); loopUI(); };
+$("#lTrRule").onchange = e => { LTR.rule = e.target.value; LS.set("ltrRule", LTR.rule); };
 function setLoop(a, b, announce) {
+  if (!P.loop || P.loop.a !== a || P.loop.b !== b) LTR.n = 0; // 구간이 바뀌면 반복 수 처음부터
   P.loop = { a, b }; LS.set("loopact:" + P.song.id, P.loop); loopUI();
   const t = cur(); if (t < P.bars[a].start || t >= P.bars[b].end) seek(P.bars[a].start);
   if (announce) toast(`${barLabel(a)}~${barLabel(b)}마디 반복`);
   lastBar = -2; render(true);
 }
 function loopOff() {
-  P.loop = null; P.loopPick = null; if (P.song) LS.set("loopact:" + P.song.id, null);
+  P.loop = null; P.loopPick = null; LTR.on = false; LTR.n = 0; if (P.song) LS.set("loopact:" + P.song.id, null);
   loopUI(); lastBar = -2; render(true);
 }
 function loopRange() { return P.loop ? { a: P.bars[P.loop.a].start, b: P.bars[P.loop.b].end } : null; }
@@ -1494,7 +1686,9 @@ function renderLesson() {
     ${(L.key_points || []).map(k => item(`${esc(tText(k.title))} <span class="bars">${bars(k)}</span>`, shortOf(k),
       `<div>${esc(tText(k.text))}</div>${k.practice ? `<div class="pr">이론 포인트: ${esc(tText(k.practice))}</div>` : ""}`, k)).join("")}
     ${(L.sections || []).length ? `<h4>구간별</h4>` + L.sections.map(x => item(`${esc(tText(x.name))}`, shortOf(x), `<div>${esc(tText(x.text))}</div>`, null)).join("") : ""}
-    ${(L.practice_plan || []).length ? `<h4>연습 순서</h4>` + L.practice_plan.map((p, i) => item(`${i + 1}. ${bars(p)} · ${p.speed}%`, shortOf({ text: p.tip }), `<div>${esc(tText(p.tip))}</div>`, p)).join("") : ""}
+    ${(L.practice_plan || []).length ? `<h4>연습 순서</h4>` + L.practice_plan.map((p, i) => { const pc = planPct(p.speed);
+      return item(`${i + 1}. ${bars(p)} · ${pc}%`, shortOf({ text: p.tip }), `<div>${esc(tText(p.tip))}</div>` +
+        (p.t0 != null ? `<div style="margin-top:8px"><button class="btn xs plan" data-i="${i}">🔁 이 구간을 ${pc}% 로 반복</button></div>` : ""), p); }).join("") : ""}
     <div class="foot">코드·화성 분석은 계산으로, 문장은 AI(${esc(L.model || "")})가 썼어요. 틀린 설명이 있으면 알려 주세요.</div></div>`;
   bindLesson();
 }
@@ -1502,7 +1696,13 @@ function bindLesson() {
   if ($("#lessonMake")) $("#lessonMake").onclick = async () => { try { await api(`/api/songs/${P.song.id}/lesson`, { method: "POST" }); LESSON = { busy: true, none: !LESSON?.summary }; renderLesson(); setTimeout(loadLesson, 4000); } catch (e) { toast("실패: " + e.message); } };
   $$("#lessonBox .kp .row").forEach(r => r.onclick = e => { if (e.target.closest(".go")) return; r.parentElement.classList.toggle("open"); });
   $$("#lessonBox .go").forEach(b => b.onclick = e => { e.stopPropagation(); lessonGo(+b.dataset.t0); });
+  $$("#lessonBox .plan").forEach(b => b.onclick = e => { e.stopPropagation(); const p = LESSON.practice_plan[+b.dataset.i];
+    const a = barAt(p.t0 + 0.05), n = Math.max(0, (p.bar_to ?? p.bar_from) - p.bar_from); setLoop(a, Math.min(P.bars.length - 1, a + n), true); setRate(planPct(p.speed) / 100); });
 }
+// 해설 '연습 순서' 속도: 모델이 BPM 으로 쓴 해설이 많음(Weapon 185 → '185%') → 곡 템포 대비 % 로 (10-29 점검)
+// 한 해설 안에 100 넘는 값이 하나라도 있으면 그 해설은 BPM 으로 쓴 것 (Alive [70,85,95,108] = 곡 108 BPM 까지)
+function planPct(v) { v = +v || 100; const T = P.song?.tempo || 0, bpm = (LESSON?.practice_plan || []).some(p => +p.speed > 100);
+  if (bpm && T) v = v / T * 100; return Math.max(50, Math.min(100, Math.round(v / 5) * 5)); }
 
 /* ---------------- lyrics ---------------- */
 // 서버: LRCLIB(시간 붙은 가사) → 없으면 보컬 받아쓰기(Whisper) 초안 → 붙여넣은 가사는 받아쓰기 시간에 맞춰 정렬
@@ -1519,7 +1719,11 @@ async function loadLyrics() {
 function renderLyrics() {
   const L = LYR?.lines || [], src = LYR?.source;
   const how = LYR?.timing === "aligned" ? " · 시간은 이 음원에 맞춤" : "";
-  $("#lyrBar").innerHTML = `<span class="small mute" style="flex:1">${LYR?.busy ? "가사 찾는 중… (벅스·NetEase·LRCLIB → 없으면 보컬에서 받아 적기, 30초~1분)" : esc((LYR_SRC[src] || "") + how)}</span>` +
+  // 위 줄 = 보기 설정 (코드 보기 · 글자 크기 · 크게 보기), 가사 출처 · 붙여넣기는 가사 아래로 (2026-10-29)
+  $("#lyrBar").innerHTML = chvBar(`<span class="stepper" title="글자 크기"><button data-chv="f-">가−</button><button data-chv="f+">가+</button></span>` +
+    `<span style="flex:1"></span><button class="btn xs" data-chv="full">⛶ 크게 보기</button>`);
+  $("#lyrBox").style.setProperty("--lyfs", CHV.fs + "px");
+  $("#lyrSrc").innerHTML = `<span class="small mute" style="flex:1">${LYR?.busy ? "가사 찾는 중… (벅스·NetEase·LRCLIB → 없으면 보컬에서 받아 적기, 30초~1분)" : esc((LYR_SRC[src] || "") + how)}</span>` +
     `<button class="btn xs" id="lyrPaste" data-perm="edit">가사 붙여넣기</button>` + (src === "user" ? `<button class="btn xs" id="lyrUndo" data-perm="edit">자동 가사로</button>` : "");
   $("#lyrPaste").onclick = () => { $("#lyrText").value = L.map(l => l.text).join("\n"); $("#lyrDlg").showModal(); };
   if ($("#lyrUndo")) $("#lyrUndo").onclick = async () => { await api(`/api/songs/${P.song.id}/lyrics`, jsonOpt("PUT", { clear: true })); loadLyrics(); };
@@ -1552,7 +1756,7 @@ function renderLyricsFlow(L) {
   const ci = i => { const c = C[i]; return `<i data-ci="${i}"${c.src === "auto" && !c.sure ? ' class="weak"' : ""}>${esc(tChord(c.chord, c.start))}</i>`; };
   // 코드 바뀜마다 한 번씩: 간주 마디면 간주 칸, 아니면 그 시각을 가진 줄 (다음 줄 0.6초 앞부터는 다음 줄 첫 글자)
   const own = L.map(() => []);
-  C.forEach((c, i) => { if (c.chord === "N" || inst.has(barAt(c.start + 0.01))) return;
+  C.forEach((c, i) => { if (c.chord === "N" || (CH_REP[i] ?? i) !== i || inst.has(barAt(c.start + 0.01))) return; // 난이도를 낮춰 앞 코드와 같아진 코드는 한 번만
     let o = 0; for (let x = 0; x < L.length; x++) if (L[x].t - 0.6 <= c.start) o = x; own[o].push(i); });
   const rows = [];
   L.forEach((l, i) => {
@@ -1566,7 +1770,7 @@ function renderLyricsFlow(L) {
       let pos = chars[Math.min(chars.length - 1, Math.floor(acc / tot * chars.length + 0.3))] ?? 0;
       if (!hangul) while (pos > 0 && !/\s/.test(text[pos - 1])) pos--; // 영어는 단어 첫 글자에
       add(pos, ci(j)); });
-    if (!at.has(0)) { const k0 = chordAt(l.t + 0.05); if (k0 >= 0 && C[k0].chord !== "N") add(0, ci(k0).replace(' class="weak"', "").replace("<i ", '<i class="cont" ')); } // 이어서 울리는 코드
+    if (!at.has(0)) { let k0 = chordAt(l.t + 0.05); if (k0 >= 0) k0 = CH_REP[k0] ?? k0; if (k0 >= 0 && C[k0].chord !== "N") add(0, ci(k0).replace(' class="weak"', "").replace("<i ", '<i class="cont" ')); } // 이어서 울리는 코드
     const cuts = [...new Set([0, ...[...at.keys()].filter(p => p < n), ...chars.filter(x => x > 0 && /\s/.test(text[x - 1]))])].sort((a, b) => a - b);
     let html = cuts.map((p, x) => `<span class="u"><b>${at.get(p) || ""}</b><span>${esc(text.slice(p, cuts[x + 1] ?? n))}</span></span>`).join("");
     if (at.has(n)) html += `<span class="u"><b>${at.get(n)}</b><span> </span></span>`;
@@ -1577,7 +1781,7 @@ function renderLyricsFlow(L) {
   let run = [];
   const flush = () => { if (!run.length) return; const b0 = B[run[0]];
     rows.push({ a: b0.start, sec: b0.start + 0.05, go: b0.start, inst: true, html: `<div class="ib">` + run.map(x => { const b = B[x];
-      const names = []; C.forEach((c, i) => { if (c.chord !== "N" && c.end > b.start + 0.05 && c.start < b.end - 0.05 && names.at(-1)?.n !== c.chord) names.push({ n: c.chord, i }); });
+      const names = []; C.forEach((c, i) => { const dn = tChord(c.chord, c.start); if (c.chord !== "N" && c.end > b.start + 0.05 && c.start < b.end - 0.05 && names.at(-1)?.n !== dn) names.push({ n: dn, i: CH_REP[i] ?? i }); });
       return `<span data-k="${x}"${names.length ? "" : ' class="mute"'}>${names.map(z => ci(z.i)).join("") || "·"}</span>`; }).join("") + `</div>` });
     run = []; };
   for (let x = 0; x < B.length; x++) { if (!inst.has(x) || run.length >= 4 || (run.length && (secStart.has(x) || run.at(-1) !== x - 1))) flush(); if (inst.has(x)) run.push(x); }
@@ -1622,8 +1826,8 @@ function highlightLyrics(t) {
     if (k !== lastLyr) { lastLyr = k;
       $$("#lyrBox .ln.cur").forEach(el => el.classList.remove("cur"));
       const el = document.querySelector(`#lyrBox .ln[data-r="${k}"]`);
-      if (el) { el.classList.add("cur"); if (P.playing) box.scrollTo({ top: el.offsetTop - box.offsetTop - box.clientHeight / 3, behavior: "smooth" }); } }
-    const c = chordAt(t);
+      if (el) { el.classList.add("cur"); if (P.playing || Date.now() - LAST_GO < 1500) box.scrollTo({ top: el.offsetTop - box.offsetTop - box.clientHeight / 3, behavior: "smooth" }); } } // 멈춰 있어도 옮기면 따라감
+    let c = chordAt(t); if (c >= 0) c = CH_REP[c] ?? c;
     if (c !== lastLyrCi) { lastLyrCi = c; $$("#lyrBox i.on").forEach(x => x.classList.remove("on")); $$(`#lyrBox i[data-ci="${c}"]`).forEach(x => x.classList.add("on")); }
     const bk = barAt(t);
     if (bk !== lastLyrBar) { lastLyrBar = bk; $$("#lyrBox .ib span.on").forEach(x => x.classList.remove("on")); const el = document.querySelector(`#lyrBox .ib span[data-k="${bk}"]`); if (el) el.classList.add("on"); }
@@ -1860,13 +2064,19 @@ function render(force) {
   $("#fill").style.width = (t / d * 100) + "%"; $("#phead").style.left = (t / d * 100) + "%";
   const lr = loopRange();
   if (lr) { const z = $("#lpz"); z.hidden = false; z.style.left = lr.a / d * 100 + "%"; z.style.width = (lr.b - lr.a) / d * 100 + "%"; } else $("#lpz").hidden = true;
-  const ci = chordAt(t);
+  const ci0 = chordAt(t), ci = ci0 >= 0 ? (CH_REP[ci0] ?? ci0) : ci0;
+  const lyOn = !$("#pLyrics").hidden;
   if (ci !== lastIdx || force) {
-    lastIdx = ci; const c = s.chords; const list = [];
-    for (let i = Math.max(0, ci); i < c.length && list.length < 4; i++) if (c[i].chord !== "N" || i === ci) list.push(i);
-    $("#now").innerHTML = list.map((i, k) => { const nm = tChord(c[i].chord, c[i].start); return `<div class="cc ${k === 0 && i === ci ? "cur" : ""}"><div class="nm">${nm === "N" ? "–" : esc(nm)}</div>${nm === "N" ? "" : diagram(nm)}${k === 0 ? '<div class="bar" id="ccbar"></div>' : ""}</div>`; }).join("");
+    lastIdx = ci; const c = s.chords; const list = upNext(ci, 4);
+    $("#now").innerHTML = list.map((x, k) => `<div class="cc ${k === 0 && x.i === ci ? "cur" : ""}"><div class="nm">${x.nm === "N" ? "–" : esc(x.nm)}</div>${x.nm === "N" ? "" : diagram(x.nm)}${k === 0 ? '<div class="bar" id="ccbar"></div>' : ""}</div>`).join("");
+    const nx = list.findIndex(x => x.i !== ci);
+    if (lyOn) $("#lyNow").innerHTML = list.length ? list.map((x, k) => `<div class="k${x.i === ci ? " cur" : ""}"><small>${x.i === ci ? "지금" : k === nx ? "다음" : "&nbsp;"}</small>${x.nm === "N" ? "–" : esc(x.nm)}${x.i === ci ? '<i class="bar" id="lybar"></i>' : ""}</div>`).join("") : `<span class="empty">코드 없음</span>`;
   }
-  if (ci >= 0) { const c = s.chords[ci]; const b = $("#ccbar"); if (b) b.style.width = Math.min(100, (t - c.start) / (c.end - c.start) * 100) + "%"; }
+  if (ci >= 0) { const c = s.chords, e = c[lastRepEnd(ci0)].end, w = Math.min(100, (t - c[ci].start) / (e - c[ci].start) * 100) + "%";
+    const b = $("#ccbar"); if (b) b.style.width = w; const b2 = $("#lybar"); if (b2) b2.style.width = w; }
+  if (document.body.classList.contains("lyfull")) {
+    $("#lyTime").textContent = fmt(t) + " / " + fmt(d); const pl = $("#play").textContent; if ($("#lyPlay").textContent !== pl) $("#lyPlay").textContent = pl; $("#lyPlay").disabled = $("#play").disabled;
+    const lp = P.loop ? `🔁 ${barLabel(P.loop.a)}~${barLabel(P.loop.b)}마디` : ""; if ($("#lyLoop").textContent !== lp) $("#lyLoop").textContent = lp; }
   const bk = barAt(t);
   if (bk !== lastBar || force) {
     lastBar = bk;
@@ -1887,6 +2097,7 @@ function render(force) {
 function core() { // sync, loop — runs on a timer so it keeps working even when frames are throttled
   if (WAE) { if (!P.song || !WA.playing) return;
     const lr = loopRange(); if (JSON.stringify(lr) !== JSON.stringify(WA.loopR)) { waStart(waPos()); return; } // 구간 반복을 켜거나 바꿈 → 새 구간으로 다시 시작
+    loopTick();
     if (!lr && waPos() >= P.song.duration - 0.02) setPlaying(false); return; }
   if (!P.song || !P.master || !P.playing) return;
   const t = cur();
@@ -1935,8 +2146,9 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---------------- routing ---------------- */
-function goHome() {
-  stopAll(); P.song = null; $("#vSong").hidden = true; $("#mainnav").hidden = false;
+function goHome(fromNav) {
+  if (fromNav !== true && history.state?.song) { history.back(); return; } // ← 버튼 = 폰 뒤로가기와 같은 길 (hashchange 가 goHome(true) 를 부름) — 기록이 쌓이지 않게
+  lyFull(false, true); stopAll(); P.song = null; $("#vSong").hidden = true; $("#mainnav").hidden = false;
   const back = RETURN_TO; RETURN_TO = null;
   if (back) return showMain(back.view, back.arg); // 이론 책 예제 듣고 ← 누르면 그 페이지로
   location.hash = ""; showMain("songs");
@@ -2185,6 +2397,7 @@ async function boot() {
   loadLib(); loadJobs();
 }
 setInterval(() => { if (!P.playing) ping(); }, 15000);
+setTimeout(() => { BOOTED = true; }, 3000);
 boot();
 </script>
 </body>
