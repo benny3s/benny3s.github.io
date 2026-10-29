@@ -1275,7 +1275,7 @@ function ensureFirebase() {
   if (loading) return loading;
   loading = (async () => {
     await loadScript(SDK + "firebase-app-compat.js");
-    await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)).concat([loadScript("/admin-login.js?v=20261027a")]));   // 관리자 새 기기 확인 (2026-10-27)
+    await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)).concat([loadScript("/admin-login.js?v=20261029a")]));   // 관리자 새 기기 확인 (2026-10-27)
     // 기본 앱 + 기본(브라우저에 남는) 로그인 = 베니브릿지(같은 주소·같은 프로젝트)와 로그인 공유
     const a = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
     app = a;

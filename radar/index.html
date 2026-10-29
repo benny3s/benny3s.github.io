@@ -248,7 +248,7 @@ function loadScript(src) { return new Promise((ok, bad) => { const s = document.
 async function ensureFirebase() {
   if (fb) return fb;
   await loadScript(SDK + "firebase-app-compat.js");
-  await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)).concat([loadScript("/admin-login.js?v=20261027a")]));   // 관리자 새 기기 확인 (2026-10-27)
+  await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)).concat([loadScript("/admin-login.js?v=20261029a")]));   // 관리자 새 기기 확인 (2026-10-27)
   fb = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
   return fb;
 }
