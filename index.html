@@ -342,7 +342,8 @@ const DEFAULT_ITEMS = [
   { id: "shorts", emoji: "🎬", name: "AI 실험 쇼츠", desc: "초파리 뇌로 움직이는 로봇 개 · 벽돌깨기 · 스타1 (비공개 영상관)", url: "https://claude.ai/artifact/WC33rPqhYLhdUcq4PqrJi2", hidden: true },
   { id: "music", emoji: "🎸", name: "Music Lab", desc: "유튜브 링크로 음원 분리 · 코드 · 기타 타브 · 연습 플레이어 (PC 필요)", url: "https://benny3s.github.io/music/", hidden: false },
   { id: "radar", emoji: "📡", name: "레이더", desc: "AI · 칩 설계 · 화장품 · 돈 되는 것 — 주 2회 갱신하는 살아 있는 목록 (관리자 전용)", url: "https://benny3s.github.io/radar/", hidden: true },
-  { id: "tower", emoji: "🛰️", name: "관제판", desc: "AI 일꾼 관제판 — 세션별 호출 · 일꾼 순서 · 작업 맡기기 (내 폰·PC 에서만, Tailscale)", url: "https://desktop-ijcbddr.tail4df4c9.ts.net:8443/", hidden: true }
+  { id: "tower", emoji: "🛰️", name: "관제판", desc: "AI 일꾼 관제판 — 세션별 호출 · 일꾼 순서 · 작업 맡기기 (내 폰·PC 에서만, Tailscale)", url: "https://desktop-ijcbddr.tail4df4c9.ts.net:8443/", hidden: true },
+  { id: "papers", emoji: "📄", name: "설계 논문", desc: "논문 서재 (공부방 3장)", url: "https://claude.ai/artifact/Lb7zZdzV3jFs5ZotGjRMwF#pp-list", hidden: true }
 ];
 /* DEFAULT_ITEMS:END */
 const FB = {
@@ -382,11 +383,11 @@ function host(u) { return String(u || "").replace(/^https?:\/\//, ""); }
    맨 위 공개 항목 = 대표 카드(순서는 관리자 ↑↓). 나머지는 항목의 group(관리자 '묶음' 칸) → 없으면 아래 기본 묶음 → '그 밖에'.
    DEFAULT_ITEMS 블록은 자동으로 덮이니 기본 묶음·색은 여기 따로 둔다. */
 const GROUP_DEFAULT = { band: "친구랑 같이", when: "친구랑 같이", trip: "친구랑 같이", wishtag: "친구랑 같이",
-  item1791622306672: "실험실", music: "실험실", ai: "실험실", shorts: "실험실", radar: "실험실", tower: "실험실" };
+  item1791622306672: "실험실", music: "실험실", ai: "실험실", shorts: "실험실", radar: "실험실", tower: "실험실", papers: "실험실" };
 /* 아이콘 타일 색 = 공통 토큰 /design/tokens.css 의 --bn-tint-* (2026-10-29) — 아이콘의 --t 에 var(...) 를 그대로 넣는다 */
 const tintVar = n => "var(--bn-tint-" + n + ")";
 const TINT = { bridge: tintVar("green"), band: tintVar("orange"), when: tintVar("blue"), trip: tintVar("yellow"), wishtag: tintVar("pink"),
-  item1791622306672: tintVar("purple"), music: tintVar("red"), ai: tintVar("teal"), shorts: tintVar("sand"), radar: tintVar("blue"), tower: tintVar("teal") };
+  item1791622306672: tintVar("purple"), music: tintVar("red"), ai: tintVar("teal"), shorts: tintVar("sand"), radar: tintVar("blue"), tower: tintVar("teal"), papers: tintVar("yellow") };
 const TINTS = ["green", "orange", "blue", "yellow", "pink", "purple", "red", "teal"].map(tintVar);
 function tint(p) {
   if (TINT[p.id]) return TINT[p.id];
