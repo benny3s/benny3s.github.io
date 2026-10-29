@@ -1,5 +1,5 @@
 {
-  "order": ["ai", "chip", "beauty", "money"],
+  "order": ["ai", "chip", "beauty", "money", "estate"],
   "topics": {
     "ai": {
       "name": "AI", "emoji": "🤖",
@@ -24,6 +24,12 @@
       "desc": "아이디어 · 시장 동향 · 사람들은 어떻게 하는지",
       "categories": ["아이디어", "시장 동향", "사람들 사례", "AI로 버는 법", "도구·플랫폼"],
       "try_label": "작게 해 볼 것 1개", "shorts_label": "쇼츠 화제 · 수익 주장 확인"
+    },
+    "estate": {
+      "name": "부동산", "emoji": "🏠",
+      "desc": "정책 · 금리 · 시장 지표 · 청약 · 투자 방식 (매수 추천 없음)",
+      "categories": ["정책·세금", "금리·대출", "가격·거래 지표", "청약·분양", "재건축·지역", "투자 방식·사례"],
+      "try_label": "알아볼 것 1개", "shorts_label": "쇼츠 화제 · 수익 주장 확인"
     }
   }
 }
