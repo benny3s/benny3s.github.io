@@ -69,6 +69,10 @@ h2{font-size:15px;margin:0 0 10px;color:var(--mute);font-weight:600}
 .setl .st.on{color:#1a7f45;background:#e3f4ea}
 .nextj{margin:10px 0 2px;padding:10px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:grid;gap:3px;font-size:14px}
 .nextj .dd{color:var(--accent);margin-right:4px}
+.qstart{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 2px}
+.qbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 10px;padding:8px 12px;border-radius:10px;background:#10302b;border:1px solid var(--accent);font-size:13.5px}
+.qbar .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qbar b{color:var(--accent)}
 .newver{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:70;min-height:42px;padding:0 16px;border-radius:99px;border:1px solid var(--accent);background:#10302b;color:var(--accent);font-weight:700;box-shadow:0 4px 18px rgba(0,0,0,.5)}
 .chip{font-size:12px;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--mute)}
 .chip b{color:var(--text);font-weight:600}
@@ -399,6 +403,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
         <div class="chips" id="sChips"></div>
       </div>
     </div>
+    <div class="qbar" id="qBar" hidden></div>
     <div class="transport">
       <div class="loadmsg" id="loadMsg" hidden><span id="loadT">트랙 불러오는 중…</span><span class="lb"><i id="loadBar"></i></span></div>
       <div class="seekrow"><span id="secNow"></span><span id="loopNow"></span></div>
@@ -545,7 +550,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-29a";
+const BUILD = "2026-10-29b";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -697,6 +702,10 @@ function renderSetlist() {
   // 다음 합주 (밴드매니저 '예정' 회차, 10-29): 날짜·시간·장소 한 줄 + 그날 할 곡을 맨 위로 🎯
   const nx = SETL.next, nxIds = new Set(nx?.songs || []);
   if (nxIds.size) items = items.slice().sort((a, b) => nxIds.has(b.bm_id) - nxIds.has(a.bm_id));
+  // 이어 듣기 목록 (10-29 Benny "합주곡 순서대로 쭉 재생"): 다음 합주 곡이 정해져 있으면 그 곡들, 아니면 연습중 — 분석된 곡만
+  const hasLib = new Set(LIB.map(s => s.id)), inLib = it => it.ml_id && hasLib.has(it.ml_id);
+  let qList = items.filter(it => inLib(it) && nxIds.has(it.bm_id));
+  if (qList.length < 2) qList = items.filter(it => inLib(it) && it.status === "연습중");
   let nextHtml = "";
   if (nx) {
     const dd0 = new Date(nx.date + "T00:00:00"), t0 = new Date(); t0.setHours(0, 0, 0, 0);
@@ -713,6 +722,7 @@ function renderSetlist() {
   const busyYt = new Set(JOBS_NOW.filter(j => j.state === "queued" || j.state === "running").map(j => (String(j.url || "").match(/[?&]v=([\w-]{11})/) || [])[1]).filter(Boolean));
   box.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:22px 0 0"><h2 style="margin:0">합주곡</h2>
     <span class="small mute">밴드매니저와 같이 움직여요 · ${esc(autoTxt)}</span>${isAdmin() ? `<button class="linkbtn small" id="autoBtn" style="margin-left:auto">⚙ 자동 분석</button>` : ""}</div>` + nextHtml +
+    (qList.length >= 2 ? `<div class="qstart"><button class="btn sm" id="qPlay">▶ 이어 듣기 ${qList.length}곡</button><span class="small mute">${nxIds.size && qList.some(x => nxIds.has(x.bm_id)) ? "다음 합주 곡" : "연습중인 곡"}을 순서대로 끝까지</span></div>` : "") +
     (items.length ? `<div class="setl">` + items.map((it, i) => {
       const s = it.ml_id && byId[it.ml_id];
       const act = s ? `<span class="chip">키 <b>${esc(listKey(s))}</b></span>`
@@ -722,6 +732,7 @@ function renderSetlist() {
         <div class="t"><b>${nxIds.has(it.bm_id) ? "🎯 " : ""}${esc(it.title)}</b><span>${esc(it.artist)}</span></div>${act}</div>`;
     }).join("") + `</div>` : `<div class="empty">밴드매니저에 합주곡이 아직 없어요.</div>`);
   $$("#setlist .sr.hit").forEach(el => el.onclick = () => openSong(items[+el.dataset.i].ml_id));
+  if ($("#qPlay")) $("#qPlay").onclick = () => qStart(qList.map(it => ({ id: it.ml_id, title: it.title })));
   if ($("#autoBtn")) $("#autoBtn").onclick = () => openAuto(bd);
   $$("#setlist [data-add]").forEach(el => el.onclick = async e => {
     e.stopPropagation(); const it = items[+el.dataset.add]; el.disabled = true;
@@ -1351,7 +1362,14 @@ async function openSong(id) {
   s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, LS.get("chsrc:" + id, "best"));
   lyFull(false, true); CHV.capo = LS.get("capo:" + id, 0); CH_REP = [];
   P.metroSolo = false; P.secEdit = false; P.loopPick = null; // 앞 곡의 메트로놈만 듣기 · 구조 고치기가 남아 소리 0 · 실수로 구조가 바뀌던 것 (10-29 점검)
-  P.song = s; P.semi = 0; if (location.hash !== "#song=" + id) { try { history.pushState({ song: id }, "", "#song=" + id); } catch { location.hash = "song=" + id; } }
+  if (PQ && !PQ.opening) PQ = null; // 손으로 다른 곡을 열면 이어 듣기는 끝
+  P.song = s; P.semi = 0;
+  if (location.hash !== "#song=" + id) {
+    const st = { song: id }, url = "#song=" + id;
+    try { if (PQ?.opening && /^#song=/.test(location.hash)) history.replaceState(st, "", url); else history.pushState(st, "", url); } // 이어 듣기로 넘어간 곡은 기록을 쌓지 않음 (뒤로가기 한 번에 목록)
+    catch { location.hash = "song=" + id; }
+  }
+  qUI();
   $("#vHome").hidden = true; $("#vBook").hidden = true; $("#vWrite").hidden = true; $("#mainnav").hidden = true; $("#vSong").hidden = false; window.scrollTo(0, 0);
   $("#sTitle").textContent = s.title;
   $("#sChips").innerHTML = `<span class="chip">키 <b>${esc((s.keys || []).length > 1 ? s.keys.map(x => x.key.replace(/^([A-G])b/, "$1♭")).join(" → ") : s.key)}</b></span><span class="chip"><b>${Math.round(s.tempo)}</b> BPM</span><span class="chip">4/4</span><span class="chip">${fmt(s.duration)}</span>` +
@@ -1718,7 +1736,7 @@ async function loadLyrics() {
 }
 function renderLyrics() {
   const L = LYR?.lines || [], src = LYR?.source;
-  const how = LYR?.timing === "aligned" ? " · 시간은 이 음원에 맞춤" : "";
+  const how = LYR?.timing === "aligned" ? " · 시간은 이 음원에 맞춤" : LYR?.timing === "lines" ? " · 이 음원에서 부르는 줄만 맞춤" : "";
   // 위 줄 = 보기 설정 (코드 보기 · 글자 크기 · 크게 보기), 가사 출처 · 붙여넣기는 가사 아래로 (2026-10-29)
   $("#lyrBar").innerHTML = chvBar(`<span class="stepper" title="글자 크기"><button data-chv="f-">가−</button><button data-chv="f+">가+</button></span>` +
     `<span style="flex:1"></span><button class="btn xs" data-chv="full">⛶ 크게 보기</button>`);
@@ -2098,7 +2116,7 @@ function core() { // sync, loop — runs on a timer so it keeps working even whe
   if (WAE) { if (!P.song || !WA.playing) return;
     const lr = loopRange(); if (JSON.stringify(lr) !== JSON.stringify(WA.loopR)) { waStart(waPos()); return; } // 구간 반복을 켜거나 바꿈 → 새 구간으로 다시 시작
     loopTick();
-    if (!lr && waPos() >= P.song.duration - 0.02) setPlaying(false); return; }
+    if (!lr && waPos() >= P.song.duration - 0.02) { setPlaying(false); qEnded(); } return; }
   if (!P.song || !P.master || !P.playing) return;
   const t = cur();
   const lr = loopRange(); if (lr && t >= lr.b - 0.03) { seek(lr.a); return; }
@@ -2145,10 +2163,35 @@ document.addEventListener("keydown", e => {
   if (e.code === "ArrowLeft") goTo(cur() - 5); if (e.code === "ArrowRight") goTo(cur() + 5);
 });
 
+/* ---------------- 이어 듣기 (10-29 Benny "합주곡 순서대로 쭉 재생") ---------------- */
+// 곡이 끝나면 다음 곡을 열어 저절로 재생. 처음 누를 때 AudioContext 를 깨워 두면(사람이 누른 순간) 다음 곡부터는 누르지 않아도 소리가 남.
+let PQ = null; // { list: [{id, title}], i }
+function qUI() {
+  const bar = $("#qBar");
+  if (!PQ || !P.song || PQ.list[PQ.i]?.id !== P.song.id) { bar.hidden = true; return; }
+  const nx = PQ.list[PQ.i + 1];
+  bar.hidden = false;
+  bar.innerHTML = `<span class="t"><b>이어 듣기 ${PQ.i + 1}/${PQ.list.length}</b> · ${nx ? "다음: " + esc(nx.title) : "마지막 곡"}</span>` +
+    (nx ? `<button class="btn xs" id="qNext">⏭ 다음 곡</button>` : "") + `<button class="btn xs" id="qStop">■ 그만</button>`;
+  if ($("#qNext")) $("#qNext").onclick = () => qGo(PQ.i + 1);
+  $("#qStop").onclick = () => { PQ = null; qUI(); toast("이어 듣기를 껐어요"); };
+}
+function qStart(list) { if (!list.length) return; ensureAC(); PQ = { list, i: 0 }; qGo(0); }
+async function qGo(i) {
+  if (!PQ) return;
+  if (i >= PQ.list.length) { PQ = null; qUI(); toast("이어 듣기 끝 · 수고하셨어요"); return; }
+  PQ.i = i; PQ.opening = true;
+  try { await openSong(PQ.list[i].id); } finally { if (PQ) PQ.opening = false; }
+  qUI();
+  const s = P.song; for (let k = 0; k < 300 && PQ && P.song === s && !P.ready; k++) await new Promise(r => setTimeout(r, 200)); // 섞인 소리 받을 때까지
+  if (PQ && P.song === s && P.ready && !P.playing) setPlaying(true);
+}
+function qEnded() { if (PQ && !PQ.opening && P.song && PQ.list[PQ.i]?.id === P.song.id) setTimeout(() => qGo(PQ.i + 1), 800); }
+
 /* ---------------- routing ---------------- */
 function goHome(fromNav) {
   if (fromNav !== true && history.state?.song) { history.back(); return; } // ← 버튼 = 폰 뒤로가기와 같은 길 (hashchange 가 goHome(true) 를 부름) — 기록이 쌓이지 않게
-  lyFull(false, true); stopAll(); P.song = null; $("#vSong").hidden = true; $("#mainnav").hidden = false;
+  PQ = null; lyFull(false, true); stopAll(); P.song = null; qUI(); $("#vSong").hidden = true; $("#mainnav").hidden = false;
   const back = RETURN_TO; RETURN_TO = null;
   if (back) return showMain(back.view, back.arg); // 이론 책 예제 듣고 ← 누르면 그 페이지로
   location.hash = ""; showMain("songs");
