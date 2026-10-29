@@ -17,6 +17,8 @@
   /* 기기 열쇠 (10-29): 믿을 기기가 될 때 서버가 이 기기에만 주는 값 — 기기 id 만으로는 믿을 기기로 안 봄. 베니브릿지와 같은 'bennyAdminDeviceKey' */
   function devKey() { try { return localStorage.getItem("bennyAdminDeviceKey") || ""; } catch (e) { return ""; } }
   function saveKey(k) { if (k) { try { localStorage.setItem("bennyAdminDeviceKey", String(k)); } catch (e) {} } }
+  /* 이미 열쇠 가진 기기 id 로 다시 승인받으면 서버가 새 id 를 줌 */
+  function saveId(id) { if (/^[A-Za-z0-9_-]{16,64}$/.test(id || "")) { try { localStorage.setItem("bennyAdminDevice", id); } catch (e) {} } }
   function devName() {
     const ua = navigator.userAgent || "";
     const os = /iPhone/.test(ua) ? "아이폰" : /iPad/.test(ua) ? "아이패드" : /Android/.test(ua) ? "안드로이드" : /Macintosh/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows PC" : "기기";
@@ -41,7 +43,7 @@
       document.body.appendChild(box);
       const msg = s => { box.querySelector("[data-msg]").textContent = s; };
       const finish = (err, tok) => { if (done) return; done = true; clearTimeout(timer); box.remove(); err ? reject(err) : resolve(tok); };
-      const ask = extra => call(Object.assign({ holdId: first.holdId, pollKey: first.pollKey, deviceId: dev }, extra || {})).then(x => { saveKey(x.deviceKey); if (x.token) finish(null, x.token); return x; });
+      const ask = extra => call(Object.assign({ holdId: first.holdId, pollKey: first.pollKey, deviceId: dev }, extra || {})).then(x => { saveId(x.deviceId); saveKey(x.deviceKey); if (x.token) finish(null, x.token); return x; });
       const poll = () => { if (done) return; ask().then(() => { if (!done) timer = setTimeout(poll, 3000); }).catch(e => finish(new Error((e && e.message) || "확인하지 못했어요."))); };
       box.querySelector("[data-cancel]").onclick = () => finish(new Error("취소했어요."));
       box.querySelectorAll("[data-sms]").forEach(b => b.onclick = () => {
@@ -64,9 +66,9 @@
   window.bennyAdminLogin = async function (app, pw) {
     const call = d => app.functions("asia-northeast3").httpsCallable("adminLogin")(d).then(r => (r && r.data) || {});
     const dev = devId();
-    /* onceOk: 이 페이지는 비번을 저장하지 않아 '이번만 허용'(12시간)으로 들어와도 됨 */
-    const r = await call({ password: pw, deviceId: dev, deviceKey: devKey(), deviceName: devName(), onceOk: 1 });
-    saveKey(r.deviceKey);
+    /* keyOk: 열쇠를 저장할 수 있음. 이번만 허용(onceOk)은 안 받음 — 이 페이지는 12시간 끝을 챙기지 않아서 */
+    const r = await call({ password: pw, deviceId: dev, deviceKey: devKey(), deviceName: devName(), keyOk: 1 });
+    saveId(r.deviceId); saveKey(r.deviceKey);
     if (r.token) return r.token;
     if (!r.pending) throw new Error("토큰을 받지 못했어요.");
     return waitUi(r, dev, call);
