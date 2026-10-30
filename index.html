@@ -1348,6 +1348,22 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 const ADMIN_AT = "bennyAdminAt";
 const ADMIN_SESSION_KEY = "bennyAdminSession";
 const ADMIN_OFF_KEY = "bennyAdminOff";
+const ADMIN_KEY_LS = "bennyAdminKey";
+async function syncAdminKey() {
+  try {
+    const cur = localStorage.getItem(ADMIN_KEY_LS) || "";
+    if (/^[0-9a-f]{64}$/.test(cur)) return cur;
+    const a = await ensureFirebase();
+    const s = await a.firestore().doc("radar/key").get();
+    if (!s.exists) return "";
+    const jwk = JSON.parse(s.data().jwk);
+    if (!jwk || !jwk.d) return "";
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("benny-apps-admin:" + jwk.d));
+    const k = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    localStorage.setItem(ADMIN_KEY_LS, k);
+    return k;
+  } catch (e) { return ""; }
+}
 function enterAdmin() {
   admin = true; preview = false;
   document.body.classList.add("admin");
@@ -1356,12 +1372,14 @@ function enterAdmin() {
     localStorage.setItem(ADMIN_SESSION_KEY, "1");
     localStorage.removeItem(ADMIN_OFF_KEY);
   } catch (e) {}
+  syncAdminKey();
   render();
 }
 function exitAdmin(manualOff) {
   try {
     localStorage.removeItem(ADMIN_AT);
     localStorage.removeItem(ADMIN_SESSION_KEY);
+    localStorage.removeItem(ADMIN_KEY_LS);
     if (manualOff) localStorage.setItem(ADMIN_OFF_KEY, "1");
   } catch (e) {}
   admin = false; preview = false;
@@ -1426,7 +1444,17 @@ try {
     storedUid().then(uid => {
       if (uid === "admin") {
         if (!admin) enterAdmin();
-        isAdminSession().then(ok => { if (!ok && admin) exitAdmin(false); });
+        isAdminSession().then(ok => {
+          if (ok) {
+            try {
+              localStorage.setItem(ADMIN_AT, String(Date.now()));
+              localStorage.setItem(ADMIN_SESSION_KEY, "1");
+            } catch (e) {}
+            syncAdminKey();
+          } else if (admin) {
+            exitAdmin(false);
+          }
+        });
       } else if (admin) {
         exitAdmin(false);
       }
