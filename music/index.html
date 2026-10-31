@@ -354,6 +354,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .wr .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .wr .aiout{margin-top:8px;padding:10px;border-radius:10px;background:var(--panel2);font-size:14px;line-height:1.65}
 .wr .memo{display:flex;align-items:center;gap:8px;margin-top:6px} .wr .memo audio{flex:1;height:34px}
+.wr textarea.gst{width:100%;min-height:64px;margin-top:8px;line-height:1.5} .wr .gsong{border-top:1px solid var(--line);padding-top:6px;margin-top:8px} .wr .gsong .memo{margin-top:2px}
 .wr .rec{background:#7f1d1d!important;color:#fff!important}
 </style>
 </head>
@@ -550,7 +551,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-10-29b";
+const BUILD = "2026-10-31a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -2282,7 +2283,13 @@ async function playExample(e, pid) { // 그 곡 그 마디로 → 곡 화면에�
 }
 
 /* ---------------- 작사·작곡 노트 (write.py) ---------------- */
-let WN = null, WSAVE = null, WP = { on: false }, WREC = null;
+let WN = null, WSAVE = null, WP = { on: false }, WREC = null, WGEN = null;
+const GEN_STYLES = [ // AI 노래 만들기 스타일 예시 (모델은 영어 설명을 더 잘 알아들음)
+  ["밴드 록 · 여자 보컬", "Korean indie band rock, bright clear female vocal, overdriven electric guitars, punchy live drums, melodic bass, uplifting and energetic"],
+  ["밴드 록 · 남자 보컬", "Korean band rock, powerful male vocal, crunchy electric guitars, driving drums, solid bass, anthemic chorus"],
+  ["어쿠스틱 발라드", "Korean acoustic ballad, warm emotional vocal, acoustic guitar, soft piano, light strings, intimate"],
+  ["시티팝", "Korean city pop, smooth vocal, funky clean electric guitar, slap bass, electric piano, groovy drums, 80s retro"],
+  ["팝 펑크", "Korean pop punk, energetic vocal, fast power chords, loud drums, catchy shout-along chorus"]];
 const KEYS = ["C","C#","Db","D","Eb","E","F","F#","Gb","G","Ab","A","Bb","B"];
 const CQ = [["maj9",[0,4,7,11,14]],["M9",[0,4,7,11,14]],["maj7",[0,4,7,11]],["M7",[0,4,7,11]],["mM7",[0,3,7,11]],["m7b5",[0,3,6,10]],["m9",[0,3,7,10,14]],["m11",[0,3,7,10,14,17]],
   ["m7",[0,3,7,10]],["m6",[0,3,7,9]],["madd9",[0,3,7,14]],["m",[0,3,7]],["dim7",[0,3,6,9]],["dim",[0,3,6]],["aug",[0,4,8]],["9sus4",[0,5,7,10,14]],["7sus4",[0,5,7,10]],
@@ -2297,7 +2304,7 @@ function chordNotes(name, prev) { // 코드 이름 → {root, bass, iv}
 function wBars(s) { s = (s || "").trim(); return s.includes("|") ? s.split("|").map(b => b.trim().split(/\s+/).filter(Boolean)).filter(b => b.length) : s.split(/\s+/).filter(Boolean).map(c => [c]); }
 function transposeText(s, d, flat) { const N = flat ? FLAT : SHARP; return s.replace(/(^|[\s|/])([A-G][#b]?)/g, (_, p, n) => p + N[(NOTE_PC[n] + d + 120) % 12]); }
 async function writeHome() {
-  location.hash = "write"; WN = null; wStop();
+  location.hash = "write"; WN = null; wStop(); clearTimeout(WGEN);
   const box = $("#writeBox"); box.className = "wr";
   let list = []; try { list = await api("/api/write"); } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   box.innerHTML = `<h1>✍️ 작사·작곡 노트</h1><div class="mute">곡 아이디어를 구간별로 — 코드 진행을 바로 들어 보고, 흥얼거림을 녹음하고, AI 선생님에게 다음 코드·가사를 물어봐요.</div>
@@ -2310,12 +2317,30 @@ async function writeHome() {
 async function writeOpen(id) {
   location.hash = "write/" + id; wStop();
   try { WN = await api(`/api/write/${id}`); } catch (e) { toast(e.message); return writeHome(); }
-  writeRender();
+  writeRender(); wGenPoll();
+}
+async function wGenPoll() { // AI 노래 만들기 진행 상태 — 만드는 중이면 3초마다
+  clearTimeout(WGEN); if (!WN) return; const id = WN.id;
+  let st; try { st = await api(`/api/write/${id}/gen`); } catch { return; }
+  if (!WN || WN.id !== id) return;
+  const el = $("#wGenSt"), go = $("#wGenGo"), on = st.state === "queued" || st.state === "running";
+  if (go) { go.disabled = on || !st.available; if (!st.available) go.title = "이 PC 에 모델이 없어요"; }
+  if (el) el.innerHTML = on ? `⏳ ${esc(st.detail || "")} · ${Math.floor((st.elapsed || 0) / 60)}분 ${(st.elapsed || 0) % 60}초 지남 (전체 약 ${Math.ceil((st.eta || 300) / 60)}분)`
+    : st.state === "error" ? `<span style="color:var(--bad,#e66)">실패: ${esc(st.detail || "")}</span>` : st.state === "done" ? `✅ ${esc(st.detail || "")}` : "";
+  if (on) { WN._genOn = true; WGEN = setTimeout(wGenPoll, 3000); return; }
+  if (WN._genOn && st.state === "done") { WN._genOn = false; try { const r = await api(`/api/write/${id}`); if (WN && WN.id === id) { WN.songs = r.songs; wDrawSongs(); } } catch {} }
+}
+function wDrawSongs() {
+  const box = $("#wSongs"); if (!box) return; const ed = can("compose");
+  box.innerHTML = (WN.songs || []).map(g => `<div class="gsong"><div class="small mute">${new Date(g.at * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} · ${Math.round(g.sec / 60)}분 · ${esc((g.style || "").slice(0, 60))}${(g.style || "").length > 60 ? "…" : ""}</div>
+    <div class="memo">🎵<audio controls preload="none" src="${SRV}/files/w/${WN.id}/${g.file}?t=${encodeURIComponent(AUTH?.ftoken || AUTH?.token || "")}"></audio>${ed ? `<button class="btn xs" data-gdel="${g.file}">지우기</button>` : ""}</div></div>`).join("");
+  box.querySelectorAll("[data-gdel]").forEach(b => b.onclick = async () => { if (!confirm("이 노래를 지울까요? (따로 보관돼요)")) return;
+    try { const r = await api(`/api/write/${WN.id}/gen/${b.dataset.gdel}`, { method: "DELETE" }); WN.songs = r.songs; wDrawSongs(); } catch (e) { toast(e.message); } });
 }
 function wSaveSoon() { if (!can("compose")) return; clearTimeout(WSAVE); WSAVE = setTimeout(wSaveNow, 1000); }
 async function wSaveNow() {
   clearTimeout(WSAVE); if (!WN || !can("compose")) return;
-  try { const r = await api(`/api/write/${WN.id}`, jsonOpt("PUT", { title: WN.title, key: WN.key, tempo: WN.tempo, notes: WN.notes, sections: WN.sections })); WN.analysis = r.analysis; WN.updated = r.updated; wDrawRoman(); }
+  try { const r = await api(`/api/write/${WN.id}`, jsonOpt("PUT", { title: WN.title, key: WN.key, tempo: WN.tempo, notes: WN.notes, style: WN.style || "", sections: WN.sections })); WN.analysis = r.analysis; WN.updated = r.updated; wDrawRoman(); }
   catch (e) { toast("저장 실패: " + e.message); }
 }
 function wDrawRoman() { // 구간마다 마디 칸(코드 + 로마 숫자) + 눈에 띄는 것
@@ -2344,6 +2369,13 @@ function writeRender() {
       ${(s.memos || []).map(m => `<div class="memo">🎙<audio controls preload="none" src="${SRV}/files/w/${w.id}/${m.file}?t=${encodeURIComponent(AUTH?.ftoken || AUTH?.token || "")}"></audio><span class="small mute">${new Date(m.at * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span></div>`).join("")}
       ${ed ? `<div class="acts"><button class="btn xs wrec">🎙 녹음</button><button class="btn xs" data-ai="next">🤖 다음 코드 추천</button><button class="btn xs" data-ai="explain">🤖 진행 설명</button><button class="btn xs" data-ai="${s.lyrics ? "lyrics" : "lyrics_new"}">🤖 ${s.lyrics ? "가사 다듬기" : "가사 아이디어"}</button></div>` : ""}
       <div class="aiout" hidden></div></div>`).join("")}
+    ${ed || (w.songs || []).length ? `<div class="sec" id="wGen"><div class="top"><b>🎤 AI 노래 만들기</b><span class="small mute">가사 · 키 · 템포 · 스타일로 노래를 통째로</span></div>
+      ${ed ? `<textarea class="gst" id="wStyle" placeholder="스타일 — 영어로 쓰면 더 잘 알아들어요 (예: Korean indie band rock, female vocal, electric guitars)">${esc(w.style || "")}</textarea>
+      <div class="acts">${GEN_STYLES.map((x, i) => `<button class="btn xs" data-gs="${i}">${x[0]}</button>`).join("")}</div>
+      <div class="acts"><select id="wGenLen"><option value="60">1분 · 2판</option><option value="120" selected>2분 · 2판</option><option value="180">3분 · 1판</option></select><button class="btn sm pri" id="wGenGo">🎤 노래 만들기</button></div>
+      <div class="small mute" id="wGenSt" style="margin-top:6px"></div>` : ""}
+      <div id="wSongs"></div>
+      ${ed ? `<div class="small mute" style="margin-top:8px">코드 진행은 반영되지 않아요 — 멜로디·반주는 AI 가 새로 만들어요. 한 번에 3~6분, 이 PC 그래픽카드로 만들어서 무료예요.</div>` : ""}</div>` : ""}
     ${ed ? `<div class="hdr"><button class="btn sm" id="wAdd">+ 구간 추가</button><button class="btn sm" id="wDelNote" style="margin-left:auto">노트 지우기</button></div>` : ""}
     <div class="small mute" style="margin:6px 0 20px">코드 소리는 연습용 간단한 피아노 + 베이스 + 메트로놈이에요. ${ed ? "고치면 저절로 저장돼요." : "보기만 할 수 있어요 (Benny 가 권한에서 열 수 있어요)."}</div>`;
   wDrawRoman();
@@ -2354,7 +2386,7 @@ function writeRender() {
   if ($("#wTup")) { const tr = d => { const k = parseKey(w.key); if (k) w.key = keyName((k.pc + d + 120) % 12, k.minor); w.sections.forEach(s => s.chords = transposeText(s.chords, d, FLAT_KEYS.has(w.key))); writeRender(); wSaveNow(); };
     $("#wTup").onclick = () => tr(1); $("#wTdn").onclick = () => tr(-1); }
   $("#wPlayAll").onclick = () => WP.on && WP.all ? wStop() : wPlay(null);
-  $$("#writeBox .sec").forEach(el => { const s = w.sections.find(x => x.id === el.dataset.s);
+  $$("#writeBox .sec[data-s]").forEach(el => { const s = w.sections.find(x => x.id === el.dataset.s);
     el.querySelector(".nm").onchange = e => { s.name = e.target.value; wSaveSoon(); };
     el.querySelector(".chords").oninput = e => { s.chords = e.target.value; wSaveSoon(); };
     el.querySelector(".lyr").oninput = e => { s.lyrics = e.target.value; wSaveSoon(); };
@@ -2368,6 +2400,14 @@ function writeRender() {
       catch (e2) { out.textContent = "실패: " + e2.message; }
     });
   });
+  wDrawSongs();
+  if ($("#wStyle")) { $("#wStyle").oninput = e => { w.style = e.target.value; wSaveSoon(); };
+    $$("#wGen [data-gs]").forEach(b => b.onclick = () => { w.style = GEN_STYLES[+b.dataset.gs][1]; $("#wStyle").value = w.style; wSaveSoon(); });
+    $("#wGenGo").onclick = async () => {
+      if (!(w.style || "").trim()) return toast("스타일을 적거나 예시를 눌러 주세요");
+      await wSaveNow(); $("#wGenGo").disabled = true;
+      try { await api(`/api/write/${w.id}/gen`, jsonOpt("POST", { style: w.style, seconds: +$("#wGenLen").value })); } catch (e) { toast(e.message); }
+      wGenPoll(); }; }
   if ($("#wAdd")) $("#wAdd").onclick = () => { w.sections.push({ id: "s" + Date.now().toString(36), name: "코러스", chords: "", lyrics: "", memos: [] }); writeRender(); wSaveNow(); };
   if ($("#wDelNote")) $("#wDelNote").onclick = async () => { if (!confirm("이 노트를 지울까요? (따로 보관돼요)")) return; await api(`/api/write/${w.id}`, { method: "DELETE" }); writeHome(); };
 }
