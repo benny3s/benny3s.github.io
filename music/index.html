@@ -368,8 +368,10 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .wr .pbar{height:4px;background:var(--panel2);border-radius:4px;margin-top:8px;overflow:hidden} .wr .pbar i{display:block;height:100%;background:var(--accent);transition:width .5s}
 .wr .wnotes{margin:14px 0} .wr .wnotes textarea{width:100%;min-height:80px;margin-top:6px}
 .wr .lock .acts select{flex:0 0 auto}
-.wr .rq{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)} .wr .rq .t{flex:1;min-width:140px}
-.wr .devs{margin:6px 2px}
+.rq{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)} .rq .t{flex:1;min-width:140px}
+.devs{margin:6px 2px} .pchip{display:inline-block;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin:2px 4px 0 0} .pchip.x{opacity:.5}
+.bandpick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0} .bandpick label{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+.bandpick input{width:auto;margin:0} .bandpick label:has(input:checked){border-color:var(--accent);color:var(--accent)}
 .nbadge{display:inline-block;background:var(--accent);color:#04241f;border-radius:999px;font-size:11px;line-height:17px;padding:0 6px;margin-left:2px;vertical-align:1px}
 </style>
 </head>
@@ -377,7 +379,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 <header class="top"><div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%">
   <div class="logo" id="home">🎸 Music <b>Lab</b></div>
   <div class="pill" id="conn"><span class="dot" id="cdot"></span><span id="ctext">PC 연결 중…</span></div>
-  <button class="linkbtn" id="permBtn" hidden title="친구(PIN)가 할 수 있는 일">권한</button> <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span><span class="lo-t"> · 로그아웃</span><span class="lo-i" aria-hidden="true"> ↪</span></button>
+  <button class="linkbtn" id="reqBtn" hidden title="기기 허용 요청">🔔</button> <button class="linkbtn" id="permBtn" hidden title="친구가 할 수 있는 일">권한</button> <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span><span class="lo-t"> · 로그아웃</span><span class="lo-i" aria-hidden="true"> ↪</span></button>
 </div></header>
 
 <main class="wrap">
@@ -528,10 +530,11 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 <dialog id="loginDlg">
   <form id="loginForm">
     <h3 style="margin-top:0">🎸 Music Lab</h3>
-    <p class="small mute">밴드매니저 합주곡의 <b>🎧 연습</b> 버튼으로 들어오면 비밀번호 없이 들어와요. 아니면 밴드 PIN 또는 Benny 관리자 비밀번호를 넣어 주세요. 한 번 들어오면 이 기기에서는 기억돼요.</p>
-    <input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    <div id="joinBox"><div class="small mute">확인 중…</div></div>
     <div class="small" id="loginErr" style="color:var(--err);min-height:20px;margin-top:6px"></div>
-    <div style="display:flex;justify-content:flex-end"><button class="btn pri">들어가기</button></div>
+    <details id="pwBox" class="small"><summary class="mute">Benny · 비밀번호로 들어가기</summary>
+      <div style="display:flex;gap:6px;margin-top:8px"><input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호" style="flex:1">
+      <button class="btn sm">들어가기</button></div></details>
   </form>
 </dialog>
 <dialog id="autoDlg">
@@ -540,11 +543,16 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
   <div id="autoList"></div>
   <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn sm" id="autoClose">닫기</button></div>
 </dialog>
+<dialog id="reqDlg">
+  <h3 style="margin:0 0 4px">🔔 기기 허용</h3>
+  <div class="small mute" style="margin-bottom:6px">친구가 이름을 적고 요청하면 여기 와요 (폰 알림도). 허용하면 그 기기만 · 고른 기간만큼 돼요. 회수하면 그 기기는 바로 막혀요.</div>
+  <div id="reqList"></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn sm" id="reqClose">닫기</button></div>
+</dialog>
 <dialog id="permDlg">
-  <h3 style="margin:0 0 4px">🔐 친구(밴드 PIN)가 할 수 있는 일</h3>
+  <h3 style="margin:0 0 4px">🔐 친구가 할 수 있는 일</h3>
   <div class="small mute" style="margin-bottom:10px">관리자(Benny 비번)는 전부 할 수 있어요. 듣기·연습(재생·코드·가사·악보·해설 보기)은 친구도 항상 돼요.</div>
   <div id="permList"></div>
-  <div class="small mute" style="margin-top:10px">PIN 을 바꾸면(PC 의 auth.json) 그 전에 PIN 으로 들어온 기기는 전부 다시 로그인해야 해요.</div>
   <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn sm" id="permClose">닫기</button></div>
 </dialog>
 <dialog id="lyrDlg">
@@ -566,7 +574,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-01a";
+const BUILD = "2026-11-02a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -612,7 +620,7 @@ async function api(path, opt = {}) {
   return r.json();
 }
 function applyRole() {
-  $("#who").textContent = AUTH ? (isAdmin() ? "Benny" : (BANDS.find(b => b.key === AUTH.band)?.name || "밴드")) : "";
+  $("#who").textContent = AUTH ? (isAdmin() ? "Benny" : AUTH.name || (BANDS.find(b => b.key === AUTH.band)?.name || "밴드")) : "";
   $("#moreLink").hidden = !isAdmin();   // 친구에게는 다른 프로젝트 안 보이게 (10-27, 밴드매니저와 같이)
   applyPerms();
 }
@@ -621,7 +629,7 @@ let PERMS = LS.get("perms", null);
 const can = k => isAdmin() || !!PERMS?.perms?.[k] || !!PERMS?.mine?.[k]; // mine = 이 기기만 허용받은 것
 function applyPerms() {
   for (const k of ["add", "edit", "study", "manage"]) document.body.classList.toggle("no-" + k, !!AUTH && !can(k));
-  $("#permBtn").hidden = !isAdmin();
+  $("#permBtn").hidden = $("#reqBtn").hidden = !isAdmin();
 }
 async function loadPerms() {
   if (!AUTH) return;
@@ -630,7 +638,7 @@ async function loadPerms() {
     try { const r = await api("/api/renew", { method: "POST" }); AUTH = Object.assign(AUTH, r, { renewed: Date.now() }); LS.set("auth", AUTH); } catch {}
   }
   applyPerms();
-  if (isAdmin()) accessLoad(); // 작곡 탭에 사용 요청 표시
+  if (isAdmin()) accessLoad(); // 🔔 기기 허용 요청 수
 }
 $("#permBtn").onclick = () => {
   const info = PERMS?.info || {}, cur = PERMS?.perms || {};
@@ -642,13 +650,54 @@ $("#permBtn").onclick = () => {
   $("#permDlg").showModal();
 };
 $("#permClose").onclick = () => $("#permDlg").close();
-function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; if (!$("#loginDlg").open) $("#loginDlg").showModal(); setTimeout(() => $("#pw").focus(), 50); }
+/* 로그인 = 이름 + 이 기기 요청 → Benny 허용 (11-02 Benny "PIN 필요 없이 닉네임·이름과 기기만", 베니 아케이드와 같은 방식).
+   허용되면 자동으로 들어옴(5초마다 확인). 밴드매니저 🎧 링크는 그대로 바로, Benny 는 접어 둔 비밀번호. 예전 PIN 도 비밀번호 칸에서 됨 */
+let JOINT = null;
+function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; if (!$("#loginDlg").open) $("#loginDlg").showModal(); joinCheck(true); }
+function joinIn(r) { // 허용됨 → 토큰 받아 들어감
+  clearTimeout(JOINT); AUTH = { role: r.role, token: r.token, ftoken: r.ftoken, band: r.band, name: r.name, renewed: Date.now() };
+  LS.set("auth", AUTH); if (r.name) LS.set("myName", r.name); LS.set("libCache", null);
+  if ($("#loginDlg").open) $("#loginDlg").close(); applyRole(); loadPerms(); boot(); toast("들어왔어요");
+}
+async function joinCheck(first) {
+  clearTimeout(JOINT);
+  if (!$("#loginDlg").open) return;
+  let r; try { r = await api("/api/join"); } catch (e) { $("#joinBox").innerHTML = `<div class="small mute">서버에 닿지 않아요 (${esc(e.message)}) — 잠시 뒤 다시 열어 주세요</div>`; return; }
+  if (r.status === "ok") return joinIn(r);
+  if (r.status === "pending") { joinDraw(r); JOINT = setTimeout(joinCheck, 5000); return; }
+  if (first || r.status === "denied" || !$("#joinName")) joinDraw(r);
+}
+function joinDraw(r) {
+  const box = $("#joinBox");
+  if (r.status === "pending") {
+    box.innerHTML = `<div>⏳ <b>${esc(r.name || LS.get("myName", ""))}</b> 님 요청을 보냈어요.</div>
+      <div class="small mute" style="margin:4px 0 8px">Benny 가 허용하면 이 화면이 저절로 열려요. 닫았다가 나중에 다시 와도 돼요.</div>
+      <button type="button" class="btn xs" id="joinRe">이름 고쳐 다시 요청</button>`;
+    $("#joinRe").onclick = () => { clearTimeout(JOINT); joinDraw(Object.assign({}, r, { status: "none" })); };
+    return;
+  }
+  const bands = r.bands || [], my = LS.get("myBand", AUTH?.band || bands[0]?.key || "");
+  box.innerHTML = `<p class="small mute" style="margin-top:0">밴드매니저 합주곡의 <b>🎧 연습</b> 버튼으로 오면 바로 들어와요.
+      아니면 이름을 적고 요청해 주세요 — Benny 가 허용하면 이 기기에서 계속 쓸 수 있어요.</p>
+    ${r.status === "denied" ? `<div class="small" style="color:var(--warn);margin-bottom:6px">지난 요청은 허용되지 않았어요. 다시 요청할 수 있어요.</div>` : ""}
+    <input id="joinName" placeholder="이름 또는 닉네임" maxlength="20" value="${esc(r.name || LS.get("myName", ""))}" autocomplete="nickname">
+    <div class="bandpick">${bands.map(b => `<label><input type="radio" name="jb" value="${esc(b.key)}" ${b.key === my ? "checked" : ""}>${esc(b.name)}</label>`).join("")}</div>
+    <button type="button" class="btn pri" id="joinGo" style="width:100%">🙋 들어가기 요청</button>`;
+  $("#joinGo").onclick = async () => {
+    const name = $("#joinName").value.trim(), band = $$("#joinBox [name=jb]").find(x => x.checked)?.value;
+    if (!name) return toast("이름을 적어 주세요"); if (!band) return toast("밴드를 골라 주세요");
+    LS.set("myName", name); LS.set("myBand", band); $("#joinGo").disabled = true; $("#loginErr").textContent = "";
+    try { await api("/api/join", jsonOpt("POST", { name, band })); joinDraw({ status: "pending", name }); JOINT = setTimeout(joinCheck, 5000); }
+    catch (e) { $("#loginErr").textContent = e.message; $("#joinGo").disabled = false; }
+  };
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && $("#loginDlg").open) joinCheck(); });
 $("#loginForm").onsubmit = async e => {
   e.preventDefault(); $("#loginErr").textContent = "확인 중…";
-  try { AUTH = await api("/api/login", jsonOpt("POST", { password: $("#pw").value })); LS.set("auth", AUTH); $("#loginDlg").close(); applyRole(); loadPerms(); boot(); }
+  try { AUTH = await api("/api/login", jsonOpt("POST", { password: $("#pw").value })); LS.set("auth", AUTH); clearTimeout(JOINT); $("#loginDlg").close(); applyRole(); loadPerms(); boot(); }
   catch (err) { $("#loginErr").textContent = err.message; }
 };
-$("#logout").onclick = () => { if (!confirm("로그아웃할까요? 다시 들어오려면 밴드매니저 🎧 링크나 비밀번호가 필요해요.")) return; AUTH = null; LS.set("auth", null); location.hash = ""; location.reload(); };
+$("#logout").onclick = () => { if (!confirm("로그아웃할까요?")) return; AUTH = null; LS.set("auth", null); location.hash = ""; location.reload(); };
 /* 밴드매니저 🎧 버튼으로 들어옴(?bm=밴드 id) → 그 밴드로 로그인. Benny(관리자)는 그대로. 주소에서는 지움 (10-27) */
 async function bmLogin() {
   const q = new URLSearchParams(location.search), bm = q.get("bm");
@@ -1907,8 +1956,8 @@ const ssOk = s => !!s.songsterr?.found, vidOk = s => !!s.videotab?.found, origOk
 // 기본 출처: 올린 악보 > 원본 악보(영상 악보 그림 그대로) > 올린 PDF > 다시 그린 영상 악보 > Songsterr > 자동 채보
 const TAB_MODE_NAME = { score: "올린 악보", orig: "원본 악보 (영상)", pdf: "올린 PDF", vid: "다시 그린 악보 (영상)", ss: "Songsterr", auto: "자동 채보" };
 /* 악보는 파트별로 (11-01 Benny "기타 1 · 기타 2 · 베이스로 관리 — 유튜브에 기타 1·2 악보가 다 나오면 둘 다 된 것, 하나만이면 하나만").
-   파트마다 볼 수 있는 출처를 좋은 순서로: 영상(원본 그림 · 다시 그린 것) > 올린 악보 > Songsterr(악기 번호로 기타·베이스 가림) > 올린 PDF > 자동 채보(기타 1 만).
-   ✓ = 사람이 쓴 악보(유튜브 타브 영상 · 올린 악보 파일). 서버 parts_of 와 같은 규칙 (곡 목록 표시) */
+   파트마다 볼 수 있는 출처를 좋은 순서로: 영상(원본 그림 · 다시 그린 것) > 올린 악보 > 올린 PDF(파트마다 한 칸, 11-02) > Songsterr(악기 번호로 기타·베이스 가림) > 자동 채보(기타 1 만).
+   ✓ = 사람이 쓴 악보(유튜브 타브 영상 · 올린 악보 파일 · 올린 PDF). 서버 parts_of 와 같은 규칙 (곡 목록 표시) */
 const PARTS = [["g1", "기타 1"], ["g2", "기타 2"], ["bass", "베이스"]];
 let tabPart = "g1";
 function partSrcs(s, part) {
@@ -1919,17 +1968,18 @@ function partSrcs(s, part) {
     out.push({ mode: "vid", ti: ti >= 0 ? ti : vp - 1, done: true });
   }
   if (s.score) out.push({ mode: "score", done: part === "g1" }); // 트랙은 불러온 뒤 이름으로 고름
+  if (s.pdfs?.[part]?.pages?.length) out.push({ mode: "pdf", done: true });
   if (ssOk(s)) { const k = ss.kinds || [], g = k.map((x, i) => x === "guitar" ? i : -1).filter(i => i >= 0), ti = part === "bass" ? k.indexOf("bass") : g[vp - 1];
     if (ti != null && ti >= 0) out.push({ mode: "ss", ti }); }
-  if (s.pdfscore?.pages?.length) out.push({ mode: "pdf" });
   if (part === "g1") out.push({ mode: "auto" });
   return out;
 }
 function partState(s, part) { const S = partSrcs(s, part);
-  return S.some(x => x.done) ? { done: true, txt: "✓", cls: "ok" } : S.some(x => x.mode === "ss") ? { txt: "참고", cls: "" } : S.some(x => x.mode === "pdf" || x.mode === "auto") ? { txt: "초안", cls: "" } : { txt: "없음", cls: "no" }; }
+  return S.some(x => x.done) ? { done: true, txt: "✓", cls: "ok" } : S.some(x => x.mode === "ss") ? { txt: "참고", cls: "" } : S.some(x => x.mode === "auto") ? { txt: "초안", cls: "" } : { txt: "없음", cls: "no" }; }
 function tabModes(s) { return partSrcs(s, tabPart).map(x => x.mode); }
 function defaultTabMode(s) { if (!PARTS.some(([k]) => k === tabPart)) tabPart = "g1"; const M = tabModes(s), sv = LS.get(`tsrc:${s.id}:${tabPart}`, null); return M.includes(sv) ? sv : M[0] || null; }
 const partSrc = () => partSrcs(P.song, tabPart).find(x => x.mode === tabMode);
+const curPdf = () => P.song?.pdfs?.[tabPart];
 function activeScore() { const s = P.song; return tabMode === "score" ? s.score : tabMode === "ss" && ssOk(s) ? s.songsterr : (tabMode === "vid" || tabMode === "orig") && vidOk(s) ? s.videotab : null; }
 function tabNote() {
   const ss = P.song.songsterr;
@@ -1937,11 +1987,11 @@ function tabNote() {
     : !tabMode ? `${PARTS.find(p => p[0] === tabPart)[1]} 악보가 아직 없어요. <b>⬆ 올리기</b>에서 이 파트가 나오는 유튜브 타브 영상 링크나 악보 파일을 넣어 주세요.`
     : tabMode === "ss" ? `Songsterr 타브 <b>${esc(ss.ref || "")}</b>의 <b>${esc(ss.tracks?.[partSrc()?.ti] || "")}</b> 트랙${ss.ai ? " (AI가 만든 타브라 틀린 곳이 있을 수 있어요)" : " (사람이 만든 타브)"}을 이 음원 마디에 맞췄어요 · ${ss.mapped}/${ss.bars}마디.`
     : tabMode === "orig" ? `타브 영상의 <b>원본 악보 그림</b>이에요. 재생하면 지금 마디에 표시되고 자동으로 넘어가요. 마디를 누르면 그 위치로 가요. 개인 연습용이에요. <a href="https://youtu.be/${esc(P.song.videotab.video)}" target="_blank">원본 영상 ↗</a>`
-    : tabMode === "pdf" ? `올린 PDF <b>${esc(P.song.pdfscore.original || "")}</b> 그대로예요. 마디 표시·자동 넘김은 없어요 (손으로 넘겨 보세요).`
+    : tabMode === "pdf" ? `올린 PDF <b>${esc(curPdf()?.original || "")}</b> 그대로예요. 마디 표시·자동 넘김은 없어요 (손으로 넘겨 보세요).`
     : tabMode === "vid" ? `타브 영상을 읽어 이 음원 마디에 맞춘 악보예요 (${P.song.videotab.tracks.map((t, i) => `${esc(t)} ${P.song.videotab.mapped[i]}마디`).join(" · ")}). 운지 숫자는 정확도가 높고, 박 위치는 영상 간격으로 맞춘 근사예요. <a href="https://youtu.be/${esc(P.song.videotab.video)}" target="_blank">원본 영상 ↗</a>`
     : "올린 악보를 보여주고 있어요. 재생 위치와 마디가 어긋나면 위의 <b>1마디 맞추기</b>를 눌러 주세요.") +
     (P.semi ? ` <b style="color:var(--warn)">악보는 원키(${esc(P.song.key)}) 기준이에요.</b>` : "") +
-    (tabMode && !partState(P.song, tabPart).done ? `<div class="small mute" style="margin-top:4px">✓ 는 유튜브 타브 영상 · 올린 악보 파일처럼 사람이 쓴 악보예요. 이 파트가 나오는 타브 영상을 넣으면 ✓ 가 돼요.</div>` : "");
+    (tabMode && !partState(P.song, tabPart).done ? `<div class="small mute" style="margin-top:4px">✓ 는 유튜브 타브 영상 · 올린 악보 파일 · PDF 처럼 사람이 쓴 악보예요. 이 파트가 나오는 타브 영상을 넣으면 ✓ 가 돼요.</div>` : "");
 }
 function buildTabBar() {
   // 한 줄: [악보 종류 고르기] … [⬆ 올리기]. 올리기·찾기·맞추기 같은 가끔 쓰는 버튼은 올리기 메뉴 안으로 (2026-10-19 Benny "버튼이 섞여 불편")
@@ -1964,7 +2014,7 @@ function buildTabBar() {
   if ($("#tabSrc")) $("#tabSrc").onchange = e => { tabMode = e.target.value; LS.set(`tsrc:${s.id}:${tabPart}`, tabMode); tabbarMenu = false; loadTab(); };
   $$("#tabbar [data-part]").forEach(b => b.onclick = () => { tabPart = b.dataset.part; LS.set("tpart:" + s.id, tabPart); tabMode = defaultTabMode(s); tabbarMenu = false; loadTab(); });
   $("#tabUp").onclick = () => { tabbarMenu = !tabbarMenu; $("#upMenu").hidden = !tabbarMenu; $("#tabUp").classList.toggle("on", tabbarMenu); };
-  if ($("#pdfDel")) $("#pdfDel").onclick = async () => { if (!confirm("올린 PDF를 지울까요?")) return; await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove_pdf: true })); delete s.pdfscore; tabbarMenu = false; tabMode = defaultTabMode(s); loadTab(); };
+  if ($("#pdfDel")) $("#pdfDel").onclick = async () => { if (!confirm("올린 PDF를 지울까요?")) return; await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove_pdf: tabPart })); if (s.pdfs) delete s.pdfs[tabPart]; delete s.pdfscore; tabbarMenu = false; tabMode = defaultTabMode(s); loadTab(); };
   if ($("#ssFind")) $("#ssFind").onclick = async () => {
     const done = busy("Songsterr에서 같은 곡을 찾아 마디를 맞추는 중… (몇 초)");
     try { const r = await api(`/api/songs/${s.id}/songsterr`, jsonOpt("POST", {}));
@@ -1991,11 +2041,12 @@ async function pollVideoTab(s) { // 영상 악보 진행 상황 (10초마다, �
   else if (VIEW === "tab") buildTabBar();
 }
 $("#scoreFile").onchange = async () => {
-  const f = $("#scoreFile").files[0]; if (!f) return; const fd = new FormData(); fd.append("file", f);
+  const f = $("#scoreFile").files[0]; if (!f) return; const fd = new FormData(); fd.append("file", f); fd.append("part", tabPart); // PDF 는 파일 이름에 파트가 없으면 보던 파트로
   const done = busy("악보를 올리는 중…");
   try { const r = await api(`/api/songs/${P.song.id}/score`, { method: "POST", body: fd });
-    if (r.pages) { P.song.pdfscore = r; tabMode = "pdf"; } else { P.song.score = r; tabMode = "score"; }
-    tabbarMenu = false; loadTab(); toast("악보를 올렸어요"); }
+    if (r.pages) { P.song.pdfs = Object.assign({}, P.song.pdfs, { [r.part]: r }); tabPart = r.part; LS.set("tpart:" + P.song.id, tabPart); tabMode = "pdf"; }
+    else { P.song.score = r; tabMode = "score"; }
+    tabbarMenu = false; loadTab(); toast(r.pages ? `${PARTS.find(p => p[0] === r.part)[1]} PDF 로 올렸어요` : "악보를 올렸어요"); }
   catch (e) { toast("실패: " + e.message); }
   done(); $("#scoreFile").value = "";
 };
@@ -2047,7 +2098,7 @@ function highlightOrig(t) {
   if (scroll.top != null || scroll.left != null) box.scrollTo(Object.assign({ behavior: P.playing ? "smooth" : "auto" }, scroll));
 }
 function loadPdf() { // 올린 PDF 페이지 그림 (마디 싱크 없음)
-  const s = P.song, pf = s.pdfscore; atApi = null; hlEl = null; P.origPages = null;
+  const s = P.song, pf = curPdf(); atApi = null; hlEl = null; P.origPages = null;
   const tb = $("#trackBtns"); tb.hidden = false;
   tb.innerHTML = `<button class="btn xs" id="origZoom">${LS.get("origZoom", isMobile) ? "🔍 작게" : "🔍 크게"}</button><a class="btn xs" href="${fileUrl(s.id, pf.file)}" target="_blank" style="text-decoration:none">PDF 받기</a>`;
   $("#tabbox").classList.toggle("zoom", !!LS.get("origZoom", isMobile));
@@ -2081,7 +2132,7 @@ async function loadTab() {
   buildTabBar(); tabNote();
   if (!tabMode) { atApi = null; P.origPages = null; box.innerHTML = ""; return; }
   if (tabMode === "orig" && origOk(s)) return loadOrig();
-  if (tabMode === "pdf" && s.pdfscore) return loadPdf();
+  if (tabMode === "pdf" && curPdf()) return loadPdf();
   P.origPages = null;
   if (!window.alphaTab) { box.innerHTML = `<div class="mute" style="padding:20px">악보 표시 도구를 불러오는 중… 잠시 뒤 다시 눌러 주세요.</div>`; tabLoaded = false; return; }
   const sc = activeScore();
@@ -2401,7 +2452,6 @@ async function writeHome() {
   location.hash = "write"; await wSaveNow(); WN = null; clearTimeout(WGEN);
   const box = $("#writeBox"), ok = can("compose"); box.className = "wr";
   box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">스타일과 가사를 넣으면 이 PC 그래픽카드로 노래를 만들어요 (무료, 3~6분). 만든 노래는 프로젝트로 남고, 다듬을 때마다 판이 쌓여요.</div>
-    <div id="wReq"></div>
     <div class="wcard" id="wMake">${ok ? wFormHtml(WDRAFT, true) + `<div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">🎤 노래 만들기</button></div>` : wLockHtml()}</div>
     <h2 class="wh">프로젝트</h2><div id="wList"></div>`;
   if (ok) {
@@ -2417,8 +2467,7 @@ async function writeHome() {
       } catch (e) { toast(e.message); $("#wGo").disabled = false; }
     };
   } else wLockBind();
-  if (isAdmin()) { wAccessDraw(); accessLoad(); }
-  else loadPerms().then(() => { if (MAIN === "write" && !WN && can("compose") !== ok) writeHome(); }); // 그사이 허용됐으면 바로 열림
+  if (!isAdmin()) loadPerms().then(() => { if (MAIN === "write" && !WN && can("compose") !== ok) writeHome(); }); // 그사이 허용됐으면 바로 열림
   wListDraw(LS.get("writeCache", null));
   try { const list = await api("/api/write"); LS.set("writeCache", list); if (MAIN === "write" && !WN) wListDraw(list); }
   catch (e) { if (!LS.get("writeCache", null)) $("#wList").innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
@@ -2453,27 +2502,38 @@ function wLockBind() {
     catch (e) { toast("실패: " + e.message); }
   };
 }
-async function accessLoad() { // Benny: 사용 요청 · 허용한 기기 (작곡 탭 숫자 표시)
+// ---- Benny: 🔔 기기 허용 (들어오기 · AI 노래 만들기 요청, 허용한 기기) — 머리 단추 숫자, 1분마다·화면 돌아올 때 새로
+const PERM_LABEL = { enter: "들어오기", compose: "AI 노래 만들기" }, SPAN_LABEL = [["today", "하루"], ["week", "1주"], ["month", "1달"], ["always", "계속"]];
+async function accessLoad() {
+  if (!isAdmin()) return;
   try { ACCESS = await api("/api/access"); } catch { return; }
-  const n = ACCESS.requests.length, b = $('#mainnav [data-main="write"]');
-  if (b) b.innerHTML = "✍️ 작곡" + (n ? ` <span class="nbadge">${n}</span>` : "");
-  wAccessDraw();
+  const n = ACCESS.requests.length;
+  $("#reqBtn").innerHTML = "🔔" + (n ? `<span class="nbadge">${n}</span>` : "");
+  if ($("#reqDlg").open) accessDraw();
 }
-function wAccessDraw() {
-  const box = $("#wReq"); if (!box || !isAdmin() || !ACCESS) return;
+function accessDraw() {
+  const box = $("#reqList"); if (!ACCESS) return;
   const R = ACCESS.requests, D = ACCESS.devices, bn = k => BANDS.find(b => b.key === k)?.name || "";
   const ago = t => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 60 ? m + "분 전" : m < 1440 ? Math.round(m / 60) + "시간 전" : new Date(t * 1000).toLocaleDateString("ko-KR"); };
-  box.innerHTML = (R.length ? `<div class="wcard req"><b>🔔 AI 노래 만들기 사용 요청 ${R.length}</b>` + R.map(r => `<div class="rq"><div class="t"><b>${esc(r.name)}</b>
-        <span class="small mute">${esc(bn(r.band))} · ${ago(r.at)} · ${r.want === "today" ? "오늘만 원함" : "계속 원함"}</span>${r.note ? `<div class="small">${esc(r.note)}</div>` : ""}</div>
-      <button class="btn xs ${r.want !== "today" ? "pri" : ""}" data-ac="always" data-h="${r.id}">계속</button><button class="btn xs ${r.want === "today" ? "pri" : ""}" data-ac="today" data-h="${r.id}">오늘만</button><button class="btn xs" data-ac="deny" data-h="${r.id}">거절</button></div>`).join("") + `</div>` : "")
-    + (D.length ? `<details class="devs"><summary class="small mute">허용한 기기 ${D.length}</summary>` + D.map(d => `<div class="rq"><div class="t small">${esc(d.name)} <span class="mute">${esc(bn(d.band))} · ${d.until ? (d.expired ? "오늘만 · 끝남" : "오늘만 · " + new Date(d.until * 1000).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) + "까지") : "계속"}</span></div><button class="btn xs" data-ac="revoke" data-h="${d.id}">회수</button></div>`).join("") + `</details>` : "");
-  $$("#wReq [data-ac]").forEach(b => b.onclick = async () => {
-    if (b.dataset.ac === "revoke" && !confirm("이 기기의 허용을 회수할까요?")) return;
-    try { await api(`/api/access/${b.dataset.h}`, jsonOpt("POST", { action: b.dataset.ac })); toast({ always: "계속 쓸 수 있게 했어요", today: "오늘만 쓸 수 있게 했어요", deny: "거절했어요", revoke: "회수했어요" }[b.dataset.ac]); }
+  const left = u => !u ? "계속" : u * 1000 < Date.now() ? "끝남" : new Date(u * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) + "까지";
+  box.innerHTML = (R.length ? R.map(r => `<div class="rq"><div class="t"><b>${esc(r.name)}</b> <span class="pchip">${PERM_LABEL[r.perm] || r.perm}</span>
+        <div class="small mute">${[esc(bn(r.band)), ago(r.at)].filter(Boolean).join(" · ")}${r.perm === "compose" ? (r.want === "today" ? " · 오늘만 원함" : " · 계속 원함") : ""}</div>${r.note ? `<div class="small">${esc(r.note)}</div>` : ""}</div>
+      ${SPAN_LABEL.map(([k, l]) => `<button class="btn xs ${(r.want === "today" ? "today" : "always") === k ? "pri" : ""}" data-ac="${k}" data-h="${r.id}">${l}</button>`).join("")}<button class="btn xs" data-ac="deny" data-h="${r.id}">거절</button></div>`).join("")
+      : `<div class="small mute" style="padding:8px 0">기다리는 요청이 없어요.</div>`)
+    + (D.length ? `<details class="devs" ${R.length ? "" : "open"}><summary class="small mute">허용한 기기 ${D.length}</summary>` + D.map(d => `<div class="rq"><div class="t small"><b>${esc(d.name)}</b> <span class="mute">${esc(bn(d.band))}</span><div>`
+        + Object.entries(d.perms).map(([p, x]) => `<span class="pchip ${x.expired ? "x" : ""}">${PERM_LABEL[p] || p} · ${left(x.until)} <button class="linkbtn small" data-ac="revoke" data-p="${p}" data-h="${d.id}">회수</button></span>`).join("") + `</div></div></div>`).join("") + `</details>` : "");
+  $$("#reqList [data-ac]").forEach(b => b.onclick = async () => {
+    const ac = b.dataset.ac;
+    if (ac === "revoke" && !confirm(`이 기기의 '${PERM_LABEL[b.dataset.p]}' 허용을 회수할까요?`)) return;
+    try { await api(`/api/access/${b.dataset.h}`, jsonOpt("POST", { action: ac, perm: b.dataset.p || undefined })); toast(ac === "deny" ? "거절했어요" : ac === "revoke" ? "회수했어요" : `${SPAN_LABEL.find(x => x[0] === ac)[1]} 허용했어요`); }
     catch (e) { toast("실패: " + e.message); }
     accessLoad();
   });
 }
+$("#reqBtn").onclick = async () => { $("#reqDlg").showModal(); accessDraw(); accessLoad(); };
+$("#reqClose").onclick = () => $("#reqDlg").close();
+setInterval(() => { if (isAdmin() && !document.hidden) accessLoad(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (isAdmin() && !document.hidden) accessLoad(); });
 
 // ---- 프로젝트: 진행 과정(판) + 다음 판 만들기
 async function writeOpen(id) {
