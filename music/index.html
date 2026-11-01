@@ -574,7 +574,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-02a";
+const BUILD = "2026-11-02b";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -651,7 +651,7 @@ $("#permBtn").onclick = () => {
 };
 $("#permClose").onclick = () => $("#permDlg").close();
 /* 로그인 = 이름 + 이 기기 요청 → Benny 허용 (11-02 Benny "PIN 필요 없이 닉네임·이름과 기기만", 베니 아케이드와 같은 방식).
-   허용되면 자동으로 들어옴(5초마다 확인). 밴드매니저 🎧 링크는 그대로 바로, Benny 는 접어 둔 비밀번호. 예전 PIN 도 비밀번호 칸에서 됨 */
+   허용되면 자동으로 들어옴(5초마다 확인). 밴드매니저 🎧 링크는 그대로 바로, Benny 는 접어 둔 비밀번호. PIN 로그인은 없앰(예전 PIN 토큰은 그대로) */
 let JOINT = null;
 function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; if (!$("#loginDlg").open) $("#loginDlg").showModal(); joinCheck(true); }
 function joinIn(r) { // 허용됨 → 토큰 받아 들어감
@@ -2517,7 +2517,7 @@ function accessDraw() {
   const ago = t => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 60 ? m + "분 전" : m < 1440 ? Math.round(m / 60) + "시간 전" : new Date(t * 1000).toLocaleDateString("ko-KR"); };
   const left = u => !u ? "계속" : u * 1000 < Date.now() ? "끝남" : new Date(u * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) + "까지";
   box.innerHTML = (R.length ? R.map(r => `<div class="rq"><div class="t"><b>${esc(r.name)}</b> <span class="pchip">${PERM_LABEL[r.perm] || r.perm}</span>
-        <div class="small mute">${[esc(bn(r.band)), ago(r.at)].filter(Boolean).join(" · ")}${r.perm === "compose" ? (r.want === "today" ? " · 오늘만 원함" : " · 계속 원함") : ""}</div>${r.note ? `<div class="small">${esc(r.note)}</div>` : ""}</div>
+        <div class="small mute">${[esc(bn(r.band)), ago(r.at)].filter(Boolean).join(" · ")}${r.perm === "compose" ? (r.want === "today" ? " · 오늘만 원함" : " · 계속 원함") : ""}</div>${r.net ? `<div class="small mute">${esc(r.net)}</div>` : ""}${r.note ? `<div class="small">${esc(r.note)}</div>` : ""}</div>
       ${SPAN_LABEL.map(([k, l]) => `<button class="btn xs ${(r.want === "today" ? "today" : "always") === k ? "pri" : ""}" data-ac="${k}" data-h="${r.id}">${l}</button>`).join("")}<button class="btn xs" data-ac="deny" data-h="${r.id}">거절</button></div>`).join("")
       : `<div class="small mute" style="padding:8px 0">기다리는 요청이 없어요.</div>`)
     + (D.length ? `<details class="devs" ${R.length ? "" : "open"}><summary class="small mute">허용한 기기 ${D.length}</summary>` + D.map(d => `<div class="rq"><div class="t small"><b>${esc(d.name)}</b> <span class="mute">${esc(bn(d.band))}</span><div>`
