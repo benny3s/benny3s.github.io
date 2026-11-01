@@ -67,6 +67,9 @@ h1{margin:0;font-size:24px;line-height:1.2;letter-spacing:-.03em}
 
 .try{border:2px solid var(--accent)}
 .try .how{margin:8px 0 0;font-size:13.5px;line-height:1.6;white-space:pre-line}
+.ins .nm{cursor:default}
+.ins .meta a{text-decoration:none;border-bottom:1px solid #d6d5cf;cursor:pointer}
+.ins .meta a:hover{border-color:var(--ink)}
 
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
 .filters button{font:inherit;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
@@ -146,6 +149,40 @@ function shortCard(s) {
                 metric: [s.channel, s.views ? "조회 " + Number(s.views).toLocaleString("ko-KR") : "", s.lang].filter(Boolean).join(" · ") });
 }
 
+// 인사이트 — learn 배울 것 · do 할 것 · watch 예측 (agent-hub radar/TASK.md '인사이트')
+const INS = { learn: ["good", "배울 것"], do: ["new", "할 것"], watch: ["watch", "예측"] };
+function insightCard(x, d) {
+  const c = el("div", "card ins"), top = el("div", "top"), k = INS[x.kind] || ["", x.kind];
+  top.appendChild(el("span", "tag " + k[0], k[1])); top.appendChild(el("span", "nm", x.title)); c.appendChild(top);
+  if (x.so_what) c.appendChild(el("p", "why", x.so_what));
+  if (x.kind === "watch") {
+    if (x.claim) c.appendChild(el("p", "d", "예측: " + x.claim));
+    const m = el("div", "meta");
+    if (x.due) m.appendChild(el("span", "", "~" + md(x.due) + " 채점"));
+    if (x.p) m.appendChild(el("span", "", "확신 " + Math.round(x.p * 100) + "%"));
+    if (x.how_check) m.appendChild(el("span", "", "확인: " + x.how_check));
+    c.appendChild(m);
+  } else if (x.start) c.appendChild(el("p", "d", "시작: " + x.start));
+  const m = el("div", "meta");
+  if (x.concept) m.appendChild(el("span", "", x.concept));
+  const live = new Map(d.items.map(i => [String(i.id).toLowerCase(), i]));
+  const old = new Map((d.archive || []).map(i => [String(i.id).toLowerCase(), i]));
+  const refs = (x.from || []).map(f => [live.get(String(f).toLowerCase()), old.get(String(f).toLowerCase())]).filter(([a, b]) => a || b);
+  if (refs.length) {
+    const r = el("span", "", "근거 ");
+    refs.forEach(([a, b], n) => {
+      if (n) r.appendChild(document.createTextNode(" · "));
+      const it = a || b, t = String(it.title || it.id), e = el("a", "", t.length > 28 ? t.slice(0, 27) + "…" : t);
+      if (a) { e.href = "#" + cur; e.onclick = ev => { ev.preventDefault(); jump(a.id); }; }
+      else { const u = safeUrl(b.url); if (u) { e.href = u; e.target = "_blank"; e.rel = "noopener"; } }
+      r.appendChild(e);
+    });
+    m.appendChild(r);
+  }
+  if (m.childNodes.length) c.appendChild(m);
+  return c;
+}
+
 function jump(id) {
   const t = document.getElementById(cardId(id));
   if (!t) return;
@@ -190,7 +227,13 @@ function draw() {
 
   if (d.headline) { const h = el("div", "headline"); h.appendChild(el("div", "k", "이번 회차 한 줄")); h.appendChild(el("p", "", d.headline)); main.appendChild(h); }
 
-  let s = el("section", "sec"); s.appendChild(el("h2", "", "이번에 바뀐 것")); s.appendChild(drawChanges(d)); main.appendChild(s);
+  let s;
+  if (d.insights && d.insights.length) {   // 11-01 Benny: 알림(베니 비서)은 3개만 지나가니 여기엔 다 남김
+    s = el("section", "sec"); const h = el("h2", "", "💡 그래서 베니 님은"); h.appendChild(el("small", "", "이번 회차")); s.appendChild(h);
+    const box = el("div", "list"); d.insights.forEach(x => box.appendChild(insightCard(x, d))); s.appendChild(box); main.appendChild(s);
+  }
+
+  s = el("section", "sec"); s.appendChild(el("h2", "", "이번에 바뀐 것")); s.appendChild(drawChanges(d)); main.appendChild(s);
 
   if (d.try && d.try.title) {
     s = el("section", "sec"); s.appendChild(el("h2", "", cfg.try_label || "해 볼 것"));
