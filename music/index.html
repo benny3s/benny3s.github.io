@@ -576,7 +576,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-02c";
+const BUILD = "2026-11-02d";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -638,7 +638,7 @@ function applyPerms() {
 async function loadPerms() {
   if (!AUTH) return;
   try { PERMS = await api("/api/perms"); LS.set("perms", PERMS); } catch {}
-  if (!AUTH.ftoken || !AUTH.renewed || AUTH.ftv !== 2 || Date.now() - AUTH.renewed > 7 * 86400e3) { // 일주일마다 로그인 자동 연장 → 비번 다시 넣을 일 없게 (ftv: 11-02 파일 토큰 서명이 바뀌어 한 번 새로 받음)
+  if (AUTH && (!AUTH.ftoken || !AUTH.renewed || AUTH.ftv !== 2 || Date.now() - AUTH.renewed > 7 * 86400e3)) { // 일주일마다 로그인 자동 연장 → 비번 다시 넣을 일 없게 (ftv: 11-02 파일 토큰 서명이 바뀌어 한 번 새로 받음)
     try { const r = await api("/api/renew", { method: "POST" }); AUTH = Object.assign(AUTH, r, { renewed: Date.now(), ftv: 2 }); LS.set("auth", AUTH); } catch {}
   }
   applyPerms();
