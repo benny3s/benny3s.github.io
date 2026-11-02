@@ -146,6 +146,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .row.met .msub{display:flex;gap:4px;margin-top:3px} .row.met .msub button{font-size:11px;padding:1px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--mute)}
 .row.met .msub button.on{border-color:var(--accent);color:var(--accent)} .row.met .nm{white-space:nowrap;font-size:14px} .row.met .metr{display:flex;align-items:center;gap:6px} .row.met .metr input{flex:1;min-width:0}
 .mset{height:30px;width:30px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--mute);font-size:15px;flex:none} .row.met .msub button{min-width:30px}
+body.link-only #mainnav,body.link-only .alt.admin{display:none!important}
 body.no-add [data-perm=add],body.no-edit [data-perm=edit],body.no-study [data-perm=study],body.no-manage [data-perm=manage]{display:none!important}
 #permList .pr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)} #permList .pr .t{flex:1} #permList .pr .t div{font-size:12px;color:var(--mute)}
 .mvrow{display:flex;align-items:center;gap:10px;padding:4px 0 8px;border-bottom:1px solid var(--line)} .mvrow input{flex:1} .mvrow b{min-width:40px;text-align:right}
@@ -379,7 +380,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 <header class="top"><div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%">
   <div class="logo" id="home">🎸 Music <b>Lab</b></div>
   <div class="pill" id="conn"><span class="dot" id="cdot"></span><span id="ctext">PC 연결 중…</span></div>
-  <button class="linkbtn" id="reqBtn" hidden title="기기 허용 요청">🔔</button> <button class="linkbtn" id="permBtn" hidden title="친구가 할 수 있는 일">권한</button> <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span><span class="lo-t"> · 로그아웃</span><span class="lo-i" aria-hidden="true"> ↪</span></button>
+  <button class="linkbtn" id="linkReq" hidden title="이 기기 허용 요청 — 받으면 곡 고치기·작곡·이론 책까지 돼요">🙋 기기 허용 요청</button> <button class="linkbtn" id="reqBtn" hidden title="기기 허용 요청">🔔</button> <button class="linkbtn" id="permBtn" hidden title="친구가 할 수 있는 일">권한</button> <button class="linkbtn" id="logout" title="로그아웃"><span id="who"></span><span class="lo-t"> · 로그아웃</span><span class="lo-i" aria-hidden="true"> ↪</span></button>
 </div></header>
 
 <main class="wrap">
@@ -535,6 +536,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
     <details id="pwBox" class="small"><summary class="mute">Benny · 비밀번호로 들어가기</summary>
       <div style="display:flex;gap:6px;margin-top:8px"><input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호" style="flex:1">
       <button class="btn sm">들어가기</button></div></details>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn xs" id="loginClose" hidden>닫기</button></div>
   </form>
 </dialog>
 <dialog id="autoDlg">
@@ -574,7 +576,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-02b";
+const BUILD = "2026-11-02c";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -605,6 +607,7 @@ function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;
 const jsonOpt = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 let AUTH = LS.get("auth", null); // {role, token}
 const isAdmin = () => AUTH?.role === "admin";
+const isLink = () => AUTH?.role === "link";   // 밴드 링크로 들어옴: 그 밴드 곡 보기·분석까지 (11-02)
 // 폰은 128k 가벼운 파일(서버가 처음 요청 때 만들어 둠) → 받는 양 2/3
 function fileUrl(id, name) { const v = P.song?.id === id && P.song.sep_v && name.endsWith(".mp3") ? `&sv=${P.song.sep_v}` : ""; // 트랙을 다시 나누면 주소가 바뀌어 캐시(30일) 대신 새로 받음
   // 폰: Opus 를 풀 수 있는 브라우저(안드로이드·iOS 17+ 대부분)는 Opus(80k, mp3 128k 의 약 60% 크기), 못 풀면 가벼운 mp3
@@ -630,12 +633,13 @@ const can = k => isAdmin() || !!PERMS?.perms?.[k] || !!PERMS?.mine?.[k]; // mine
 function applyPerms() {
   for (const k of ["add", "edit", "study", "manage"]) document.body.classList.toggle("no-" + k, !!AUTH && !can(k));
   $("#permBtn").hidden = $("#reqBtn").hidden = !isAdmin();
+  document.body.classList.toggle("link-only", isLink()); $("#linkReq").hidden = !isLink();
 }
 async function loadPerms() {
   if (!AUTH) return;
   try { PERMS = await api("/api/perms"); LS.set("perms", PERMS); } catch {}
-  if (!AUTH.ftoken || !AUTH.renewed || Date.now() - AUTH.renewed > 7 * 86400e3) { // 일주일마다 로그인 자동 연장 → 비번·PIN 다시 넣을 일 없게
-    try { const r = await api("/api/renew", { method: "POST" }); AUTH = Object.assign(AUTH, r, { renewed: Date.now() }); LS.set("auth", AUTH); } catch {}
+  if (!AUTH.ftoken || !AUTH.renewed || AUTH.ftv !== 2 || Date.now() - AUTH.renewed > 7 * 86400e3) { // 일주일마다 로그인 자동 연장 → 비번 다시 넣을 일 없게 (ftv: 11-02 파일 토큰 서명이 바뀌어 한 번 새로 받음)
+    try { const r = await api("/api/renew", { method: "POST" }); AUTH = Object.assign(AUTH, r, { renewed: Date.now(), ftv: 2 }); LS.set("auth", AUTH); } catch {}
   }
   applyPerms();
   if (isAdmin()) accessLoad(); // 🔔 기기 허용 요청 수
@@ -653,7 +657,9 @@ $("#permClose").onclick = () => $("#permDlg").close();
 /* 로그인 = 이름 + 이 기기 요청 → Benny 허용 (11-02 Benny "PIN 필요 없이 닉네임·이름과 기기만", 베니 아케이드와 같은 방식).
    허용되면 자동으로 들어옴(5초마다 확인). 밴드매니저 🎧 링크는 그대로 바로, Benny 는 접어 둔 비밀번호. PIN 로그인은 없앰(예전 PIN 토큰은 그대로) */
 let JOINT = null;
-function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; if (!$("#loginDlg").open) $("#loginDlg").showModal(); joinCheck(true); }
+$("#linkReq").onclick = () => showLogin();
+$("#loginClose").onclick = () => { clearTimeout(JOINT); $("#loginDlg").close(); };
+function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; $("#loginClose").hidden = !AUTH; if (!$("#loginDlg").open) $("#loginDlg").showModal(); joinCheck(true); }
 function joinIn(r) { // 허용됨 → 토큰 받아 들어감
   clearTimeout(JOINT); AUTH = { role: r.role, token: r.token, ftoken: r.ftoken, band: r.band, name: r.name, renewed: Date.now() };
   LS.set("auth", AUTH); if (r.name) LS.set("myName", r.name); LS.set("libCache", null);
@@ -677,8 +683,8 @@ function joinDraw(r) {
     return;
   }
   const bands = r.bands || [], my = LS.get("myBand", AUTH?.band || bands[0]?.key || "");
-  box.innerHTML = `<p class="small mute" style="margin-top:0">밴드매니저 합주곡의 <b>🎧 연습</b> 버튼으로 오면 바로 들어와요.
-      아니면 이름을 적고 요청해 주세요 — Benny 가 허용하면 이 기기에서 계속 쓸 수 있어요.</p>
+  box.innerHTML = `<p class="small mute" style="margin-top:0">밴드매니저 합주곡의 <b>🎧 연습</b> 버튼으로 오면 그 밴드 곡 보기·분석은 바로 돼요.
+      전부 쓰려면 이름을 적고 요청해 주세요 — Benny 가 허용하면 이 기기에서 계속 쓸 수 있어요.</p>
     ${r.status === "denied" ? `<div class="small" style="color:var(--warn);margin-bottom:6px">지난 요청은 허용되지 않았어요. 다시 요청할 수 있어요.</div>` : ""}
     <input id="joinName" placeholder="이름 또는 닉네임" maxlength="20" value="${esc(r.name || LS.get("myName", ""))}" autocomplete="nickname">
     <div class="bandpick">${bands.map(b => `<label><input type="radio" name="jb" value="${esc(b.key)}" ${b.key === my ? "checked" : ""}>${esc(b.name)}</label>`).join("")}</div>
@@ -703,7 +709,7 @@ async function bmLogin() {
   const q = new URLSearchParams(location.search), bm = q.get("bm");
   if (!bm) return;
   q.delete("bm"); try { history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); } catch {}
-  if (isAdmin()) return;
+  if (isAdmin() || AUTH?.role === "member") return;
   try { AUTH = await api("/api/login", jsonOpt("POST", { bm })); LS.set("auth", AUTH); LS.set("libCache", null); if ($("#loginDlg").open) $("#loginDlg").close(); }
   catch (e) { toast("밴드 링크로 들어오지 못했어요 — " + e.message); }
 }
@@ -2296,6 +2302,7 @@ function goHome(fromNav) {
 }
 let RETURN_TO = null, MAIN = "songs";
 function showMain(view, arg) {
+  if (isLink() && view !== "songs") { view = "songs"; arg = undefined; }
   if (view !== "write") { clearTimeout(WGEN); wSaveNow(); }
   MAIN = view; $("#vHome").hidden = view !== "songs"; $("#vBook").hidden = view !== "book"; $("#vWrite").hidden = view !== "write"; $("#mainnav").hidden = false;
   $$("#mainnav button").forEach(b => b.classList.toggle("on", b.dataset.main === view));
@@ -2674,7 +2681,7 @@ async function boot() {
   const wr = location.hash.match(/^#write(?:\/([a-z0-9]+))?/);
   if (online && wr) return showMain("write", wr[1]);
   loadLib(); loadJobs();
-  setTimeout(() => { if (MAIN === "songs") { bookLoad().catch(() => {}); api("/api/write").then(l => LS.set("writeCache", l)).catch(() => {}); } }, 2500); // 이론 책 · 작곡 목록 미리 받아 둠 → 탭 누르면 바로
+  setTimeout(() => { if (MAIN === "songs" && !isLink()) { bookLoad().catch(() => {}); api("/api/write").then(l => LS.set("writeCache", l)).catch(() => {}); } }, 2500); // 이론 책 · 작곡 목록 미리 받아 둠 → 탭 누르면 바로
 }
 setInterval(() => { if (!P.playing) ping(); }, 15000);
 setTimeout(() => { BOOTED = true; }, 3000);
