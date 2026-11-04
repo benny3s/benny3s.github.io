@@ -576,7 +576,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-02d";
+const BUILD = "2026-11-04a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -2402,7 +2402,7 @@ async function playExample(e, pid) { // 그 곡 그 마디로 → 곡 화면에�
    첫 화면 = 만들기 칸(스타일 · 가사 · 키 · 템포 · 길이) + 프로젝트 목록. 프로젝트 = 판(만들기 한 번)이 쌓이는 진행 과정 + 다음 판 만들기.
    권한 compose: Benny 는 늘, 친구는 '사용 요청' → Benny 가 기기마다 허용 (베니 아케이드처럼) */
 let WN = null, WGEN = null, WSAVE = null, WPATCH = {}, WBASE = null, ACCESS = null;
-let WDRAFT = Object.assign({ title: "", style: "", lyrics: "", key: "", tempo: 0, sec: 120 }, LS.get("wDraft", null) || {}); // 쓰던 것은 기기에 (다른 화면 다녀와도)
+let WDRAFT = Object.assign({ title: "", style: "", lyrics: "", key: "", tempo: 0, sec: 120, engine: "ace" }, LS.get("wDraft", null) || {}); // 쓰던 것은 기기에 (다른 화면 다녀와도)
 const GEN_STYLES = [ // AI 노래 만들기 스타일 예시 (모델은 영어 설명을 더 잘 알아들음)
   ["밴드 록 · 여자 보컬", "Korean indie band rock, bright clear female vocal, overdriven electric guitars, punchy live drums, melodic bass, uplifting and energetic"],
   ["밴드 록 · 남자 보컬", "Korean band rock, powerful male vocal, crunchy electric guitars, driving drums, solid bass, anthemic chorus"],
@@ -2415,6 +2415,8 @@ const STRENGTHS = [[0.7, "가깝게"], [0.5, "중간"], [0.3, "많이 바꾸기"
 const strengthName = v => v >= 0.65 ? "가깝게" : v >= 0.45 ? "중간" : "많이 바꿈";
 const wFileOf = (id, name) => `${SRV}/files/w/${id}/${name}?t=${encodeURIComponent(AUTH?.ftoken || AUTH?.token || "")}`;
 const wDate = t => new Date((t || 0) * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const W_ENGINES = [["ace", "ACE-Step · 한 판 약 3분"], ["yue", "YuE2 · 한 판 6~11분"]];
+const wEngName = e => e === "yue" ? "YuE2" : "ACE-Step";
 
 // ---- 만들기 칸 (첫 화면 · 프로젝트 '다음 판' 같이 씀)
 function wFormHtml(d, home) {
@@ -2426,6 +2428,8 @@ function wFormHtml(d, home) {
     <label class="fl">가사 <span class="mute">— [벌스] [코러스] 처럼 구간을 적고 아래에 줄 · 비우면 연주곡</span></label>
     <textarea class="lyr" id="wfLyr" placeholder="[벌스]&#10;퇴근길 지하철 창에 비친 얼굴&#10;…&#10;&#10;[코러스]&#10;볼륨을 올려 줘 오늘 밤은 우리 차례&#10;…">${esc(d.lyrics)}</textarea>
     <div class="acts"><button class="btn xs" id="wfAI">🤖 ${d.lyrics.trim() ? "가사 다듬기" : "주제로 가사 쓰기"}</button><span class="small mute" id="wfAISt"></span></div>
+    <label class="fl">엔진 <span class="mute" id="wfEngNote"></span></label>
+    <select id="wfEng">${W_ENGINES.map(([v, n]) => `<option value="${v}" ${v === (d.engine || "ace") ? "selected" : ""}>${n}</option>`).join("")}</select>
     <div class="row3"><label>키<select id="wfKey">${keyOpts.map(([v, n]) => `<option value="${v}" ${v === (d.key || "") ? "selected" : ""}>${n}</option>`).join("")}</select></label>
       <label>템포 (BPM)<input id="wfTempo" type="number" min="40" max="240" placeholder="AI 에게 맡김" value="${d.tempo || ""}"></label>
       <label>길이<select id="wfSec">${[[60, "1분 · 2곡"], [120, "2분 · 2곡"], [180, "3분 · 1곡"]].map(([v, n]) => `<option value="${v}" ${+d.sec === v ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>`;
@@ -2440,6 +2444,13 @@ function wFormBind(d, changed) {
   $("#wfKey").onchange = e => set("key", e.target.value);
   $("#wfTempo").onchange = e => set("tempo", Math.max(0, Math.min(240, Math.round(+e.target.value || 0))));
   $("#wfSec").onchange = e => set("sec", +e.target.value);
+  const engUI = () => { // YuE2 는 길이 · 키를 글로 못 정함 (11-04 시험) → 칸을 숨김
+    const y = d.engine === "yue";
+    $("#wfEngNote").textContent = y ? "— 길이와 키는 AI 가 정해요 · 가사가 있어야 해요" : "— 빠른 초안";
+    $("#wfKey").closest("label").style.display = $("#wfSec").closest("label").style.display = y ? "none" : "";
+  };
+  $("#wfEng").onchange = e => { set("engine", e.target.value); engUI(); };
+  engUI();
   $("#wfAI").onclick = async () => { // 가사 도우미 (Haiku, 1~2원): 비었으면 주제로 새로, 있으면 다듬기 → 칸에 바로 (되돌리기 가능)
     let topic = "";
     if (!d.lyrics.trim()) { topic = prompt("어떤 이야기를 담을까요?\n(예: 퇴근하고 합주실 가는 길의 설렘)"); if (!topic) return; }
@@ -2458,7 +2469,7 @@ function wFormBind(d, changed) {
 async function writeHome() {
   location.hash = "write"; await wSaveNow(); WN = null; clearTimeout(WGEN);
   const box = $("#writeBox"), ok = can("compose"); box.className = "wr";
-  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">스타일과 가사를 넣으면 이 PC 그래픽카드로 노래를 만들어요 (무료, 3~6분). 만든 노래는 프로젝트로 남고, 다듬을 때마다 판이 쌓여요.</div>
+  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">스타일과 가사를 넣으면 이 PC 그래픽카드로 노래를 만들어요 (무료, 3~11분). 만든 노래는 프로젝트로 남고, 다듬을 때마다 판이 쌓여요.</div>
     <div class="wcard" id="wMake">${ok ? wFormHtml(WDRAFT, true) + `<div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">🎤 노래 만들기</button></div>` : wLockHtml()}</div>
     <h2 class="wh">프로젝트</h2><div id="wList"></div>`;
   if (ok) {
@@ -2469,7 +2480,7 @@ async function writeHome() {
       try {
         const w = await api("/api/write", jsonOpt("POST", Object.assign({}, WDRAFT, { go: true })));
         if (w.gen?.state === "error") toast(w.gen.detail, 4000);
-        WDRAFT = { title: "", style: WDRAFT.style, lyrics: "", key: "", tempo: 0, sec: WDRAFT.sec }; LS.set("wDraft", WDRAFT); // 스타일 · 길이는 다음에도
+        WDRAFT = { title: "", style: WDRAFT.style, lyrics: "", key: "", tempo: 0, sec: WDRAFT.sec, engine: WDRAFT.engine }; LS.set("wDraft", WDRAFT); // 스타일 · 길이 · 엔진은 다음에도
         writeOpen(w.id);
       } catch (e) { toast(e.message); $("#wGo").disabled = false; }
     };
@@ -2558,7 +2569,7 @@ async function writeOpen(id) {
 }
 function writeRender() {
   const w = WN, ed = can("compose");
-  w._d = { style: w.style || "", lyrics: w.lyrics || "", key: w.key || "", tempo: w.tempo || 0, sec: w.sec || 120 };
+  w._d = { style: w.style || "", lyrics: w.lyrics || "", key: w.key || "", tempo: w.tempo || 0, sec: w.sec || 120, engine: w.engine || "ace" };
   $("#writeBox").innerHTML = `<button class="btn xs" id="wBack">← 작곡</button>
     <div class="hdr"><input class="ttl" id="wTitle" value="${esc(w.title)}" ${ed ? "" : "disabled"}></div>
     <div class="small mute" id="wSum"></div>
@@ -2586,7 +2597,8 @@ function wDiff(a, b) { // 앞 판과 바뀐 것
   if ((a.lyrics || "") !== (b.lyrics || "")) { const A = new Set(L(a.lyrics)), n = L(b.lyrics).filter(x => !A.has(x)).length; out.push(n ? `가사 ${n}줄` : "가사 줄 정리"); }
   if ((a.key || "") !== (b.key || "")) out.push(`키 ${a.key || "AI"} → ${b.key || "AI"}`);
   if ((a.tempo || 0) !== (b.tempo || 0)) out.push(`템포 ${a.tempo || "AI"} → ${b.tempo || "AI"}`);
-  if (a.sec !== b.sec) out.push(`길이 ${Math.round(a.sec / 60)}분 → ${Math.round(b.sec / 60)}분`);
+  if ((a.engine || "ace") !== (b.engine || "ace")) out.push(`엔진 ${wEngName(a.engine)} → ${wEngName(b.engine)}`);
+  if (a.sec !== b.sec && a.engine !== "yue" && b.engine !== "yue") out.push(`길이 ${Math.round(a.sec / 60)}분 → ${Math.round(b.sec / 60)}분`);
   return out.length ? "바꾼 것: " + out.join(" · ") : b.base ? "같은 설정으로 다듬기" : "같은 설정으로 한 번 더";
 }
 function wVersDraw() {
@@ -2597,12 +2609,12 @@ function wVersDraw() {
   if (!V.length) { box.innerHTML = `<div class="empty">아직 만든 판이 없어요.</div>`; return; }
   const label = {}; V.forEach(v => v.takes.forEach((t, i) => label[t.file] = `${v.n}판 ${TAKE_ABC[i]}`));
   box.innerHTML = V.map((v, k) => `<div class="ver">
-      <div class="vh"><b>${v.n}판</b><span class="small mute">${wDate(v.at)} · ${Math.round(v.sec / 60)}분</span>${v.base ? `<span class="tagb">${esc(label[v.base] || "지운 곡")} 다듬기 · ${strengthName(v.strength)}</span>` : ""}</div>
+      <div class="vh"><b>${v.n}판</b><span class="small mute">${wDate(v.at)} · ${v.engine === "yue" ? "YuE2" : Math.round(v.sec / 60) + "분"}</span>${v.base ? `<span class="tagb">${esc(label[v.base] || "지운 곡")} 다듬기 · ${strengthName(v.strength)}</span>` : ""}</div>
       <div class="chg small">${esc(wDiff(V[k - 1], v))}</div>
       ${v.takes.length ? v.takes.map((t, i) => `<div class="take${t.star ? " star" : ""}"><span class="ab">${TAKE_ABC[i]}</span><audio controls preload="none" src="${wFileOf(w.id, t.file)}"></audio>
         ${ed ? `<span class="tb"><button class="btn xs ${t.star ? "on" : ""}" data-star="${t.file}" title="마음에 듦">${t.star ? "★" : "☆"}</button><button class="btn xs" data-base="${t.file}">이 곡으로 다듬기</button><button class="btn xs" data-tdel="${t.file}" title="지우기">🗑</button></span>` : t.star ? "★" : ""}</div>`).join("")
         : `<div class="small mute">이 판 곡은 지웠어요.</div>`}
-      <details class="vset"><summary class="small mute">이 판 설정</summary><div class="small"><b>스타일</b> ${esc(v.style)}<br><b>키</b> ${esc(v.key || "AI")} · <b>템포</b> ${v.tempo || "AI"} · <b>길이</b> ${Math.round(v.sec / 60)}분</div>
+      <details class="vset"><summary class="small mute">이 판 설정</summary><div class="small"><b>스타일</b> ${esc(v.style)}<br>${v.engine ? `<b>엔진</b> ${wEngName(v.engine)} · ` : ""}<b>키</b> ${esc(v.key || "AI")} · <b>템포</b> ${v.tempo || "AI"} · <b>길이</b> ${v.engine === "yue" ? "AI" : Math.round(v.sec / 60) + "분"}</div>
         <pre class="vly">${esc(v.lyrics || "(연주곡)")}</pre>${ed ? `<button class="btn xs" data-load="${k}">이 설정을 다음 판에 불러오기</button>` : ""}</details></div>`).reverse().join(""); // 새 판이 위
   $$("#wVers [data-star]").forEach(b => b.onclick = async () => { const on = b.textContent !== "★";
     try { const r = await api(`/api/write/${w.id}/takes/${b.dataset.star}`, jsonOpt("PUT", { star: on })); w.versions = r.versions; wVersDraw(); } catch (e) { toast(e.message); } });
@@ -2615,14 +2627,15 @@ function wVersDraw() {
     wBaseDraw(); $("#wNextH")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $$("#wVers [data-load]").forEach(b => b.onclick = () => { const v = V[+b.dataset.load];
-    Object.assign(w, { style: v.style, lyrics: v.lyrics, key: v.key, tempo: v.tempo, sec: v.sec });
-    wSaveSoon({ style: v.style, lyrics: v.lyrics, key: v.key, tempo: v.tempo, sec: v.sec }); const base = WBASE; writeRender(); WBASE = base; wBaseDraw();
+    const eng = v.engine || "ace";
+    Object.assign(w, { style: v.style, lyrics: v.lyrics, key: v.key, tempo: v.tempo, sec: v.sec, engine: eng });
+    wSaveSoon({ style: v.style, lyrics: v.lyrics, key: v.key, tempo: v.tempo, sec: v.sec, engine: eng }); const base = WBASE; writeRender(); WBASE = base; wBaseDraw();
     $("#wNextH")?.scrollIntoView({ behavior: "smooth", block: "start" }); toast(`${v.n}판 설정을 불러왔어요`); });
 }
 function wBaseDraw() {
   const el = $("#wBase"); if (!el) return;
   if (!WBASE) { el.innerHTML = ""; return; }
-  el.innerHTML = `<div class="basebar">바탕: <b>${esc(WBASE.label || "")}</b> 를 다듬어요 <select id="wStr">${STRENGTHS.map(([v, n]) => `<option value="${v}" ${v === WBASE.strength ? "selected" : ""}>${n}</option>`).join("")}</select>
+  el.innerHTML = `<div class="basebar">바탕: <b>${esc(WBASE.label || "")}</b> 를 ACE-Step 으로 다듬어요 <select id="wStr">${STRENGTHS.map(([v, n]) => `<option value="${v}" ${v === WBASE.strength ? "selected" : ""}>${n}</option>`).join("")}</select>
     <button class="btn xs" id="wBaseX">× 새로 만들기로</button></div>`;
   $("#wStr").onchange = e => WBASE.strength = +e.target.value;
   $("#wBaseX").onclick = () => { WBASE = null; wBaseDraw(); };
