@@ -576,7 +576,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-04a";
+const BUILD = "2026-11-04b";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -2415,7 +2415,7 @@ const STRENGTHS = [[0.7, "가깝게"], [0.5, "중간"], [0.3, "많이 바꾸기"
 const strengthName = v => v >= 0.65 ? "가깝게" : v >= 0.45 ? "중간" : "많이 바꿈";
 const wFileOf = (id, name) => `${SRV}/files/w/${id}/${name}?t=${encodeURIComponent(AUTH?.ftoken || AUTH?.token || "")}`;
 const wDate = t => new Date((t || 0) * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
-const W_ENGINES = [["ace", "ACE-Step · 한 판 약 3분"], ["yue", "YuE2 · 한 판 6~11분"]];
+const W_ENGINES = [["ace", "ACE-Step · 한 판 3~6분"], ["yue", "YuE2 · 한 판 6~11분"]];
 const wEngName = e => e === "yue" ? "YuE2" : "ACE-Step";
 
 // ---- 만들기 칸 (첫 화면 · 프로젝트 '다음 판' 같이 씀)
