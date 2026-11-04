@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f7f7f5">
 <title>레이더</title>
-<meta name="description" content="AI · 칩 설계 · 화장품 · 돈 되는 것 — 주 2회 정리하는 살아 있는 목록">
+<meta name="description" content="AI · 칩 설계 · 화장품 · 돈 되는 것 · 부동산 · 투자 · 트렌드 — 주 1회 정리하는 살아 있는 목록">
 <style>
 /* 포털과 같은 라이트 톤. 2026-10-25 Benny: 주마다 쌓지 말고 "살아 있는 목록", 주제 4개 탭 */
 :root{
@@ -90,7 +90,7 @@ footer{margin-top:28px;color:var(--muted);font-size:12px;line-height:1.75}
     <a class="mark" href="../" aria-label="Benny 첫 화면">📡</a>
     <div class="ttl">
       <h1>레이더</h1>
-      <p class="sub" id="sub">월 · 목 아침 자동 정리</p>
+      <p class="sub" id="sub">금요일 아침 자동 정리</p>
     </div>
   </header>
   <nav class="tabs" id="tabs" role="tablist" aria-label="주제" hidden></nav>
@@ -214,14 +214,14 @@ function drawChanges(d) {
 }
 
 let DATA = {}, BOX = {};
-// 월·목 조사라 간격은 최대 4일 — 5일 넘으면 조사가 멈춘 것 (2026-10-26)
-const STALE_DAYS = 5;
+// 금요일 주 1회 조사라 간격은 7일 — 8일 넘으면 조사가 멈춘 것 (2026-11-04)
+const STALE_DAYS = 8;
 const ageDays = s => s ? Math.floor((Date.now() - Date.parse(s + "T00:00:00+09:00")) / 864e5) : 0;
 function draw() {
   const d = DATA[cur], cfg = CONF.topics[cur];
   main.textContent = "";
   $("#sub").textContent = cfg.desc + (d ? " · " + md(d.updated) + " 갱신 · " + d.runs + "회차" : "");
-  if (!d) { main.appendChild(el("div", "err", "아직 첫 조사 전이에요 — 다음 월·목 아침에 채워집니다.")); return; }
+  if (!d) { main.appendChild(el("div", "err", "아직 첫 조사 전이에요 — 다음 금요일 아침에 채워집니다.")); return; }
   const age = ageDays(d.updated);
   if (age > STALE_DAYS) main.appendChild(el("div", "err", "⚠ " + age + "일째 갱신이 멈췄어요 — 앱의 예약 작업 '레이더: " + cfg.name + "' 실행 기록을 확인해 주세요."));
 
@@ -373,7 +373,7 @@ async function start() {
   catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "열쇠를 못 받았어요: " + e.message)); return; }
   try { CONF = await getJSON("topics.json"); }
   catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "설정을 못 불러왔어요: " + e.message)); return; }
-  if (made) { main.textContent = ""; main.appendChild(el("div", "err", "처음이라 열쇠를 만들었어요 — 다음 조사(월·목 아침)부터 여기에 보입니다.")); return; }
+  if (made) { main.textContent = ""; main.appendChild(el("div", "err", "처음이라 열쇠를 만들었어요 — 다음 조사(금요일 아침)부터 여기에 보입니다.")); return; }
   tabsEl.hidden = false; tabsEl.textContent = "";
   CONF.order.forEach(t => {
     const c = CONF.topics[t], b = el("button", "", c.emoji + " " + c.name);
