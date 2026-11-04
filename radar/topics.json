@@ -1,5 +1,5 @@
 {
-  "order": ["ai", "chip", "beauty", "money", "estate", "invest", "trend"],
+  "order": ["ai", "chip", "beauty", "estate", "invest", "trend"],
   "topics": {
     "ai": {
       "name": "AI", "emoji": "🤖",
@@ -39,9 +39,9 @@
     },
     "trend": {
       "name": "트렌드", "emoji": "✨",
-      "desc": "한국에서 지금 사람들이 몰리는 것 — 숫자로 확인되는 것만",
-      "categories": ["콘텐츠·음악", "소비·상품", "앱·서비스", "세대·일상"],
-      "try_label": "눈여겨볼 것 1개", "shorts_label": "쇼츠 화제 · 주장 확인"
+      "desc": "사람들이 몰리는 것과 돈 · 일에 닿는 플랫폼 변화 — 확인되는 것만",
+      "categories": ["콘텐츠·음악", "소비·상품", "앱·서비스", "세대·일상", "플랫폼·일거리"],
+      "try_label": "작게 해 볼 것 1개", "shorts_label": "쇼츠 화제 · 주장 확인"
     }
   }
 }
