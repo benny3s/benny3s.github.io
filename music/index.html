@@ -642,7 +642,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-06a";
+const BUILD = "2026-11-06b";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -3056,7 +3056,7 @@ function cPickDraw() {
   if (!CPICK) { el.innerHTML = ""; return; }
   const P = w.pieces || [], sel = P.filter(p => CSEL.has(p.id)), chordP = P.filter(p => p.chords), needChord = sel.some(p => (p.lyrics || "").trim() && !p.chords), old = $("#cpChord")?.value || "", oldStyle = $("#cpStyle")?.value;
   el.innerHTML = `<div class="wcard" style="margin:8px 0"><b>🎵 고른 조각 ${sel.length}개로 만들기</b> <span class="small mute">— 위에서부터 차례대로</span>
-    <div class="small mute" style="margin-top:4px">YuE2 로 2곡, 길이는 가사 길이만큼 (4줄이면 40초쯤), 곡당 약 3분. 코드나 멜로디가 있으면 Claude 가 먼저 악보를 써요 (1~2분). 반복되는 구간은 조각을 또 넣어 주세요.${isAdmin() ? "" : " Benny 가 승인하면 만들어요."}</div>
+    <div class="small mute" style="margin-top:4px">YuE2 로 2곡, 2곡에 4분쯤. 악보가 있으면 그 길이로 불러요 (8마디 = 20초쯤, 두 번 부르는 곡도 있어요). 코드나 멜로디가 있으면 Claude 가 먼저 악보를 써요 (1~2분). 반복되는 구간은 조각을 또 넣어 주세요.${isAdmin() ? "" : " Benny 가 승인하면 만들어요."}</div>
     ${needChord && chordP.length ? `<label class="fl">코드 <span class="mute">— 코드 없는 가사 조각에 붙여요</span></label><select id="cpChord"><option value="">AI 에게 맡기기</option>${chordP.map(p => `<option value="${p.id}" ${p.id === old ? "selected" : ""}>${esc([p.label || C_KIND[p.kind], p.title].filter(Boolean).join(" · "))} — ${esc(p.chords.slice(0, 30))}</option>`).join("")}</select>` : ""}
     <label class="fl">스타일 <span class="mute">— 영어로</span></label><textarea class="gst" id="cpStyle" maxlength="500" style="margin-top:0" placeholder="indie rock, female vocal, overdriven electric guitars, punchy live drums">${esc(oldStyle ?? (w.style || ""))}</textarea>
     <div class="acts" style="margin-top:8px"><button class="btn sm pri" id="cpGo" ${sel.length ? "" : "disabled"}>${isAdmin() ? "🎤 만들기" : "🙋 만들기 요청"}</button><button class="btn xs" id="cpToNext" ${sel.some(p => (p.lyrics || "").trim()) ? "" : "disabled"}>📥 다음 판 가사 칸에 넣기</button></div></div>`;
