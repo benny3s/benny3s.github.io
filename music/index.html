@@ -404,6 +404,31 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .bandpick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0} .bandpick label{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
 .bandpick input{width:auto;margin:0} .bandpick label:has(input:checked){border-color:var(--accent);color:var(--accent)}
 .nbadge{display:inline-block;background:var(--accent);color:#04241f;border-radius:999px;font-size:11px;line-height:17px;padding:0 6px;margin-left:2px;vertical-align:1px}
+.wr #wTabs{display:inline-flex;margin:12px 0 4px}
+.cnote{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:10px 12px;margin:10px 0}
+.cnote summary{cursor:pointer;font-size:13px;color:var(--mute)} .cnote textarea{width:100%;min-height:70px;margin-top:4px}
+.cdec{display:flex;gap:6px;align-items:baseline;font-size:13.5px;padding:3px 0} .cdec .t{flex:1;min-width:0}
+.cchat{display:flex;flex-direction:column;gap:10px;max-height:62vh;overflow-y:auto;padding:10px 2px;margin-top:6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cmsg{max-width:92%;padding:9px 12px;border-radius:12px;font-size:14.5px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.cmsg.user{align-self:flex-end;background:rgba(25,211,181,.14);border:1px solid rgba(25,211,181,.3)}
+.cmsg.assistant{align-self:stretch;max-width:100%;background:var(--panel);border:1px solid var(--line)}
+.cmsg.note{align-self:center;background:none;color:var(--mute);font-size:12.5px;padding:2px 8px;text-align:center}
+.cmsg.error{align-self:stretch;max-width:100%;border:1px solid var(--err);color:var(--err);background:none}
+.cmsg .by{font-size:11.5px;color:var(--mute);display:block;margin-bottom:2px}
+.cmsg .foot{font-size:11.5px;color:var(--mute);margin-top:6px;white-space:normal}
+.ccard{white-space:normal;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin-top:8px;font-size:14px}
+.ccard .h{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px} .ccard .h b{font-size:14px}
+.ccard pre{white-space:pre-wrap;font:inherit;line-height:1.65;margin:6px 0;overflow-wrap:anywhere} .ccard .ex{font-size:13px;color:var(--mute);line-height:1.6;margin-top:6px;white-space:pre-wrap}
+.cbars{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0} .cbar{display:flex;gap:2px;border-left:2px solid var(--line);padding-left:4px}
+.cch{display:inline-flex;flex-direction:column;align-items:center;min-width:38px;padding:3px 6px;border-radius:7px;background:var(--chip);font-weight:700;font-size:14px;line-height:1.25}
+.cch small{font-weight:500;font-size:11px;color:var(--mute)} .cch.on{background:var(--accent);color:#04241f} .cch.on small{color:#04241f}
+.cctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px} .cctl select{height:32px;padding:0 6px;font-size:12.5px} .cctl input{width:58px;height:32px;padding:0 6px;font-size:12.5px}
+.ckey{display:inline-flex;align-items:center;gap:2px;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:1px 2px;font-size:12.5px}
+.ckey button{background:none;border:0;color:var(--text);min-width:28px;height:28px;font-size:15px} .ckey b{min-width:30px;text-align:center}
+.cinput{display:flex;gap:8px;align-items:flex-end;margin-top:8px} .cinput textarea{flex:1;min-height:58px;resize:vertical}
+.cform label{display:block;font-size:12.5px;color:var(--mute);margin-top:7px} .cform input,.cform textarea,.cform select{width:100%;margin-top:2px} .cform textarea{min-height:70px}
+.csel{margin-right:4px;width:20px;height:20px}
+.cbook-deg{display:grid;grid-template-columns:44px 1fr;gap:3px 8px;font-size:13px;margin:8px 0} .cbook-deg b{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -617,7 +642,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-05b";
+const BUILD = "2026-11-06a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -2504,7 +2529,7 @@ function showMain(view, arg) {
     if (view === "write" && arg) { JOIN_NEXT = "#write/" + arg; setTimeout(() => { showLogin(); toast("작곡 작업실은 이름을 알려 주고 허용받은 기기로 들어와요", 5000); }, 300); }
     view = "songs"; arg = undefined;
   }
-  if (view !== "write") { clearTimeout(WGEN); wSaveNow(); }
+  if (view !== "write") { clearTimeout(WGEN); wSaveNow(); cpStop(); }
   MAIN = view; $("#vHome").hidden = view !== "songs"; $("#vBook").hidden = view !== "book"; $("#vWrite").hidden = view !== "write"; $("#mainnav").hidden = false;
   $$("#mainnav button").forEach(b => b.classList.toggle("on", b.dataset.main === view));
   if (view === "songs") { location.hash = ""; loadLib(); loadJobs(); }
@@ -2609,9 +2634,9 @@ const wMe = () => PERMS?.who || (isAdmin() ? "Benny" : "");
 const wBandName = k => BANDS.find(b => b.key === k)?.name || "";
 const wGoWord = n => (isAdmin() ? "🎤 " : "🙋 ") + (n ? n + "판 " : "노래 ") + (isAdmin() ? "만들기" : "만들기 요청");
 const W_WHEN = { "": "승인 기다리는 중", now: "▶ 승인됨 · GPU 가 비면 바로 만들어요", night: "🌙 오늘 밤에 만들어요 (새벽 1~7시)" };
-const W_FIELD = { title: "제목", style: "스타일", lyrics: "가사", inst: "종류", key: "키", tempo: "템포", sec: "길이", engine: "엔진", notes: "메모" };
-const W_INPUT = { title: "#wTitle", notes: "#wNotes", style: "#wfStyle", lyrics: "#wfLyr", key: "#wfKey", tempo: "#wfTempo", sec: "#wfSec" };
-let WMODE = LS.get("wMode", "simple"), WCHIP = 0;
+const W_FIELD = { title: "제목", style: "스타일", lyrics: "가사", inst: "종류", key: "키", tempo: "템포", sec: "길이", engine: "엔진", notes: "메모", brief: "곡 방향" };
+const W_INPUT = { title: "#wTitle", notes: "#wNotes", style: "#wfStyle", lyrics: "#wfLyr", key: "#wfKey", tempo: "#wfTempo", sec: "#wfSec", brief: "#wBrief" };
+let WMODE = LS.get("wMode2", "coach"), WCHIP = 0;
 // 11-04 작곡 앱 벤치마크: Suno 는 글 칸 + 추천 말, Soundraw 는 장르 · 분위기 고르기 → 눌러서 고르면 글 칸에 영어로 들어감 (글 칸이 원본, 모델은 영어를 더 잘 알아들음)
 const STYLE_CHIPS = [
   ["장르", [["록", "rock"], ["인디 록", "indie rock"], ["팝 펑크", "pop punk"], ["메탈", "heavy metal"], ["발라드", "ballad"], ["어쿠스틱", "acoustic"], ["K팝", "K-pop"], ["시티팝", "city pop"], ["R&B", "R&B"], ["펑크(Funk)", "funk"], ["힙합", "hip hop"], ["재즈", "jazz"], ["블루스", "blues"], ["EDM", "EDM"], ["로파이", "lo-fi"], ["영화음악", "cinematic"]]],
@@ -2719,6 +2744,368 @@ function wFormBind(d, changed) {
   };
 }
 
+// ---- 코드 듣기 (11-06 "1도 4도 5도가 오면 어떤 느낌인지"): GPU 없이 이 기기에서 합성. 한 번 그려 두고 반복 재생 (폰에서도 안 밀림), 소리는 스케치용
+const PC_BASE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const pcRaw = n => PC_BASE[n[0]] + (n[1] === "#" ? 1 : n[1] === "b" ? -1 : 0), pcOf = n => (pcRaw(n) + 12) % 12;
+const SHARP_N = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], FLAT_N = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+const CP_FLATS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Dm", "Gm", "Cm", "Fm", "Bbm", "Ebm"]);
+const pcName = (pc, key) => (CP_FLATS.has(key) ? FLAT_N : SHARP_N)[((pc % 12) + 12) % 12];
+function cpSplit(sym) { const m = String(sym || "").match(/^([A-G][#b]?)(.*?)(?:\/([A-G][#b]?))?$/); return m ? { root: m[1], q: m[2] || "", bass: m[3] || "" } : null; }
+function cpShiftChord(sym, n, key) { const c = cpSplit(sym); if (!c || !n) return sym; return pcName(pcOf(c.root) + n, key) + c.q + (c.bass ? "/" + pcName(pcOf(c.bass) + n, key) : ""); }
+function cpShiftKey(key, n) { const c = cpSplit(key); if (!c) return key; const m = c.q.startsWith("m"); const x = (m ? CP_FLATS.has(pcName(pcOf(c.root) + n, "F") + "m") : CP_FLATS.has(pcName(pcOf(c.root) + n, "F"))) ? pcName(pcOf(c.root) + n, "F") : pcName(pcOf(c.root) + n, "C"); return x + (m ? "m" : ""); }
+function cpShiftText(text, n, key) { return !n ? String(text || "") : String(text || "").split(/(\||\s+)/).map(t => t && !/^(\||\s+|%)$/.test(t) ? cpShiftChord(t, n, key) : t).join(""); }
+function cpShiftMel(text, n, key) { if (!n) return String(text || ""); return String(text || "").replace(/([A-G][#b]?)(\d):/g, (_, a, o) => { const v = pcRaw(a) + n, oct = +o + Math.floor(v / 12); return pcName(v, key) + oct + ":"; }); }
+const cpMinor = q => /^(m(?!aj)|min|-)/.test(q);
+function cpIntervals(q) {
+  q = q.replace(/[()]/g, "");
+  if (q === "5") return [0, 7];
+  const minor = cpMinor(q), dim = /^(dim|°)/.test(q), aug = /^(aug|\+)/.test(q), half = /ø|m7b5/.test(q), sus2 = /sus2/.test(q), sus4 = /sus(4|$)/.test(q);
+  const out = [0, sus2 ? 2 : sus4 ? 5 : minor || dim || half ? 3 : 4, dim || half || /b5/.test(q) ? 6 : aug || /#5/.test(q) ? 8 : 7];
+  if (/maj|M7|M9|Δ/.test(q)) out.push(11); else if (/dim7|°7/.test(q)) out.push(9); else if (/6/.test(q) && !/m7b5/.test(q)) out.push(9); else if (/ø|7|9|11|13/.test(q) && !/add/.test(q)) out.push(10);
+  if (/9/.test(q)) out.push(/b9/.test(q) ? 13 : /#9/.test(q) ? 15 : 14);
+  return out;
+}
+const CP_DEG = ["1", "b2", "2", "b3", "3", "4", "#4", "5", "b6", "6", "b7", "7"];
+function cpDegree(sym, key) { const c = cpSplit(sym), k = cpSplit(key); if (!c || !k) return ""; const q = /^(dim|°)/.test(c.q) ? "°" : cpMinor(c.q) ? "m" : ""; return CP_DEG[(pcOf(c.root) - pcOf(k.root) + 12) % 12] + q + (c.bass ? "/" + CP_DEG[(pcOf(c.bass) - pcOf(k.root) + 12) % 12] : ""); }
+function cpBars(text) { // "| G | D | Em C |" → 마디별 코드, 세로줄이 없으면 코드 하나가 한 마디
+  const t = String(text || ""), bars = [];
+  t.split(t.includes("|") ? "|" : /\s+/).map(x => x.trim()).filter(Boolean).forEach(seg => bars.push(seg === "%" ? (bars[bars.length - 1] || []) : seg.split(/\s+/).filter(x => cpSplit(x))));
+  return bars.filter(b => b.length);
+}
+function cpMelody(text) { // "E4:1 G4:0.5 R:0.5 | ..." → [{midi, len}]
+  return String(text || "").split(/[\s|]+/).filter(Boolean).map(t => { const m = t.match(/^(?:R|([A-G][#b]?)(\d)):([\d.]+)$/); if (!m) return null; return { midi: m[1] ? 12 * (+m[2] + 1) + pcRaw(m[1]) : null, len: +m[3] }; }).filter(Boolean);
+}
+const CP_PATS = [["rock", "록 8비트"], ["ballad", "발라드"], ["arp", "아르페지오"], ["plain", "코드만"]];
+function cpNote(ctx, dest, t, dur, midi, o = {}) {
+  const osc = ctx.createOscillator(), g = ctx.createGain(), a = o.a ?? .004, v = o.v ?? .2, r = Math.min(o.r ?? .05, dur / 2);
+  osc.type = o.type || "triangle"; osc.frequency.value = 440 * 2 ** ((midi - 69) / 12); if (o.detune) osc.detune.value = o.detune;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a);
+  if (o.decay) g.gain.exponentialRampToValueAtTime(Math.max(v * o.decay, .0005), t + dur - r); else g.gain.setValueAtTime(v, t + dur - r);
+  g.gain.linearRampToValueAtTime(0, t + dur); osc.connect(g).connect(dest); osc.start(t); osc.stop(t + dur + .01);
+}
+function cpNoise(ctx, dest, noise, t, dur, v, hp) {
+  const s = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter(); s.buffer = noise; f.type = "highpass"; f.frequency.value = hp;
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); s.connect(f).connect(g).connect(dest); s.start(t); s.stop(t + dur + .01);
+}
+function cpKick(ctx, dest, t, v) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(45, t + .11); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + .2); o.connect(g).connect(dest); o.start(t); o.stop(t + .22); }
+function cpVoice(sym) { // 근음(베이스) + 가운데 음역 화음
+  const c = cpSplit(sym); if (!c) return null;
+  const root = 40 + ((pcOf(c.root) - 4 + 12) % 12), bass = c.bass ? 40 + ((pcOf(c.bass) - 4 + 12) % 12) : root;
+  return { bass, notes: cpIntervals(c.q).map(iv => { let n = root + iv; while (n < 52) n += 12; while (n > 71) n -= 12; return n; }) };
+}
+async function cpRender({ bars, melody, bpm, beats, pat }) {
+  const spb = 60 / bpm, mel = melody || [], melBeats = mel.reduce((a, x) => a + x.len, 0);
+  const nBars = bars.length || Math.max(1, Math.ceil(melBeats / beats)), sr = 32000, total = nBars * beats * spb;
+  const ctx = new OfflineAudioContext(2, Math.ceil(total * sr), sr), master = ctx.createGain(); master.gain.value = .8; master.connect(ctx.destination);
+  const lp = (cut, into = master) => { const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = cut; f.connect(into); return f; };
+  const shaper = ctx.createWaveShaper(), curve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(4 * x); } shaper.curve = curve;
+  const gtrBus = ctx.createGain(); gtrBus.gain.value = .55; gtrBus.connect(shaper); shaper.connect(lp(2600));
+  const clean = lp(3200), bassBus = lp(700), drum = ctx.createGain(); drum.gain.value = .9; drum.connect(master);
+  const noise = ctx.createBuffer(1, sr, sr), nd = noise.getChannelData(0); for (let i = 0; i < sr; i++) nd[i] = Math.random() * 2 - 1;
+  const sub = beats === 6 ? 1 : .5; // 나누는 박: 6/8 은 8분음표가 한 박
+  bars.forEach((chs, bi) => {
+    const bt = bi * beats * spb, each = beats / chs.length;
+    chs.forEach((sym, ci) => {
+      const v = cpVoice(sym); if (!v) return;
+      const t0 = bt + ci * each * spb, dur = each * spb, steps = Math.max(1, Math.round(each / sub)), stepT = sub * spb;
+      if (pat === "rock") {
+        for (let s = 0; s < steps; s++) { const t = t0 + s * stepT, acc = (s * sub) % 1 === 0 ? 1 : .72;
+          v.notes.slice(0, 3).forEach((n, i) => cpNote(ctx, gtrBus, t + i * .003, stepT * .92, n, { type: "sawtooth", v: .13 * acc, r: .02 }));
+          cpNote(ctx, bassBus, t, stepT * .9, v.bass - 12 < 28 ? v.bass : v.bass - 12, { type: "sawtooth", v: .3 * acc, r: .02 }); }
+      } else if (pat === "ballad") {
+        v.notes.forEach((n, i) => { cpNote(ctx, clean, t0 + i * .012, dur, n, { type: "triangle", v: .13, a: .006, decay: .18, r: .15 }); cpNote(ctx, clean, t0, dur, n + 12, { type: "sine", v: .025, a: .08, r: .2 }); });
+        cpNote(ctx, bassBus, t0, dur, v.bass - 12 < 28 ? v.bass : v.bass - 12, { type: "triangle", v: .34, a: .01, r: .1 });
+      } else if (pat === "arp") {
+        const order = v.notes.length > 3 ? [0, 1, 2, 3, 2, 1] : [0, 1, 2, 1];
+        for (let s = 0; s < steps; s++) cpNote(ctx, clean, t0 + s * stepT, stepT * 1.6, v.notes[order[s % order.length]], { type: "triangle", v: .2, decay: .25, r: .05 });
+        cpNote(ctx, bassBus, t0, dur, v.bass - 12 < 28 ? v.bass : v.bass - 12, { type: "triangle", v: .28, a: .01, r: .1 });
+      } else {
+        v.notes.forEach(n => cpNote(ctx, clean, t0, dur, n, { type: "triangle", v: .15, a: .01, decay: .4, r: .12 }));
+        cpNote(ctx, bassBus, t0, dur, v.bass - 12 < 28 ? v.bass : v.bass - 12, { type: "triangle", v: .26, a: .01, r: .1 });
+      }
+    });
+    if (pat === "rock" || pat === "ballad") { // 드럼
+      const n = Math.round(beats / sub);
+      for (let s = 0; s < n; s++) { const t = bt + s * sub * spb, b = s * sub;
+        if (pat === "rock" || s % 2 === 0) cpNoise(ctx, drum, noise, t, .04, pat === "rock" ? .13 : .05, 7000);
+        const kick = beats === 3 ? b === 0 : beats === 6 ? b === 0 : b === 0 || b === 2 || (pat === "rock" && b === 2.5), snare = beats === 3 ? b === 1 || b === 2 : beats === 6 ? b === 3 : b === 1 || b === 3;
+        if (kick) cpKick(ctx, drum, t, pat === "rock" ? .7 : .4);
+        if (snare) { cpNoise(ctx, drum, noise, t, pat === "rock" ? .14 : .08, pat === "rock" ? .36 : .12, 1200); cpNote(ctx, drum, t, .08, 50, { type: "triangle", v: pat === "rock" ? .22 : .08, r: .05 }); }
+      }
+    }
+  });
+  let at = 0; mel.forEach(x => { const t = at * spb, d = x.len * spb; at += x.len; if (x.midi == null || t >= total) return; cpNote(ctx, lp(3400), t, Math.min(d, total - t), x.midi, { type: "sawtooth", v: .13, a: .012, r: .05 }); cpNote(ctx, master, t, Math.min(d, total - t), x.midi, { type: "triangle", v: .12, a: .012, r: .05 }); });
+  const buf = await ctx.startRendering();
+  let peak = .001; for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < d.length; i += 4) peak = Math.max(peak, Math.abs(d[i])); }
+  const g = .85 / peak; for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; }
+  return { buf, spb, beats, nBars, peak };
+}
+const CP = { ac: null, src: null, gain: null, on: "", raf: 0, tok: 0 };
+function cpStop() { CP.tok++; clearInterval(CP.raf); try { CP.src?.stop(); } catch {} CP.src = null; const id = CP.on; CP.on = ""; if (id) cCardPaint(id, -1); }
+
+// ---- 같이 쓰기: 곡 노트 + 대화 + 조각 (coach.py). 답은 뒤에서 만들어져 저장됨 → 화면은 받아 오기만
+let WTAB = "gen", CCHAT = { msgs: [], busy: "", story: { text: "" } }, CARDS = {}, CEDIT = null, CPICK = false, CSEL = new Set(), CPOLL = null, CSIG = "", CNOTE_OPENED = "";
+const C_KIND = { verse: "벌스", prechorus: "프리코러스", chorus: "코러스", bridge: "브릿지", intro: "인트로", solo: "기타 솔로", interlude: "간주", outro: "아웃트로", chords: "코드 진행" };
+const C_QUICK = [["방향부터", "바로 쓰지 말고 방향부터 같이 얘기해요. 뭘 정해야 하는지 하나씩 물어봐 주세요."], ["코러스만", "코러스 하나만 먼저 만들어 봐요. 안을 두세 개 주세요."], ["1절만", "1절만 먼저 써 봐요."], ["코드+해설", "이 곡에 맞는 코드 진행을 두세 개 짜 주고, 각각 왜 그런 느낌이 나는지 해설해 주세요."], ["인트로", "인트로만 먼저 잡아 봐요. 들어 볼 수 있게 동기도 주세요."], ["기타 솔로", "기타 솔로 방향만 잡아 봐요. 쓸 음계와 구조, 들어 볼 동기를 주세요."], ["하이라이트", "곡에서 가장 터지는 자리만 먼저 생각해 봐요."], ["다른 안", "방금 것과 많이 다른 안을 하나 더 주세요."]];
+function cHtml(ed) {
+  return `<details class="cnote" id="cNote"><summary id="cNoteSum">곡 노트</summary>
+      <label class="fl">밴드 이야기 <span class="mute" id="cStoryBy">— 이 밴드 곡 모두가 같이 읽어요</span></label><textarea id="cStory" ${ed ? "" : "disabled"} maxlength="6000" placeholder="누구인지, 어떻게 살고 있는지, 멤버들 이야기…"></textarea><div id="cStoryAct"></div>
+      <label class="fl">이 곡 방향 <span class="mute">— 시점 · 톤 · 장르 · 템포 · 난이도</span></label><textarea id="wBrief" ${ed ? "" : "disabled"} maxlength="4000" placeholder="예: 보컬 시점, 웃기다 뭉클하게, 합주로 바로 칠 수 있는 록">${esc(WN.brief || "")}</textarea>
+      <label class="fl">정한 것</label><div id="cDecs"></div>${ed ? `<div class="cinput" style="margin-top:4px"><input class="ti" id="cDecIn" maxlength="300" placeholder="예: 코러스 훅은 '이름은 쓰레기'" style="flex:1"><button class="btn xs" id="cDecGo">적기</button></div>` : ""}</details>
+    <div class="cchat" id="cChat"></div>
+    ${ed ? `<div class="chips" id="cQuick">${C_QUICK.map(([n], i) => `<button class="chip" data-q="${i}">${n}</button>`).join("")}</div>
+    <div class="cinput"><textarea id="cIn" maxlength="2000" placeholder="AI 에게 한마디 — 방향, 고칠 점, 궁금한 것"></textarea><button class="btn pri sm" id="cSend">보내기</button></div>
+    <div class="small mute" id="cMeta" style="margin-top:6px"></div>` : ""}
+    <h2 class="wh" id="cPiecesH">조각</h2><div class="acts" id="cPieceBar"></div><div id="cPick"></div><div id="cPieces"></div>
+    <details class="cnote" id="cBook"><summary>📖 코드 진행 사전 — 도수별 느낌과 대표 진행 (API 안 씀)</summary><div id="cBookBox"></div></details>`;
+}
+function cBind(ed) {
+  const w = WN, saved = LS.get("wtab:" + w.id, null);
+  WTAB = saved || ((w.versions || []).length && !(w.pieces || []).length ? "gen" : "coach"); CARDS = {}; CEDIT = null; CPICK = false; CSEL = new Set(); CSIG = "";
+  if (CCHAT._id !== w.id) CCHAT = { msgs: [], busy: "", story: { text: "" }, _id: w.id, _new: true };
+  const tabUI = () => { $$("#wTabs button").forEach(b => b.classList.toggle("on", b.dataset.t === WTAB)); $("#wTabCoach").hidden = WTAB !== "coach"; $("#wTabGen").hidden = WTAB !== "gen"; if (WTAB !== "coach") cpStop(); };
+  $$("#wTabs button").forEach(b => b.onclick = () => { WTAB = b.dataset.t; LS.set("wtab:" + w.id, WTAB); tabUI(); if (WTAB === "coach") cLoad(); });
+  tabUI(); cDecisionsDraw(); cPiecesDraw(); cChatDraw(); cLoad();
+  $("#wTabCoach").onclick = cClick; $("#wTabCoach").onchange = cChange;
+  $("#cBook").ontoggle = () => { if ($("#cBook").open && !$("#cBookBox").innerHTML) cBookDraw(); };
+  if (!ed) return;
+  $("#cIn").value = LS.get("cDraft:" + w.id, "") || ""; $("#cIn").oninput = e => LS.set("cDraft:" + w.id, e.target.value);
+  $("#cSend").onclick = () => cSend();
+  $("#cIn").onkeydown = e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") cSend(); };
+  $$("#cQuick [data-q]").forEach(b => b.onclick = () => { const t = $("#cIn"); t.value = (t.value.trim() ? t.value.trim() + "\n" : "") + C_QUICK[+b.dataset.q][1]; LS.set("cDraft:" + w.id, t.value); t.focus(); });
+  $("#wBrief").oninput = e => { w.brief = e.target.value; wSaveSoon({ brief: w.brief }); };
+  $("#cStory").onchange = async e => { try { CCHAT.story = await api(`/api/write/${w.id}/story`, jsonOpt("PUT", { text: e.target.value })); cStoryDraw(); toast("밴드 이야기를 저장했어요"); } catch (err) { toast(err.message); } };
+  $("#cDecGo").onclick = async () => { const i = $("#cDecIn"), text = i.value.trim(); if (!text) return; try { const r = await api(`/api/write/${w.id}/decisions`, jsonOpt("POST", { text })); w.decisions = r.decisions; i.value = ""; cDecisionsDraw(); } catch (e) { toast(e.message); } };
+}
+function cStoryDraw() {
+  const st = CCHAT.story || {}, el = $("#cStory"); if (!el) return;
+  if (document.activeElement !== el) el.value = st.text || "";
+  $("#cStoryBy").textContent = st.at ? `— ${st.by} · ${wDate(st.at)} · 이 밴드 곡 모두가 같이 읽어요` : "— 이 밴드 곡 모두가 같이 읽어요";
+  const act = $("#cStoryAct"); if (act) { act.innerHTML = st.prev && can("compose") ? `<button class="linkbtn" id="cStoryUndo">↩ 전 글로 되돌리기</button>` : ""; if ($("#cStoryUndo")) $("#cStoryUndo").onclick = () => { $("#cStory").value = st.prev; $("#cStory").dispatchEvent(new Event("change")); }; }
+  cNoteSum();
+}
+function cNoteSum() {
+  const w = WN, st = CCHAT.story || {}, el = $("#cNoteSum"); if (!el || !w) return;
+  const nd = (w.decisions || []).length;
+  el.textContent = `곡 노트 · 밴드 이야기 ${st.text ? "✓" : "없음"} · 방향 ${(w.brief || "").trim() ? "✓" : "없음"} · 정한 것 ${nd}`;
+  if (!CCHAT._new && CNOTE_OPENED !== w.id) { CNOTE_OPENED = w.id; $("#cNote").open = !st.text && !(w.brief || "").trim() && !(CCHAT.msgs || []).length; } // 아무것도 없을 때만 펼침 (폰에서 대화를 밀어내지 않게)
+}
+function cDecisionsDraw() {
+  const el = $("#cDecs"), w = WN; if (!el || !w) return; const ed = can("compose");
+  el.innerHTML = (w.decisions || []).map(d => `<div class="cdec"><span class="t">• ${esc(d.text)} <span class="small mute">${esc(d.by)}</span></span>${ed ? `<button class="linkbtn" data-decdel="${d.id}">✕</button>` : ""}</div>`).join("") || `<div class="small mute">대화에서 정해지면 AI 가 적을지 물어봐요.</div>`;
+  cNoteSum();
+}
+async function cLoad() {
+  const w = WN; if (!w || !$("#cChat")) return;
+  try { const r = await api(`/api/write/${w.id}/coach`); if (WN?.id !== w.id) return; cApply(r); } catch {}
+}
+function cApply(r) {
+  const wasBusy = CCHAT.busy; CCHAT = Object.assign(r, { _id: WN?.id }); const sig = JSON.stringify([r.msgs, r.busy]);
+  if (sig !== CSIG) { CSIG = sig; cChatDraw(); }
+  cStoryDraw(); cMetaDraw();
+  clearTimeout(CPOLL); if (r.busy && WN && WTAB === "coach") CPOLL = setTimeout(cLoad, 2500);
+  if (wasBusy && !r.busy) { clearTimeout(WPOLL); wPollTick(); } // 악보를 다 썼으면 만들기 상태 · 판도 새로
+}
+function cMetaDraw() {
+  const el = $("#cMeta"); if (!el) return;
+  if (!isAdmin() || !CCHAT.models) { el.textContent = ""; return; }
+  const U = CCHAT.usage || {}, n = Object.values(U).reduce((a, x) => a + x.n, 0), usd = Object.values(U).reduce((a, x) => a + x.usd, 0);
+  el.innerHTML = `대화 모델 <select id="cModel">${Object.entries(CCHAT.models).map(([k, v]) => `<option value="${k}" ${k === CCHAT.model ? "selected" : ""}>${v}</option>`).join("")}</select> · 이 곡 ${n}번 · $${usd.toFixed(2)}${Object.keys(U).length > 1 ? " (" + Object.entries(U).map(([k, x]) => `${CCHAT.models[k]} ${x.n}번 $${x.usd.toFixed(2)}`).join(" · ") + ")" : ""}`;
+  $("#cModel").onchange = async e => { try { const r = await api("/api/write-coach-model", jsonOpt("PUT", { model: e.target.value })); CCHAT.model = r.model; toast(`이제 대화는 ${CCHAT.models[r.model]} 으로 해요 (친구 대화도)`); } catch (err) { toast(err.message); } };
+}
+function cMsgHtml(m, i, last) {
+  if (m.role === "note") return `<div class="cmsg note">${esc(m.text)}</div>`;
+  if (m.role === "error") return `<div class="cmsg error">${esc(m.text)}${i === last && can("compose") ? ` <button class="btn xs" data-retry="1">다시 받기</button>` : ""}</div>`;
+  if (m.role === "user") return `<div class="cmsg user"><span class="by">${esc(m.by || "")} · ${wDate(m.at)}</span>${esc(m.text)}</div>`;
+  const ed = can("compose"), P = (m.pieces || []).map((p, k) => cCardHtml(`c:${m.id}:${k}`, p, ed ? (p.kept ? `<span class="small mute">📌 담음</span>` : `<button class="btn xs" data-keep="${m.id}" data-k="${k}">📌 조각에 담기</button>`) : ""));
+  const R = (m.remember || []).map((t, k) => `<div class="cctl small">📝 ${esc(t)} ${(m.noted || []).includes(k) ? `<span class="mute">적음</span>` : ed ? `<button class="btn xs" data-note="${m.id}" data-k="${k}">노트에 적기</button>` : ""}</div>`).join("");
+  const S = m.style ? `<div class="cctl small">🎛 스타일 제안: <span class="mute">${esc(m.style)}</span> ${m.style_used ? `<span class="mute">적용함</span>` : ed ? `<button class="btn xs" data-style="${m.id}">적용</button>` : ""}</div>` : "";
+  const other = isAdmin() && CCHAT.models && i === last && !CCHAT.busy ? Object.keys(CCHAT.models).find(k => k !== m.model) : "";
+  const foot = isAdmin() && m.model ? `<div class="foot">${esc(CCHAT.models?.[m.model] || m.model)}${m.served ? ` (실제 답: ${esc(m.served)})` : ""}${m.usd != null ? ` · $${m.usd.toFixed(3)}` : ""}${other ? ` · <button class="linkbtn" data-retry="${other}">🔁 ${esc(CCHAT.models[other])} 로도 받아 보기</button>` : ""}</div>` : "";
+  return `<div class="cmsg assistant">${esc(m.text)}${P.join("")}${R}${S}${foot}</div>`;
+}
+function cChatDraw() {
+  const box = $("#cChat"); if (!box) return;
+  const near = box.scrollHeight - box.scrollTop - box.clientHeight < 80, M = CCHAT.msgs || [], lastA = M.length - 1;
+  box.innerHTML = (M.length ? M.map((m, i) => cMsgHtml(m, i, lastA)).join("") : `<div class="cmsg note">아직 대화가 없어요. 아래 단추를 누르거나 한마디 적어 보세요.</div>`)
+    + (CCHAT.busy ? `<div class="cmsg note">${CCHAT.busy === "score" ? "🎼 Claude 가 악보를 쓰는 중… (1~2분)" : "💬 AI 가 생각하는 중… (보통 30초~2분, 화면을 닫아도 저장돼요)"}</div>` : "");
+  if (near || CCHAT.busy) box.scrollTop = box.scrollHeight;
+  if ($("#cSend")) $("#cSend").disabled = !!CCHAT.busy;
+  if (CP.on) cCardPaint(CP.on, CP.idx ?? -1);
+}
+async function cSend(extra) {
+  const w = WN, inp = $("#cIn"), text = extra ? "" : inp.value.trim();
+  if (!extra && !text) return toast("한마디 적어 주세요");
+  $("#cSend").disabled = true;
+  try {
+    const r = await api(`/api/write/${w.id}/coach`, jsonOpt("POST", extra || { text }));
+    if (!extra) { inp.value = ""; LS.set("cDraft:" + w.id, ""); }
+    cApply(r); const box = $("#cChat"); box.scrollTop = box.scrollHeight;
+  } catch (e) { toast(e.message, 4000); $("#cSend").disabled = false; }
+}
+// 조각 카드 — 대화 · 보드 · 사전이 같이 씀
+function cCard(id, p) { return CARDS[id] ||= { p, shift: 0, pat: LS.get("cpPat", "rock"), bpm: p.bpm || (p.meter === "6/8" ? 150 : 96) }; }
+function cCardHtml(id, p, acts) {
+  const c = cCard(id, p); c.p = p;
+  const head = [p.label !== C_KIND[p.kind] ? p.label : "", p.title].filter(Boolean).map(esc).join(" · ");
+  const canPlay = cpBars(p.chords).length || cpMelody(p.melody).length;
+  return `<div class="ccard" data-card="${esc(id)}"><div class="h"><span class="pchip">${esc(C_KIND[p.kind] || "조각")}</span><b>${head}</b></div>
+    ${p.lyrics ? `<pre>${esc(p.lyrics)}</pre>` : ""}<div class="cbars" data-bars="${esc(id)}">${cBarsHtml(id)}</div>
+    ${canPlay ? `<div class="cctl"><button class="btn xs" data-play="${esc(id)}">${CP.on === id ? "■ 멈춤" : "▶ 듣기"}</button>
+      ${cpBars(p.chords).length ? `<select data-pat="${esc(id)}">${CP_PATS.map(([k, n]) => `<option value="${k}" ${k === c.pat ? "selected" : ""}>${n}</option>`).join("")}</select>` : ""}
+      <label class="small mute">BPM <input type="number" min="40" max="240" data-bpm="${esc(id)}" value="${c.bpm}"></label>
+      ${p.key ? `<span class="ckey"><button data-shift="-1" data-id="${esc(id)}">−</button><b data-keyname="${esc(id)}">${esc(cpShiftKey(p.key, c.shift))}</b><button data-shift="1" data-id="${esc(id)}">+</button></span>` : ""}</div>` : ""}
+    ${p.melody ? `<div class="small mute" style="margin-top:4px">🎵 멜로디 스케치 같이 나와요</div>` : ""}
+    ${p.explain ? `<div class="ex">${esc(p.explain)}</div>` : ""}${acts ? `<div class="cctl">${acts}</div>` : ""}</div>`;
+}
+function cBarsHtml(id) {
+  const c = CARDS[id]; if (!c) return ""; const p = c.p, key = cpShiftKey(p.key, c.shift); let n = 0;
+  return cpBars(p.chords).map(b => `<span class="cbar">${b.map(s => `<span class="cch" data-ci="${n++}">${esc(cpShiftChord(s, c.shift, key))}${p.key ? `<small>${esc(cpDegree(s, p.key))}</small>` : ""}</span>`).join("")}</span>`).join("");
+}
+function cCardPaint(id, idx) {
+  CP.idx = idx; const el = document.querySelector(`[data-bars="${CSS.escape(id)}"]`); if (el) el.querySelectorAll(".cch").forEach(x => x.classList.toggle("on", +x.dataset.ci === idx));
+  const b = document.querySelector(`[data-play="${CSS.escape(id)}"]`); if (b) b.textContent = CP.on === id ? "■ 멈춤" : "▶ 듣기";
+}
+async function cPlay(id) {
+  if (CP.on === id) return cpStop();
+  cpStop();
+  const c = CARDS[id]; if (!c) return; const p = c.p, meter = p.meter || "4/4", beats = meter === "3/4" ? 3 : meter === "6/8" ? 6 : 4, key = cpShiftKey(p.key, c.shift);
+  CP.ac ||= new (window.AudioContext || window.webkitAudioContext)(); if (CP.ac.state === "suspended") CP.ac.resume(); // 누른 순간에 깨워야 폰에서 소리가 남
+  $$("#writeBox audio").forEach(a => a.pause());
+  CP.on = id; cCardPaint(id, -1);
+  const tok = CP.tok, bars = cpBars(cpShiftText(p.chords, c.shift, key)), mel = cpMelody(cpShiftMel(p.melody, c.shift, key));
+  let r; try { r = await cpRender({ bars, melody: mel, bpm: c.bpm, beats, pat: bars.length ? c.pat : "plain" }); } catch (e) { CP.on = ""; cCardPaint(id, -1); return toast("소리를 못 만들었어요: " + e.message); }
+  if (CP.tok !== tok) return;
+  const ac = CP.ac, s = ac.createBufferSource(), g = ac.createGain(); s.buffer = r.buf; s.loop = true; g.gain.value = window.__cpMute ? 0 : .9; s.connect(g).connect(ac.destination);
+  const t0 = ac.currentTime + .03; s.start(t0); CP.src = s; CP.gain = g; CP.last = r;
+  const flat = []; bars.forEach((b, bi) => b.forEach((_, ci) => flat.push(bi * beats + ci * beats / b.length)));
+  const tick = () => { if (CP.tok !== tok) return; const btn = document.querySelector(`[data-play="${CSS.escape(id)}"]`); if (!btn || !(btn.checkVisibility ? btn.checkVisibility() : btn.offsetParent)) return cpStop(); const pos = Math.max(0, ac.currentTime - t0) % r.buf.duration, beat = pos / r.spb; let i = flat.length - 1; while (i > 0 && flat[i] > beat) i--; if (i !== CP.idx) cCardPaint(id, i); };
+  CP.raf = setInterval(tick, 100); // rAF 는 화면이 안 보이면 멈춤
+}
+function cTransposed(id) { // 지금 고른 키 · 템포 그대로 담기
+  const c = CARDS[id], p = c.p, key = cpShiftKey(p.key, c.shift);
+  return { kind: p.kind, label: p.label, title: p.title, lyrics: p.lyrics, explain: p.explain, meter: p.meter, bpm: c.bpm, key, chords: cpShiftText(p.chords, c.shift, key), melody: cpShiftMel(p.melody, c.shift, key) };
+}
+function cChange(e) {
+  const t = e.target, d = t.dataset;
+  if (d.pat) { const c = CARDS[d.pat]; c.pat = t.value; LS.set("cpPat", t.value); if (CP.on === d.pat) { cpStop(); cPlay(d.pat); } }
+  else if (d.bpm) { const c = CARDS[d.bpm]; c.bpm = Math.max(40, Math.min(240, +t.value || 96)); t.value = c.bpm; if (CP.on === d.bpm) { cpStop(); cPlay(d.bpm); } }
+  else if (d.bookkey) { LS.set("cBookKey", t.value); cBookDraw(); }
+}
+async function cClick(e) {
+  const b = e.target.closest("button"); if (!b) return; const w = WN, d = b.dataset;
+  const put = r => { w.pieces = r.pieces; w.decisions = r.decisions; cPiecesDraw(); cDecisionsDraw(); };
+  try {
+    if (d.play) return cPlay(d.play);
+    if (d.shift) { const c = CARDS[d.id]; c.shift = Math.max(-6, Math.min(6, c.shift + +d.shift)); const was = CP.on === d.id; if (was) cpStop(); document.querySelector(`[data-bars="${CSS.escape(d.id)}"]`).innerHTML = cBarsHtml(d.id); document.querySelector(`[data-keyname="${CSS.escape(d.id)}"]`).textContent = cpShiftKey(c.p.key, c.shift); const save = document.querySelector(`[data-keysave="${CSS.escape(d.id)}"]`); if (save) save.hidden = !c.shift; if (was) cPlay(d.id); return; }
+    if (d.retry) return cSend(d.retry === "1" ? { retry: true } : { retry: true, model: d.retry });
+    if (d.keep) { const m = CCHAT.msgs.find(x => x.id === d.keep), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", Object.assign(cTransposed(`c:${m.id}:${k}`), { chat_id: m.id, chat_idx: k })))); toast("조각에 담았어요"); return cLoad(); }
+    if (d.note) { const m = CCHAT.msgs.find(x => x.id === d.note), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/decisions`, jsonOpt("POST", { text: m.remember[k], chat_id: m.id, chat_idx: k }))); toast("노트에 적었어요"); return cLoad(); }
+    if (d.style) { b.disabled = true; const r = await api(`/api/write/${w.id}/coach-style`, jsonOpt("POST", { chat_id: d.style })); if (r.style !== undefined) { w.fv = r.fv; wSetField("style", r.style); } toast("스타일에 적용했어요"); return cLoad(); }
+    if (d.decdel) return put(await api(`/api/write/${w.id}/decisions/${d.decdel}`, { method: "DELETE" }));
+    if (d.pdel) { if (!confirm("이 조각을 지울까요?")) return; CSEL.delete(d.pdel); return put(await api(`/api/write/${w.id}/pieces/${d.pdel}`, { method: "DELETE" })); }
+    if (d.pup) { const ids = (w.pieces || []).map(p => p.id), i = ids.indexOf(d.pup); if (i > 0) { [ids[i - 1], ids[i]] = [ids[i], ids[i - 1]]; put(await api(`/api/write/${w.id}/pieces-order`, jsonOpt("PUT", { ids }))); } return; }
+    if (d.pedit) { CEDIT = d.pedit; return cPiecesDraw(); }
+    if (d.ptalk) { const p = (w.pieces || []).find(x => x.id === d.ptalk), t = $("#cIn"); t.value = `「${[p.label || C_KIND[p.kind], p.title].filter(Boolean).join(" · ")}」 `; t.focus(); return t.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    if (d.keysave) { const id = d.keysave, r = await api(`/api/write/${w.id}/pieces/${id.slice(2)}`, jsonOpt("PUT", cTransposed(id))); delete CARDS[id]; put(r); return toast("이 키 · 템포로 저장했어요"); }
+    if (d.bookkeep) { const it = cBookItem(+d.bookkeep); put(await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", Object.assign(cTransposed(`k:${d.bookkeep}`), { title: it[0] })))); return toast("조각에 담았어요"); }
+    if (d.booktalk) { const it = cBookItem(+d.booktalk), key = LS.get("cBookKey", "G"), t = $("#cIn"); if (t) { t.value = `${it[0]} (${key} 키: ${it[1].map(x => cpBookChord(x, key)).join(" - ")}) 로 짜 보면 어떨까요?`; t.focus(); t.scrollIntoView({ behavior: "smooth", block: "center" }); } return; }
+  } catch (err) { toast(err.message, 4000); b.disabled = false; }
+}
+// 조각 보드
+function cPiecesDraw() {
+  const box = $("#cPieces"), w = WN; if (!box || !w) return;
+  const ed = can("compose"), P = w.pieces || [], me = wMe();
+  $("#cPiecesH").textContent = `조각 ${P.length}`;
+  $("#cPieceBar").innerHTML = ed ? `<button class="btn xs ${CPICK ? "on" : ""}" id="cPickGo">${CPICK ? "× 고르기 끝" : "🎵 골라서 소리로 만들기"}</button><button class="btn xs" id="cNew">+ 직접 쓰기</button>` : "";
+  if ($("#cPickGo")) $("#cPickGo").onclick = () => { CPICK = !CPICK; if (!CPICK) CSEL.clear(); cPiecesDraw(); };
+  if ($("#cNew")) $("#cNew").onclick = () => { CEDIT = "new"; cPiecesDraw(); };
+  cPickDraw();
+  box.innerHTML = (CEDIT === "new" ? cFormHtml({ kind: "verse", meter: "4/4" }) : "") + (P.length ? P.map((p, i) => CEDIT === p.id ? cFormHtml(p)
+    : (CPICK ? `<label class="small" style="display:flex;align-items:center;gap:4px;margin-top:8px"><input type="checkbox" class="csel" data-sel="${p.id}" ${CSEL.has(p.id) ? "checked" : ""}>고르기</label>` : "")
+      + cCardHtml("b:" + p.id, p, ed ? `<button class="btn xs" data-ptalk="${p.id}">💬</button><button class="btn xs" data-pedit="${p.id}">✏️</button>${i ? `<button class="btn xs" data-pup="${p.id}">↑</button>` : ""}<button class="btn xs" data-keysave="b:${p.id}" ${CARDS["b:" + p.id]?.shift ? "" : "hidden"}>이 키로 저장</button>${isAdmin() || p.by === me || w.by === me ? `<button class="btn xs" data-pdel="${p.id}">🗑</button>` : ""}<span class="small mute">${esc(p.by || "")}</span>` : "")).join("")
+    : CEDIT === "new" ? "" : `<div class="empty" style="padding:18px">대화에서 마음에 드는 조각을 📌 로 담아요.</div>`);
+  $$("#cPieces [data-sel]").forEach(x => x.onchange = () => { x.checked ? CSEL.add(x.dataset.sel) : CSEL.delete(x.dataset.sel); cPickDraw(); });
+  if (CEDIT) cFormBind();
+}
+function cFormHtml(p) {
+  return `<div class="ccard cform" id="cForm"><b>${p.id ? "조각 고치기" : "조각 직접 쓰기"}</b>
+    <label>종류<select id="cfKind">${Object.entries(C_KIND).map(([k, n]) => `<option value="${k}" ${k === p.kind ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    <label>구간 이름 · 안 이름<input id="cfLabel" maxlength="30" value="${esc(p.label || "")}" placeholder="예: 코러스"><input id="cfTitle" maxlength="80" value="${esc(p.title || "")}" placeholder="예: A안 · 반전 훅"></label>
+    <label>가사<textarea id="cfLyr" maxlength="4000">${esc(p.lyrics || "")}</textarea></label>
+    <label>코드 — 마디는 | 로, 예: | G | D | Em C | D |<input id="cfCh" value="${esc(p.chords || "")}"></label>
+    <div class="row3"><label>키<input id="cfKey" value="${esc(p.key || "")}" placeholder="G · Em"></label><label>BPM<input id="cfBpm" type="number" min="40" max="240" value="${p.bpm || ""}"></label><label>박자<select id="cfMeter">${["4/4", "3/4", "6/8"].map(k => `<option ${k === (p.meter || "4/4") ? "selected" : ""}>${k}</option>`).join("")}</select></label></div>
+    <label>멜로디 스케치 — 음이름옥타브:박자, 예: E4:1 G4:0.5 R:0.5 | A4:2 …<input id="cfMel" value="${esc(p.melody || "")}"></label>
+    <label>해설 · 메모<textarea id="cfEx" maxlength="4000">${esc(p.explain || "")}</textarea></label>
+    <div class="acts" style="margin-top:8px"><button class="btn xs pri" id="cfSave">저장</button><button class="btn xs" id="cfX">취소</button></div></div>`;
+}
+function cFormBind() {
+  const w = WN;
+  $("#cfX").onclick = () => { CEDIT = null; cPiecesDraw(); };
+  $("#cfSave").onclick = async () => {
+    const body = { kind: $("#cfKind").value, label: $("#cfLabel").value.trim(), title: $("#cfTitle").value.trim(), lyrics: $("#cfLyr").value, chords: $("#cfCh").value.trim(), key: $("#cfKey").value.trim(), bpm: +$("#cfBpm").value || 0, meter: $("#cfMeter").value, melody: $("#cfMel").value.trim(), explain: $("#cfEx").value };
+    try {
+      const r = CEDIT === "new" ? await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", body)) : await api(`/api/write/${w.id}/pieces/${CEDIT}`, jsonOpt("PUT", body));
+      if (CEDIT !== "new") delete CARDS["b:" + CEDIT];
+      CEDIT = null; w.pieces = r.pieces; cPiecesDraw();
+    } catch (e) { toast(e.message, 4000); }
+  };
+}
+function cPickDraw() {
+  const el = $("#cPick"), w = WN; if (!el || !w) return;
+  if (!CPICK) { el.innerHTML = ""; return; }
+  const P = w.pieces || [], sel = P.filter(p => CSEL.has(p.id)), chordP = P.filter(p => p.chords), needChord = sel.some(p => (p.lyrics || "").trim() && !p.chords), old = $("#cpChord")?.value || "", oldStyle = $("#cpStyle")?.value;
+  el.innerHTML = `<div class="wcard" style="margin:8px 0"><b>🎵 고른 조각 ${sel.length}개로 만들기</b> <span class="small mute">— 위에서부터 차례대로</span>
+    <div class="small mute" style="margin-top:4px">YuE2 로 2곡, 길이는 가사 길이만큼 (4줄이면 40초쯤), 곡당 약 3분. 코드나 멜로디가 있으면 Claude 가 먼저 악보를 써요 (1~2분). 반복되는 구간은 조각을 또 넣어 주세요.${isAdmin() ? "" : " Benny 가 승인하면 만들어요."}</div>
+    ${needChord && chordP.length ? `<label class="fl">코드 <span class="mute">— 코드 없는 가사 조각에 붙여요</span></label><select id="cpChord"><option value="">AI 에게 맡기기</option>${chordP.map(p => `<option value="${p.id}" ${p.id === old ? "selected" : ""}>${esc([p.label || C_KIND[p.kind], p.title].filter(Boolean).join(" · "))} — ${esc(p.chords.slice(0, 30))}</option>`).join("")}</select>` : ""}
+    <label class="fl">스타일 <span class="mute">— 영어로</span></label><textarea class="gst" id="cpStyle" maxlength="500" style="margin-top:0" placeholder="indie rock, female vocal, overdriven electric guitars, punchy live drums">${esc(oldStyle ?? (w.style || ""))}</textarea>
+    <div class="acts" style="margin-top:8px"><button class="btn sm pri" id="cpGo" ${sel.length ? "" : "disabled"}>${isAdmin() ? "🎤 만들기" : "🙋 만들기 요청"}</button><button class="btn xs" id="cpToNext" ${sel.some(p => (p.lyrics || "").trim()) ? "" : "disabled"}>📥 다음 판 가사 칸에 넣기</button></div></div>`;
+  $("#cpGo").onclick = async () => { $("#cpGo").disabled = true;
+    try {
+      const body = { pieces: sel.map(p => p.id), style: $("#cpStyle").value.trim(), chords: $("#cpChord")?.value || undefined };
+      const r = await api(`/api/write/${w.id}/sketch`, jsonOpt("POST", body));
+      CPICK = false; CSEL.clear(); cPiecesDraw(); cLoad();
+      if (r.state === "held") toast("요청을 보냈어요 · Benny 가 승인하면 만들어요", 4000);
+      else if (r.state !== "writing") { w._genOn = false; wGenPoll(); }
+      $("#cChat")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (e) { toast(e.message, 4500); $("#cpGo").disabled = false; }
+  };
+  $("#cpToNext").onclick = () => {
+    const text = sel.filter(p => p.kind !== "chords").map(p => `[${C_KIND[p.kind] || p.label || "벌스"}]${(p.lyrics || "").trim() ? "\n" + p.lyrics.trim() : ""}`).join("\n\n");
+    const bpm = sel.find(p => p.bpm)?.bpm, key = sel.find(p => p.key)?.key, style = $("#cpStyle").value.trim(), patch = { lyrics: text, inst: false };
+    if (bpm) patch.tempo = bpm; if (key) patch.key = key; if (style) patch.style = style;
+    for (const k in patch) { w[k] = patch[k]; if (w._d && k in w._d) w._d[k] = patch[k]; const el = W_INPUT[k] && $(W_INPUT[k]); if (el) el.value = patch[k]; }
+    wSaveSoon(patch); WTAB = "gen"; LS.set("wtab:" + w.id, "gen"); CPICK = false; CSEL.clear(); writeRender(); $("#wNextH")?.scrollIntoView({ behavior: "smooth", block: "start" }); toast("다음 판 칸에 넣었어요 · 코드 진행은 여기 안 들어가요", 4000);
+  };
+}
+// 코드 진행 사전 — API 를 안 쓰고 바로 들어 봄. 느낌은 서양 대중음악 관습에서 온 경향
+const C_DEG_FEEL = [["1", "집. 안정, 끝난 느낌 (토닉)"], ["2m", "다음으로 밀어 줌, 5 로 가고 싶어 함 (서브도미넌트 대리)"], ["3m", "흐릿하고 애틋함, 1 과 음을 많이 공유 (토닉 대리)"], ["4", "집을 나서는 느낌, 열림 (서브도미넌트)"], ["5", "돌아가고 싶은 긴장, 1 로 풀림 (도미넌트)"], ["6m", "그늘, 씁쓸함, 1 의 나란한 단조 (토닉 대리)"], ["b7", "장조에 없는 음이 주는 록의 당당함 (믹솔리디언)"], ["4m", "장조에 빌려 온 단조 색, 눈물 버튼 (빌린 화음)"]];
+const C_BOOK = [
+  ["1-4-5", ["1", "4", "5", "5"], "떠났다 돌아가고 싶어지는 가장 단순한 움직임. 힘이 곧게 나가서 다 같이 외치는 코러스에 좋아요."],
+  ["1-5-6m-4", ["1", "5", "6m", "4"], "밝게 시작해 6m 에서 잠깐 그늘, 4 에서 다시 열려요. 끝이 1 로 해결되지 않아 계속 돌아갑니다."],
+  ["6m-4-1-5", ["6m", "4", "1", "5"], "위와 같은 코드 넷인데 단조에서 시작해요. 씁쓸한데 앞으로 나아가는 느낌."],
+  ["1-6m-4-5", ["1", "6m", "4", "5"], "옛 팝의 정겨운 돌림. 순진하고 복고적이라 웃긴 가사와도 잘 붙어요."],
+  ["4-5-3m-6m", ["4", "5", "3m", "6m"], "떠 있는 4 에서 시작해 3m · 6m 으로 내려앉아요. 한국 · 일본 대중가요에 흔한 애틋한 코러스."],
+  ["1-b7-4-1", ["1", "b7", "4", "1"], "5 의 강한 해결 대신 b7 을 써요. 긴장을 풀어 달라고 조르지 않는 록의 당당함."],
+  ["6m-5-4-5", ["6m", "5", "4", "5"], "단조에서 왔다 갔다 하며 밀고 나가요. 어둡고 전진감 있는 리프에 좋아요."],
+  ["2m-5-1", ["2m", "5", "1", "1"], "4도씩 내려가는 가장 매끈한 해결. 세련되고 재즈 냄새가 나요."],
+  ["1-3-4-4m", ["1", "3", "4", "4m"], "3 이 4 를 끌어당기고(부속화음), 마지막 4m 에서 빌려 온 단조 색이 비쳐요. 발라드 끝 줄의 눈물 자리."],
+  ["베이스 내림", ["1", "5/7", "6m", "1/5", "4", "1/3", "2m", "5"], "베이스가 한 칸씩 내려가요. 이야기가 흘러가는 느낌이라 인트로 · 벌스 · 마무리에 좋아요."],
+];
+const cBookItem = i => C_BOOK[i];
+function cpBookChord(deg, key) { // "5/7" · "b7" · "4m" → 코드 이름 (장조 기준)
+  const S = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11 }, tonic = pcOf(key), one = x => { const m = x.match(/^(b|#)?([1-7])(.*)$/); return { pc: tonic + S[m[2]] + (m[1] === "b" ? -1 : m[1] === "#" ? 1 : 0), q: m[3] || "" }; };
+  const nm = (pc, d) => (d[0] === "b" ? FLAT_N[((pc % 12) + 12) % 12] : pcName(pc, key)), [a, b] = deg.split("/"), r = one(a); return nm(r.pc, a) + r.q + (b ? "/" + nm(one(b).pc, b) : "");
+}
+function cBookDraw() {
+  const box = $("#cBookBox"); if (!box) return; const key = LS.get("cBookKey", "G"), ed = can("compose");
+  C_BOOK.forEach((_, i) => { delete CARDS["k:" + i]; });
+  box.innerHTML = `<div class="small mute" style="margin-top:6px">느낌은 서양 대중음악 관습에서 온 경향이에요. 귀로 듣고 판단해 주세요. 소리는 스케치용 합성음이에요.</div>
+    <div class="cbook-deg">${C_DEG_FEEL.map(([d, t]) => `<b>${d}</b><span>${t}</span>`).join("")}</div>
+    <label class="small mute">키 <select data-bookkey="1">${["C", "D", "E", "F", "G", "A", "Bb"].map(k => `<option ${k === key ? "selected" : ""}>${k}</option>`).join("")}</select></label>
+    ${C_BOOK.map(([n, deg, tx], i) => cCardHtml("k:" + i, { kind: "chords", label: n, key, chords: "| " + deg.map(x => cpBookChord(x, key)).join(" | ") + " |", explain: tx, meter: "4/4", bpm: 96 }, ed ? `<button class="btn xs" data-bookkeep="${i}">📌 조각에 담기</button><button class="btn xs" data-booktalk="${i}">💬 이걸로 얘기하기</button>` : "")).join("")}`;
+}
+
 // ---- 첫 화면: 만들기 + 프로젝트 목록
 const bandsReady = async () => { if (!BANDS.length) try { BANDS = await api("/api/bands"); LS.set("bands", BANDS); } catch {} }; // 작곡 링크로 바로 들어온 새 기기 — 곡 목록을 안 거쳐 밴드 이름이 비어 있음
 async function writeHome() {
@@ -2737,10 +3124,25 @@ async function writeHome() {
 // 간단히 = 한 줄 → AI 가 제목 · 스타일 · 가사 · 템포를 씀 (Suno Simple) / 직접 쓰기 = 칸마다 (Suno Custom)
 function wMakeDraw() {
   const box = $("#wMake"), d = WDRAFT, save = () => LS.set("wDraft", d);
-  const seg = `<div class="seg" id="wMode"><button data-m="simple" class="${WMODE === "simple" ? "on" : ""}">간단히</button><button data-m="full" class="${WMODE === "full" ? "on" : ""}">직접 쓰기</button></div>`;
-  const setMode = m => { WMODE = m; LS.set("wMode", m); wMakeDraw(); };
+  const seg = `<div class="seg" id="wMode"><button data-m="coach" class="${WMODE === "coach" ? "on" : ""}">💬 같이 쓰기</button><button data-m="simple" class="${WMODE === "simple" ? "on" : ""}">간단히</button><button data-m="full" class="${WMODE === "full" ? "on" : ""}">직접 쓰기</button></div>`;
+  const setMode = m => { WMODE = m; LS.set("wMode2", m); wMakeDraw(); };
   const bandSel = isAdmin() && BANDS.length ? `<label class="fl">밴드 <span class="mute">— 고른 밴드 멤버에게 보여요</span></label><select id="wfBand">${[["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, n]) => `<option value="${esc(k)}" ${(d.band || "") === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>` : "";
-  if (WMODE === "simple") {
+  if (WMODE === "coach") { // 11-06: 바로 만들지 않고 논의 → 조각 → 고른 것만 소리로
+    box.innerHTML = seg + `<div class="small mute" style="margin-top:10px">바로 만들지 않고 AI 와 방향부터 얘기해요. 1절 · 코러스 · 코드 진행 · 솔로처럼 조각으로 다듬고, 고른 조각만 소리로 들어 봐요.</div>
+      <label class="fl">제목 <span class="mute">— 나중에 바꿔도 돼요</span></label><input class="ti" id="wfTitle" value="${esc(d.title)}" placeholder="예: 일요일 오전">
+      <label class="fl">첫마디 <span class="mute">— 없어도 돼요</span></label><textarea class="gst" id="wfIdea" style="margin-top:0" placeholder="예: 밴드 이름은 인간 쓰레기인데 제일 성실한 직장인들이라는 곡. 방향부터 얘기해요">${esc(d.idea || "")}</textarea>${bandSel}
+      <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">💬 같이 쓰기 시작</button></div>`;
+    $("#wfTitle").oninput = e => { d.title = e.target.value; save(); };
+    $("#wfIdea").oninput = e => { d.idea = e.target.value; save(); };
+    $("#wGo").onclick = async () => { $("#wGo").disabled = true;
+      try {
+        const w = await api("/api/write", jsonOpt("POST", { title: d.title.trim() || "새 곡", band: d.band || "", engine: "yue" }));
+        LS.set("wtab:" + w.id, "coach");
+        const first = (d.idea || "").trim();
+        if (first) await api(`/api/write/${w.id}/coach`, jsonOpt("POST", { text: first }));
+        d.title = ""; d.idea = ""; save(); writeOpen(w.id);
+      } catch (e) { toast(e.message, 4000); $("#wGo").disabled = false; } };
+  } else if (WMODE === "simple") {
     box.innerHTML = seg + `<label class="fl" style="margin-top:12px">어떤 노래를 만들까요? <span class="mute">— 한 줄이면 제목 · 스타일 · 가사는 AI 가 써요</span></label>
       <textarea class="gst" id="wfIdea" style="margin-top:0" placeholder="예: 퇴근하고 합주실 가는 길의 설렘, 신나는 밴드 록, 여자 보컬">${esc(d.idea || "")}</textarea>
       <div class="row3"><label>종류<select id="wfKind"><option value="0">노래</option><option value="1" ${d.inst ? "selected" : ""}>연주곡</option></select></label>
@@ -2870,9 +3272,9 @@ async function writeOpen(id) {
   let w; try { w = await api(`/api/write/${id}`); } catch (e) { toast(e.message); return writeHome(); }
   if (location.hash !== "#write/" + id) return;
   LS.set("wn:" + id, w);
-  const sig = x => JSON.stringify([x.title, x.style, x.lyrics, x.inst, x.engine, x.key, x.tempo, x.sec, x.notes]);
+  const sig = x => JSON.stringify([x.title, x.style, x.lyrics, x.inst, x.engine, x.key, x.tempo, x.sec, x.notes, x.brief]);
   if (!c || (sig(c) !== sig(w) && !WN._dirty)) { WN = w; writeRender(); }
-  else { const v0 = JSON.stringify(c.versions) !== JSON.stringify(w.versions); Object.assign(WN, { versions: w.versions, comments: w.comments, holds: w.holds, edits: w.edits, fv: w.fv, fby: w.fby, band: w.band, by: w.by, bm_song: w.bm_song }); if (v0) wVersDraw(); wCmDraw(); wHoldsDraw(); wEditsDraw(); wBandDraw(); }
+  else { const v0 = JSON.stringify(c.versions) !== JSON.stringify(w.versions); Object.assign(WN, { versions: w.versions, comments: w.comments, holds: w.holds, edits: w.edits, fv: w.fv, fby: w.fby, band: w.band, by: w.by, bm_song: w.bm_song, pieces: w.pieces, decisions: w.decisions }); if (v0) wVersDraw(); wCmDraw(); wHoldsDraw(); wEditsDraw(); wBandDraw(); cPiecesDraw(); cDecisionsDraw(); }
   LS.set("wseen:" + id, (w.comments || []).length);
   wGenPoll(); WPOLL = setTimeout(wPollTick, 20000);
 }
@@ -2898,6 +3300,8 @@ function wMerge(r) {
   const files = x => JSON.stringify((x || []).map(v => v.takes.map(t => t.file)));
   if (files(w.versions) === files(r.versions)) { w.versions = r.versions; wLikesPaint(); }
   else if (!wInUse()) { w.versions = r.versions; wVersDraw(); }       // 판이 늘었는데 듣는 중이면 다 듣고 나서
+  if (JSON.stringify(w.pieces || []) !== JSON.stringify(r.pieces || [])) { w.pieces = r.pieces; if (!CEDIT) cPiecesDraw(); }
+  if (JSON.stringify(w.decisions || []) !== JSON.stringify(r.decisions || [])) { w.decisions = r.decisions; cDecisionsDraw(); }
   if (redraw) writeRender(); else wEditsDraw();
   if (said.length) toast(`${said.join(" · ")} 고쳤어요`, 3500);
 }
@@ -2905,7 +3309,7 @@ async function wPollTick() {
   clearTimeout(WPOLL); if (!WN || MAIN !== "write" || !location.hash.startsWith("#write/")) return;
   const id = WN.id;
   if (!document.hidden) {
-    try { const r = await api(`/api/write/${id}`); if (WN?.id !== id) return; wMerge(r); LS.set("wn:" + id, r); if (!WN._genOn) wGenPoll(); } catch {}
+    try { const r = await api(`/api/write/${id}`); if (WN?.id !== id) return; wMerge(r); LS.set("wn:" + id, r); if (!WN._genOn) wGenPoll(); if (WTAB === "coach") cLoad(); } catch {}
   }
   WPOLL = setTimeout(wPollTick, 20000);
 }
@@ -2926,7 +3330,7 @@ function wBandDraw() {
 }
 function wHoldsDraw() {
   const el = $("#wHolds"), w = WN; if (!el || !w) return;
-  el.innerHTML = (w.holds || []).map(h => { const o = h.opts || {}, kind = o.repaint ? "구간 다시" : o.base ? "다듬기" : "새 판";
+  el.innerHTML = (w.holds || []).map(h => { const o = h.opts || {}, kind = o.sketch ? "조각 듣기" : o.repaint ? "구간 다시" : o.base ? "다듬기" : "새 판";
     return `<div class="wcard req"><b>🙋 ${esc(h.by)} 요청</b> <span class="small mute">· ${kind} · ${wEngName(o.engine)} · ${wDate(h.at)}</span>
       <div class="small ${h.error ? "" : "mute"}" ${h.error ? 'style="color:var(--warn)"' : ""}>${h.error ? "지난번 실패: " + esc(h.error) : W_WHEN[h.when || ""]}</div>${h.note ? `<div class="small">${esc(h.note)}</div>` : ""}
       <div class="acts">${isAdmin() ? `<button class="btn xs ${h.when === "now" ? "pri" : ""}" data-hg="now" data-h="${h.id}">▶ 지금</button><button class="btn xs ${h.when === "night" ? "pri" : ""}" data-hg="night" data-h="${h.id}">🌙 오늘 밤</button><button class="btn xs" data-hg="deny" data-h="${h.id}">거절</button>` : h.by === wMe() ? `<button class="btn xs" data-hx="${h.id}">요청 취소</button>` : ""}</div></div>`; }).join("");
@@ -2994,18 +3398,22 @@ function writeRender() {
     <div class="wband" id="wBand"></div>
     <div id="wConf"></div><div id="wHolds"></div>
     <div id="wGenSt"></div>
+    <div class="seg" id="wTabs"><button data-t="coach">💬 같이 쓰기</button><button data-t="gen">🎤 노래 판</button></div>
+    <div id="wTabCoach">${cHtml(ed)}</div>
+    <div id="wTabGen">
     <h2 class="wh">진행 과정</h2><div id="wVers"></div>
     <h2 class="wh">의견</h2><div id="wCmAll"></div>
     ${ed ? `<h2 class="wh" id="wNextH">다음 판 만들기</h2><div class="wcard"><div id="wBase"></div>${wFormHtml(w._d, false)}
       <label class="fl">이 판에 남길 말 <span class="mute">— 선택</span></label><input class="ti" id="wNote" maxlength="200" placeholder="예: 후렴을 더 세게">
       <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">${wGoWord((w.versions || []).length + 1)}</button></div>
       <div class="small mute" style="margin-top:8px">바꾼 스타일 · 가사 · 키 · 템포로 새 판을 만들어요. 판마다 설정이 남아서 무엇을 바꿨는지 위에 보여요.
-        곡 옆 <b>⋯</b> 에서 다듬기 · 구간 다시 만들기(시험 기능) · 연습으로 보내기를 할 수 있어요. 코드 진행은 넣을 수 없어요.${isAdmin() ? "" : " 요청은 Benny 가 승인하면 지금 또는 밤에 돌아가요."}</div></div>` : ""}
+        곡 옆 <b>⋯</b> 에서 다듬기 · 구간 다시 만들기(시험 기능) · 연습으로 보내기를 할 수 있어요. 코드 진행을 정해서 만들려면 같이 쓰기의 조각에서 🎵 로 만들어요.${isAdmin() ? "" : " 요청은 Benny 가 승인하면 지금 또는 밤에 돌아가요."}</div></div>` : ""}
     <details class="wnotes" ${w.notes ? "open" : ""}><summary class="small mute">메모</summary><textarea id="wNotes" ${ed ? "" : "disabled"} placeholder="아이디어, 고칠 점…">${esc(w.notes || "")}</textarea></details>
     <details class="wnotes" id="wEdits" hidden></details>
+    </div>
     ${ed && (isAdmin() || w.by === wMe()) ? `<div class="hdr"><button class="btn sm" id="wDel" style="margin-left:auto">프로젝트 지우기</button></div>` : ""}`;
   $("#writeBox").onclick = wBoxClick;
-  wVersDraw(); wBaseDraw(); wBandDraw(); wHoldsDraw(); wEditsDraw(); wConfDraw();
+  wVersDraw(); wBaseDraw(); wBandDraw(); wHoldsDraw(); wEditsDraw(); wConfDraw(); cBind(ed);
   $("#wBack").onclick = () => writeHome();
   if (!ed) return;
   $("#wTitle").oninput = e => { w.title = e.target.value; wSaveSoon({ title: w.title }); };
@@ -3035,7 +3443,7 @@ function wVersDraw() {
   const label = {}; V.forEach(v => v.takes.forEach((t, i) => label[t.file] = `${v.n}판 ${TAKE_ABC[i]}`));
   box.innerHTML = V.map((v, k) => `<div class="ver">
       <div class="vh"><b>${v.n}판</b><span class="small mute">${wDate(v.at)} · ${v.engine === "yue" ? "YuE2" : Math.round(v.sec / 60) + "분"}</span>${v.base ? `<span class="tagb">${esc(label[v.base] || "지운 곡")} ${v.repaint ? `${wClock(v.repaint[0])}~${wClock(v.repaint[1])} 다시` : `다듬기 · ${strengthName(v.strength)}`}</span>` : ""}</div>
-      <div class="chg small">${esc(wDiff(V[k - 1], v))}${v.by ? ` · ${esc(v.by)}` : ""}</div>${v.note ? `<div class="vnote small">${esc(v.note)}</div>` : ""}
+      <div class="chg small">${v.sketch ? `🧩 조각: ${esc(v.sketch.join(", "))}${v.chords ? ` · 코드 ${esc(v.chords.slice(0, 60))}` : ""}` : esc(wDiff(V[k - 1], v))}${v.by ? ` · ${esc(v.by)}` : ""}</div>${v.note ? `<div class="vnote small">${esc(v.note)}</div>` : ""}
       ${v.takes.length ? v.takes.map((t, i) => `<div class="take${t.star ? " star" : ""}"><span class="ab">${TAKE_ABC[i]}</span><audio controls preload="none" data-f="${t.file}" src="${wFileOf(w.id, t.file)}"></audio>
         <span class="tb"><button class="btn xs" data-like="${t.file}">♡</button><button class="btn xs" data-cm="${t.file}">💬</button></span><div class="tcm" data-for="${t.file}" hidden></div>
         ${ed ? `<span class="tb"><button class="btn xs ${t.star ? "on" : ""}" data-star="${t.file}" title="마음에 듦">${t.star ? "★" : "☆"}</button><button class="btn xs" data-more="${t.file}" title="더 보기">⋯</button></span>
