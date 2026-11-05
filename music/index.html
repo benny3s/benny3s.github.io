@@ -240,7 +240,7 @@ body.lyfull [data-chv="full"]{display:none}
   .ms{height:40px;width:42px}
   .mixer .row{grid-template-columns:12px 72px 42px 42px minmax(0,1fr)}
   .mixer .row input[type=range]{min-width:0;width:100%} .mixer .metr{min-width:0}
-  .tabs button{min-height:42px}
+  .tabs button{min-height:42px;padding:0 11px}
   .logo{font-size:16px;white-space:nowrap;gap:5px}
   .pill{padding:4px 8px;font-size:12px;white-space:nowrap}
   #logout{white-space:nowrap} .lo-t{display:none} .lo-i{display:inline}
@@ -364,6 +364,8 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .wr .chg{color:var(--mute);margin:2px 0 4px}
 .wr .take{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px} .wr .take audio{flex:1 1 200px;min-width:0;height:34px}
 .wr .take .ab{font-weight:800;width:14px;color:var(--mute)} .wr .take.star .ab{color:var(--accent)} .wr .take .tb{display:flex;gap:4px}
+.wr .take .tcm,.wr .take .tmore{order:9;flex-basis:100%}
+@media (max-width:600px){.wr .take audio{flex-basis:calc(100% - 20px)} .wr .take audio + .tb{margin-left:20px}}
 .wr .vset{margin-top:6px} .wr .vly{white-space:pre-wrap;font:inherit;font-size:13px;background:var(--panel2);padding:8px;border-radius:8px;max-height:220px;overflow:auto;margin:6px 0}
 .wr .basebar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;border-radius:10px;background:var(--panel2);margin-bottom:10px;font-size:14px}
 .wr .basebar.rp audio{flex:1 0 100%;height:34px;min-width:0} .wr .basebar.rp label{display:flex;align-items:center;gap:4px} .wr .basebar.rp input{width:64px}
@@ -382,6 +384,22 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .wr .wnotes{margin:14px 0} .wr .wnotes textarea{width:100%;min-height:80px;margin-top:6px}
 .wr .lock .acts select{flex:0 0 auto}
 .rq{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)} .rq .t{flex:1;min-width:140px}
+.wr .wband{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0} .wr .wlink{font-size:13px;color:var(--accent);padding:0}
+.wr .cm{padding:6px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.45;overflow-wrap:anywhere} .wr .cm .linkbtn{color:var(--accent);padding:0;font-size:13px}
+.wr .tcm{flex:1 0 100%;padding:2px 0 6px 20px;min-width:0} .wr .tcm[hidden]{display:none} .wr .cmin{display:flex;gap:6px;margin-top:6px} .wr .cmin input{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);padding:0 10px;color:var(--text)}
+.wr .confl{border-color:var(--warn)} .wr .confl pre{white-space:pre-wrap;max-height:200px;overflow:auto;font-size:13px;margin:6px 0;font-family:inherit} .wr .vnote{margin:2px 0 4px}
+.wr .edit{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:13px} .wr .edit .t{flex:1;min-width:0}
+#pArr .achips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+#pArr select{height:36px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);padding:0 8px}
+#pArr .asec{border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:6px 0} #pArr .asec.cur{border-color:var(--accent)}
+#pArr .ah{display:flex;align-items:center;gap:8px;min-height:32px} #pArr .ah .linkbtn{color:var(--accent);text-decoration:none;font-size:14px;padding:6px 2px}
+#pArr .arow{display:flex;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.45;min-height:34px} #pArr .arow[data-ae]{cursor:pointer}
+#pArr .ap{flex:0 0 58px;color:var(--mute);font-size:13px} #pArr .at{flex:1;min-width:0;overflow-wrap:anywhere}
+#pArr .aed{padding:6px 0;border-top:1px solid var(--line)} #pArr .aed select{margin-bottom:6px} #pArr textarea{width:100%;min-height:64px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 10px;font:inherit}
+#pArr .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px} #pArr input:not([type=file]){flex:1;min-width:120px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:0 10px}
+#pArr .ahh{font-size:14px;margin:16px 0 4px} #pArr .acm{padding:6px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.45;overflow-wrap:anywhere} #pArr .acm .linkbtn{color:var(--accent);padding:0;font-size:13px}
+#pArr .atk{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--line)} #pArr .atk .t{flex:1;min-width:150px}
+@media (max-width:560px){#pArr .btn.xs{min-height:40px}}
 .devs{margin:6px 2px} .pchip{display:inline-block;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin:2px 4px 0 0} .pchip.x{opacity:.5}
 .bandpick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0} .bandpick label{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
 .bandpick input{width:auto;margin:0} .bandpick label:has(input:checked){border-color:var(--accent);color:var(--accent)}
@@ -506,7 +524,9 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
           <button data-v="lyrics">가사</button>
           <button data-v="tab">악보</button>
           <button data-v="info">해설</button>
+          <button data-v="arr">편곡</button>
         </div>
+        <div id="pArr" hidden></div>
         <div id="pInfo" hidden><div id="lessonBox"></div><div id="infoBox" class="teach"></div></div>
         <div id="pChords" hidden>
           <div class="tabbar chvw" id="chvBar"></div>
@@ -577,6 +597,15 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
     <button class="btn sm" id="lyrCancel">닫기</button><button class="btn sm pri" id="lyrSave">맞춰서 저장</button>
   </div>
 </dialog>
+<dialog id="chDlg">
+  <h3 style="margin:0 0 8px" id="chDlgT">코드</h3>
+  <input id="chDlgI" placeholder="Am7 G/B" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div class="small mute" style="margin-top:6px">띄어쓰면 한 마디 안에 고르게 놓여요. <span id="chDlgKey"></span></div>
+  <div class="small" id="chDlgErr" style="color:var(--err);min-height:18px;margin-top:4px"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:6px">
+    <button class="btn sm" id="chDlgBack">이 마디 원래대로</button><button class="btn sm" id="chDlgX">취소</button><button class="btn sm pri" id="chDlgOk">저장</button>
+  </div>
+</dialog>
 <dialog id="secDlg">
   <h3 style="margin:0" id="secDlgTitle">섹션</h3>
   <div class="labgrid" id="secLabels"></div>
@@ -588,7 +617,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-05a";
+const BUILD = "2026-11-05b";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -625,7 +654,7 @@ let AUTH = LS.get("auth", null); // {role, token}
 const isAdmin = () => AUTH?.role === "admin";
 const isLink = () => AUTH?.role === "link";   // 밴드 링크로 들어옴: 그 밴드 곡 보기·분석까지 (11-02)
 // 폰은 128k 가벼운 파일(서버가 처음 요청 때 만들어 둠) → 받는 양 2/3
-function fileUrl(id, name) { const v = P.song?.id === id && P.song.sep_v && name.endsWith(".mp3") ? `&sv=${P.song.sep_v}` : ""; // 트랙을 다시 나누면 주소가 바뀌어 캐시(30일) 대신 새로 받음
+function fileUrl(id, name) { const ex = P.song?.id === id && (P.song.extra || []).find(e => name.startsWith(e.id)), v = ex ? `&sv=${ex.v || 1}` : P.song?.id === id && P.song.sep_v && name.endsWith(".mp3") ? `&sv=${P.song.sep_v}` : ""; // 트랙을 다시 나누면(파트 트랙은 시작을 옮기면) 주소가 바뀌어 캐시(30일) 대신 새로 받음
   // 폰: Opus 를 풀 수 있는 브라우저(안드로이드·iOS 17+ 대부분)는 Opus(80k, mp3 128k 의 약 60% 크기), 못 풀면 가벼운 mp3
   const fmt = !isMobile || !name.endsWith(".mp3") ? "" : OPUS_OK && !NO_OPUS ? "&fmt=opus" : "&lite=1";
   return `${SRV}/files/${id}/${name}?t=${encodeURIComponent(AUTH?.ftoken || AUTH?.token || "")}${fmt}${v}`; } // ftoken = 파일 받기만 되는 토큰
@@ -635,7 +664,7 @@ async function api(path, opt = {}) {
   opt.headers = Object.assign({ "X-Dev": DEV }, opt.headers || {}, AUTH ? { Authorization: "Bearer " + AUTH.token } : {});
   const r = await fetch(SRV + path, opt);
   if (r.status === 401 && path !== "/api/login") { AUTH = null; LS.set("auth", null); showLogin(); throw new Error("로그인이 필요해요"); }
-  if (!r.ok) { let m = r.status + ""; try { m = (await r.json()).detail || m; } catch {} throw Object.assign(new Error(m), { status: r.status }); }
+  if (!r.ok) { let m = r.status + "", j = null; try { j = await r.json(); m = j.detail || m; } catch {} throw Object.assign(new Error(m), { status: r.status, data: j }); }
   return r.json();
 }
 function applyRole() {
@@ -679,7 +708,9 @@ function showLogin() { $("#loginErr").textContent = ""; $("#pw").value = ""; $("
 function joinIn(r) { // 허용됨 → 토큰 받아 들어감
   clearTimeout(JOINT); AUTH = { role: r.role, token: r.token, ftoken: r.ftoken, band: r.band, name: r.name, renewed: Date.now() };
   LS.set("auth", AUTH); if (r.name) LS.set("myName", r.name); LS.set("libCache", null);
-  if ($("#loginDlg").open) $("#loginDlg").close(); applyRole(); loadPerms(); boot(); toast("들어왔어요");
+  if ($("#loginDlg").open) $("#loginDlg").close(); applyRole(); loadPerms();
+  if (JOIN_NEXT) { location.hash = JOIN_NEXT; JOIN_NEXT = ""; }
+  boot(); toast("들어왔어요");
 }
 async function joinCheck(first) {
   clearTimeout(JOINT);
@@ -1182,6 +1213,10 @@ async function waGraph() {
   for (const n of ["vocals", "drums", "bass", "guitar", "piano", "other", "mix", "metro"]) { const g = ac.createGain(); g.gain.value = 0; g.connect(lines[n === "drums" || n === "metro" ? "U" : "P"].bus); WA.g[n] = g; }
   WA.lines = lines;
 }
+function waExtraGains() { // 올린 파트 트랙도 음량 조절 하나씩 (드럼 파트는 키를 안 바꾸는 줄로)
+  if (!WA.lines) return;
+  for (const e of P.song?.extra || []) if (!WA.g[e.id]) { const g = P.ac.createGain(); g.gain.value = 0; g.connect(WA.lines[e.part === "드럼" ? "U" : "P"].bus); WA.g[e.id] = g; }
+}
 async function waLatency(rate, semis) { // SoundTouch 지연(초): 임펄스 하나를 미리 그려 잼 (설정마다 한 번, 캐시)
   const k = rate + "|" + semis; if (WA_LAT[k] != null) return WA_LAT[k];
   const sr = P.ac.sampleRate, oac = new OfflineAudioContext(2, Math.ceil(sr * 2.5), sr);
@@ -1267,7 +1302,7 @@ async function waLoad(s) { // 곡 열기: mix 먼저 → 재생 가능, 트랙 6
   const gen = ++WA.gen;
   WA.bufs = {}; WA.stems = false; P.stems = false; WA.off = P.pos || 0; WA.baseSemi = P.semi;
   try {
-    await waGraph(); await waParams(); renderClickTrack();
+    await waGraph(); waExtraGains(); await waParams(); renderClickTrack();
     waNote("🎚 곡 받는 중… 곧 재생할 수 있어요", 0);
     const m = await loadAB({ mix: P.mixFile }, "곡 받는 중"); if (gen !== WA.gen) return;
     WA.bufs.mix = await waDecode(m.mix, P.mixFile); if (gen !== WA.gen) return;
@@ -1455,9 +1490,9 @@ async function openSong(id) {
   stopAll(); await pickServer();
   const t0 = setTimeout(() => toast("곡 여는 중…", 1500), 400); // 느릴 때만 보임
   let s; try { s = await api("/api/songs/" + id); } catch (e) { toast("곡을 열지 못했어요 — " + e.message); return; } finally { clearTimeout(t0); }
-  s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, LS.get("chsrc:" + id, "best"));
-  lyFull(false, true); CHV.capo = LS.get("capo:" + id, 0); CH_REP = [];
-  P.metroSolo = false; P.secEdit = false; P.loopPick = null; // 앞 곡의 메트로놈만 듣기 · 구조 고치기가 남아 소리 0 · 실수로 구조가 바뀌던 것 (10-29 점검)
+  s.chords_auto = s.chords; s.keys_auto = s.keys; useChordSrc(s, chSrcOf(s));
+  lyFull(false, true); CHV.capo = LS.get("capo:" + id, 0); CH_REP = []; ARR = null; clearTimeout(ARRT);
+  P.metroSolo = false; P.secEdit = false; P.chEdit = false; P.loopPick = null; // 앞 곡의 메트로놈만 듣기 · 구조 고치기가 남아 소리 0 · 실수로 구조가 바뀌던 것 (10-29 점검)
   if (PQ && !PQ.opening) PQ = null; // 손으로 다른 곡을 열면 이어 듣기는 끝
   P.song = s; P.semi = 0; P.secOk = JSON.parse(JSON.stringify(s.sections || [])); // 구조 저장이 실패하면 되돌릴 기준
   if (location.hash !== "#song=" + id) {
@@ -1492,7 +1527,7 @@ async function openSong(id) {
   if (!s.chords_best?.length && (s.songsterr?.found || s.videotab?.found)) setTimeout(async () => {
     if (P.song !== s) return;
     try { const m = await api("/api/songs/" + id); if (P.song !== s || !m.chords_best?.length) return;
-      s.chords_best = m.chords_best; s.keys_best = m.keys_best; useChordSrc(s, LS.get("chsrc:" + id, "best")); buildChords(); buildInfo(); render(true); toast("추천 코드표가 준비됐어요"); } catch {}
+      s.chords_best = m.chords_best; s.keys_best = m.keys_best; useChordSrc(s, chSrcOf(s)); buildChords(); buildInfo(); render(true); toast("추천 코드표가 준비됐어요"); } catch {}
   }, 20000);
   if (WAE) return waLoad(s);
   let urls;
@@ -1511,8 +1546,9 @@ function buildMixer() {
   $("#mixer").innerHTML = s.stems.map(n => {
     P.mixer[n] = saved?.[n] || { vol: VOL0, mute: false, solo: false };
     if (Math.abs(P.mixer[n].vol - 0.85) < 0.001) P.mixer[n].vol = VOL0; // 예전 기본값(0.85) → 새 기본값
-    return `<div class="row" data-stem="${n}"><span class="sw" style="background:var(--${n})"></span>
-      <span class="nm">${STEM_LABEL[n]}${quiet(n) ? '<div class="small mute" style="font-weight:400">거의 없음</div>' : ""}</span>
+    const ex = (s.extra || []).find(e => e.id === n); // 올린 파트 트랙 (편곡 탭)
+    return `<div class="row" data-stem="${n}"><span class="sw" style="background:${ex ? "var(--mute)" : `var(--${n})`}"></span>
+      <span class="nm">${ex ? `${esc(ex.part || ex.name)}<div class="small mute" style="font-weight:400">${esc(ex.by || "")} 트랙</div>` : STEM_LABEL[n]}${quiet(n) ? '<div class="small mute" style="font-weight:400">거의 없음</div>' : ""}</span>
       <button class="ms m">M</button><button class="ms s">S</button>
       <input type="range" min="0" max="1" step="0.01" value="${P.mixer[n].vol}"></div>`;
   }).join("");
@@ -1660,20 +1696,53 @@ function splitAtBar(k) {
 /* chord grid */
 // 코드 출처: 악보(영상 악보 위 사람이 쓴 코드 이름 — 텐션·자리 정확, 서버 chords_score) / 자동 분석(음원에서 계산 — 단순화, 곳에 따라 2박 일찍)
 // 코드 출처 (2026-10-19): best = 추천(서버 chords.build_best: 영상 악보 > Songsterr 음표 계산 > 자동, 반 마디마다) / score = 영상 악보 / ss = Songsterr 계산 / auto
-const CH_SRC = [["best", "추천", s => s.chords_best, s => s.keys_best], ["score", "영상 악보", s => s.chords_score, s => s.keys_score],
+// band = 우리 편곡 (멤버가 고친 코드표, 서버 collab.py — 있으면 이게 기본. 분석 결과는 그대로 남아서 언제든 돌아감, 11-05)
+const CH_SRC = [["band", "우리 편곡", s => s.chords_band, s => s.keys_best], ["best", "추천", s => s.chords_best, s => s.keys_best], ["score", "영상 악보", s => s.chords_score, s => s.keys_score],
   ["ss", "Songsterr", s => s.chords_ss, () => null], ["auto", "자동 분석", s => s.chords_auto, s => s.keys_auto]];
+const chSrcOf = s => LS.get("chsrc:" + s.id, s.chords_band?.length ? "band" : "best"); // 손으로 고른 적 없으면 우리 편곡부터
 function useChordSrc(s, src) {
   const avail = CH_SRC.filter(([k, , g]) => g(s)?.length);
   const pick = avail.find(x => x[0] === src) || avail[0];
   s.chordSrc = pick[0]; s.chords = pick[2](s); s.keys = pick[3](s) || s.keys_auto;
 }
+// 코드 고치기 (편곡): 화면에 보이는 키 · 카포 그대로 적으면 원키로 바꿔 저장
+function chordBack(n) {
+  n = n.replace(/♯/g, "#").replace(/♭/g, "b"); n = n.charAt(0).toUpperCase() + n.slice(1);
+  const sh = CHV.capo - P.semi; if (!sh) return n;
+  const up = x => SHARP[(NOTE_PC[x] + sh + 120) % 12];
+  return n.replace(/^([A-G][#b]?)/, (_, r) => up(r)).replace(/\/([A-G][#b]?)$/, (_, b) => "/" + up(b));
+}
+let CH_BAR = 0;
+function chEditBar(k) {
+  const b = P.bars[k], lv = CHV.lv, cur = []; CHV.lv = 2; // 쉬운 보기로 줄여 보던 코드도 원래 이름으로 고침
+  P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") { const n = tChord(c.chord, c.start); if (cur[cur.length - 1] !== n) cur.push(n); } });
+  CHV.lv = lv; CH_BAR = k;
+  $("#chDlgT").textContent = `${barLabel(k) || k + 1}마디 코드`; $("#chDlgI").value = cur.join(" "); $("#chDlgErr").textContent = "";
+  $("#chDlgKey").textContent = P.semi || CHV.capo ? `지금 보이는 키(${tKey()}${CHV.capo ? ` · 카포 ${CHV.capo}` : ""}) 기준으로 적어 주세요.` : "";
+  $("#chDlg").showModal(); $("#chDlgI").focus();
+}
+async function chSave(names) {
+  const s = P.song, b = P.bars[CH_BAR];
+  try {
+    const r = await api(`/api/songs/${s.id}/chords`, jsonOpt("PUT", { a: b.start, b: b.end, names, seed: s.chords_best || s.chords_score || s.chords_auto }));
+    s.chords_band = r.chords?.list; LS.set("chsrc:" + s.id, "band"); useChordSrc(s, "band"); buildChords(); buildInfo(); loopUI(); render(true); $("#chDlg").close();
+    toast(names.length ? "고쳤어요 · '우리 편곡' 코드표에 남아요" : "이 마디를 원래대로 했어요");
+  } catch (e) { $("#chDlgErr").textContent = e.message; }
+}
+$("#chDlgOk").onclick = () => { const v = $("#chDlgI").value.trim(); if (!v) return chSave([]); chSave(v.split(/\s+/).map(chordBack)); };
+$("#chDlgBack").onclick = () => chSave([]);
+$("#chDlgX").onclick = () => $("#chDlg").close();
 function buildChords() {
   chordReps(); $("#chvBar").innerHTML = chvBar(CHV.capo ? `<span class="small" style="color:var(--warn)">카포 ${CHV.capo}번 칸 모양 · 소리는 ${esc(tKey())}</span>` : "");
   const avail = CH_SRC.filter(([k, , g]) => g(P.song)?.length);
-  const cs = $("#chSrc"); cs.hidden = avail.length < 2;
+  const cs = $("#chSrc"), chEd = can("edit") && !isLink(); cs.hidden = avail.length < 2 && !chEd;
   if (!cs.hidden) {
-    cs.innerHTML = `<span class="small mute">코드</span>` + avail.map(([k, label]) => `<button class="btn xs ${P.song.chordSrc === k ? "on" : ""}" data-c="${k}">${label}</button>`).join("");
+    cs.innerHTML = `<span class="small mute">코드</span>` + (avail.length > 1 ? avail : []).map(([k, label]) => `<button class="btn xs ${P.song.chordSrc === k ? "on" : ""}" data-c="${k}">${label}</button>`).join("")
+      + (chEd ? `<button class="btn xs ${P.chEdit ? "on" : ""}" id="chEditBtn">✏️ 코드 고치기</button>` : "") + (chEd && P.chEdit && P.song.chords_band?.length ? `<button class="btn xs" id="chDrop">우리 편곡 지우기</button>` : "");
     $$("#chSrc [data-c]").forEach(b => b.onclick = () => { LS.set("chsrc:" + P.song.id, b.dataset.c); useChordSrc(P.song, b.dataset.c); buildChords(); buildInfo(); loopUI(); render(true); });
+    if ($("#chEditBtn")) $("#chEditBtn").onclick = () => { P.chEdit = !P.chEdit; $("#gridHint").textContent = P.chEdit ? "고칠 마디를 누르세요. 고친 코드는 '우리 편곡' 코드표에 남고, 분석 결과는 그대로 있어요. 소리는 바뀌지 않아요." : "마디를 누르면 그 위치로 이동해요."; buildChords(); render(true); };
+    if ($("#chDrop")) $("#chDrop").onclick = async () => { if (!confirm("멤버들이 고친 '우리 편곡' 코드표를 전부 지울까요?")) return;
+      try { await api(`/api/songs/${P.song.id}/chords`, jsonOpt("PUT", { drop: true })); delete P.song.chords_band; LS.set("chsrc:" + P.song.id, "best"); useChordSrc(P.song, "best"); buildChords(); buildInfo(); loopUI(); render(true); } catch (e) { toast(e.message); } };
   }
   const B = P.bars; const S = secs(); let html = "";
   const heads = new Map(S.map((s, i) => [nearestBar(s.start), s]));
@@ -1686,6 +1755,7 @@ function buildChords() {
   $("#cgrid").innerHTML = html;
   $$("#cgrid .bar").forEach(el => el.onclick = () => {
     const k = +el.dataset.k;
+    if (P.chEdit) return chEditBar(k);
     if (P.secEdit) return splitAtBar(k);
     if (!$("#popLoop").hidden) {
       if (P.loopPick == null) { P.loopPick = k; setLoop(k, k, false); toast(`${barLabel(k)}마디부터 — 끝 마디를 누르세요`); }
@@ -1984,14 +2054,103 @@ $("#lyrSave").onclick = async () => {
 /* ---------------- tab / score ---------------- */
 let tabLoaded = false, atApi = null, tabBars = [], tabMode = "auto", tabbarMenu = false;
 let VIEW = null; // 한 번에 하나만 열림, 연 탭을 다시 누르면 닫힘, 곡을 열면 다 닫힌 채로 시작 (2026-10-18 Benny)
-const VIEW_EL = () => ({ chords: $("#pChords"), lyrics: $("#pLyrics"), tab: $("#pTab"), info: $("#pInfo") });
+const VIEW_EL = () => ({ chords: $("#pChords"), lyrics: $("#pLyrics"), tab: $("#pTab"), info: $("#pInfo"), arr: $("#pArr") });
 function applyViews() {
   $$("#tabs [data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === VIEW));
   for (const [k, el] of Object.entries(VIEW_EL())) el.hidden = k !== VIEW;
   if (VIEW === "tab" && !tabLoaded && P.song) loadTab();
   if ((VIEW === "lyrics" || VIEW === "tab") && P.song && (!LYR || LYR.busy)) loadLyrics(); // 악보 화면에도 가사 한 줄
   if (VIEW === "info" && P.song && (!LESSON || LESSON.busy)) loadLesson();
+  clearTimeout(ARRT); if (VIEW === "arr" && P.song) arrLoad();
   lastIdx = -2; lastBar = -2; if (P.song) render(true);
+}
+
+/* ---------------- 같이 편곡 (collab.py, 11-05 Benny "밴드 사람들하고 곡을 만들어 가는 과정, 편곡 포함") ----------------
+   구간마다 파트별 메모(폰에서 표는 안 들어가서 구간 카드 + 파트 고르기) · 곡 위치 의견 · 직접 친 파트 트랙. 코드 고치기는 코드 탭 ✏️ */
+let ARR = null, ARRT = null, ARR_ED = null, ARR_SIG = "";
+const arrBusy = () => ARR_ED || document.activeElement?.id === "aCm";
+async function arrLoad() { // 탭을 연 동안 20초마다 (다른 멤버가 적은 것), 적는 중이면 그리지 않음
+  clearTimeout(ARRT); const s = P.song; if (!s || VIEW !== "arr") return;
+  if (!document.hidden) {
+    try { const c = await api(`/api/songs/${s.id}/collab`); if (P.song !== s) return; arrApply(c); }
+    catch (e) { if (!ARR) $("#pArr").innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+  }
+  ARRT = setTimeout(arrLoad, 20000);
+}
+function arrApply(c) {
+  const s = P.song, sig = JSON.stringify([c.parts, c.cells, c.comments, c.extra]);
+  const band = c.chords?.list || null;
+  if (JSON.stringify(band) !== JSON.stringify(s.chords_band || null)) { // 다른 멤버가 코드를 고침
+    if (band) s.chords_band = band; else delete s.chords_band;
+    useChordSrc(s, chSrcOf(s)); buildChords(); buildInfo(); render(true);
+  }
+  if (JSON.stringify(c.extra || []) !== JSON.stringify(s.extra || []) && !P.playing) extrasSync().catch(() => {});
+  ARR = c;
+  if (sig !== ARR_SIG && !arrBusy()) { ARR_SIG = sig; arrDraw(); }
+}
+function arrDraw() {
+  const box = $("#pArr"), s = P.song; if (!s || !ARR) return;
+  const ed = can("edit") && !isLink(), me = PERMS?.who || "", fil = LS.get("arrPart:" + s.id, ""), B = P.bars, C = ARR.cells, S = secs();
+  const parts = fil && ARR.parts.includes(fil) ? [fil] : ARR.parts, one = parts.length === 1 && !!fil;
+  const R = (S.length ? S : [{ name: "곡 전체", start: 0, end: s.duration }]).map((x, i, L) => ({ x, a: i ? nearestBar(x.start) : 0, z: i + 1 < L.length ? nearestBar(L[i + 1].start) : B.length }));
+  const notes = (r, p) => { const out = []; for (let k = r.a; k < r.z; k++) if (C[k]?.[p]) out.push(Object.assign({ k }, C[k][p])); return out; };
+  const edHtml = (r, p) => `<div class="aed">${one ? "" : `<select id="aPart">${ARR.parts.map(n => `<option ${n === p ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`}
+      <textarea id="aText" maxlength="500" placeholder="예: 8마디까지 팜뮤트, 후렴 전 한 박 쉬기">${esc(notes(r, p).map(n => n.text).join("\n"))}</textarea>
+      <div class="acts"><button class="btn xs pri" id="aOk">저장</button><button class="btn xs" id="aNo">취소</button></div></div>`;
+  box.innerHTML = `<div class="achips"><button class="btn xs ${one ? "" : "on"}" data-af="">전체</button>${ARR.parts.map(n => `<button class="btn xs ${fil === n ? "on" : ""}" data-af="${esc(n)}">${esc(n)}</button>`).join("")}${ed ? `<button class="btn xs" id="aParts">✎ 파트</button>` : ""}</div>`
+    + R.map((r, i) => { const rows = parts.map(p => {
+        if (ARR_ED?.i === i && ARR_ED.p === p) return edHtml(r, p);
+        const N = notes(r, p); if (!N.length && !one) return "";
+        return `<div class="arow" ${ed ? `data-ae="${i}" data-ap="${esc(p)}"` : ""}>${one ? "" : `<span class="ap">${esc(p)}</span>`}<span class="at">${N.map(n => `${esc(n.text)} <small class="mute">${esc(n.by || "")}</small>`).join("<br>") || `<span class="mute">${ed ? "눌러서 적기" : "·"}</span>`}</span></div>`; }).join("");
+      const add = ARR_ED?.i === i && !parts.includes(ARR_ED.p) ? edHtml(r, ARR_ED.p) : "";
+      return `<div class="asec" data-a="${r.x.start}" data-z="${r.z < B.length ? B[r.z].start : s.duration}"><div class="ah"><button class="linkbtn" data-at="${r.x.start}">▶</button><b>${esc(r.x.name)}</b><span class="small mute">${barLabel(r.a) || r.a + 1}~${barLabel(r.z - 1) || r.z}마디</span>${ed && !one && !(ARR_ED?.i === i) ? `<button class="btn xs" data-aadd="${i}" style="margin-left:auto">＋ 적기</button>` : ""}</div>${rows}${add}</div>`; }).join("")
+    + `<h3 class="ahh">곡 위치 의견</h3><div id="aCms">${[...ARR.comments].sort((a, b) => (a.t ?? 1e9) - (b.t ?? 1e9) || a.at - b.at).map(c => `<div class="acm">${c.t != null ? `<button class="linkbtn" data-at="${c.t}">${fmt(c.t)}</button> ` : ""}<b>${esc(c.by)}</b> ${esc(c.text)}${isAdmin() || c.by === me ? ` <button class="linkbtn" data-acd="${c.id}">✕</button>` : ""}</div>`).join("") || `<div class="small mute">아직 의견이 없어요.</div>`}</div>`
+    + (isLink() ? `<div class="small mute" style="margin-top:6px">적으려면 🙋 기기 허용을 요청해 주세요.</div>` : `<div class="acts"><input id="aCm" maxlength="500" placeholder="재생 위치에 의견 달기"><button class="btn xs" id="aCmGo">올리기</button></div>`)
+    + `<h3 class="ahh">파트 트랙</h3>` + ((s.extra || []).map(e => `<div class="atk"><div class="t"><b>${esc(e.part || e.name)}</b> <span class="small mute">${esc(e.name)} · ${esc(e.by || "")}${e.offset ? ` · 시작 ${e.offset > 0 ? "+" : ""}${e.offset}초` : ""}</span></div>${ed ? `<button class="btn xs" data-ao="-0.1" data-ai="${e.id}">−0.1초</button><button class="btn xs" data-ao="0.1" data-ai="${e.id}">+0.1초</button>${isAdmin() || e.by === me ? `<button class="btn xs" data-atd="${e.id}">🗑</button>` : ""}` : ""}</div>`).join("") || `<div class="small mute">직접 친 소리를 올리면 믹서에 한 줄 생겨요. 곡 처음부터 맞춰 친 파일이 가장 쉬워요.</div>`)
+    + (ed ? `<div class="acts"><select id="aTkPart">${ARR.parts.map(n => `<option ${n === fil ? "selected" : ""}>${esc(n)}</option>`).join("")}</select><input type="file" id="aTkFile" accept="audio/*,video/*" hidden><button class="btn xs" id="aTkGo">⬆ 트랙 올리기</button></div>${P.semi ? `<div class="small mute">지금 키(${P.semi > 0 ? "+" : ""}${P.semi})에 맞춰 친 소리로 올려요. 다른 키로 쳤으면 키를 먼저 맞춰 주세요.</div>` : ""}` : "");
+  $$("#pArr [data-af]").forEach(b => b.onclick = () => { LS.set("arrPart:" + s.id, b.dataset.af); ARR_ED = null; arrDraw(); });
+  $$("#pArr [data-at]").forEach(b => b.onclick = () => goTo(+b.dataset.at));
+  $$("#pArr [data-ae]").forEach(el => el.onclick = () => { ARR_ED = { i: +el.dataset.ae, p: el.dataset.ap }; arrDraw(); });
+  $$("#pArr [data-aadd]").forEach(b => b.onclick = () => { ARR_ED = { i: +b.dataset.aadd, p: ARR.parts[0] }; arrDraw(); });
+  if ($("#aPart")) $("#aPart").onchange = e => { const t = $("#aText").value; ARR_ED.p = e.target.value; arrDraw(); if (t.trim() && !$("#aText").value.trim()) $("#aText").value = t; };
+  if ($("#aText")) $("#aText").focus();
+  if ($("#aNo")) $("#aNo").onclick = () => { ARR_ED = null; arrDraw(); };
+  if ($("#aOk")) $("#aOk").onclick = async () => { const r = R[ARR_ED.i], p = ARR_ED.p, others = notes(r, p).map(n => n.k).filter(k => k !== r.a);
+    try { ARR = Object.assign(await api(`/api/songs/${s.id}/arr`, jsonOpt("PUT", { bar: r.a, part: p, text: $("#aText").value, clear: others })), { extra: ARR.extra }); ARR_ED = null; arrDraw(); } catch (e) { toast(e.message); } };
+  if ($("#aParts")) $("#aParts").onclick = async () => { const v = prompt("파트 이름을 쉼표로 (빼도 적어 둔 글은 남아요)", ARR.parts.join(", ")); if (v == null) return;
+    try { ARR = Object.assign(await api(`/api/songs/${s.id}/arr`, jsonOpt("PUT", { parts: v.split(",") })), { extra: ARR.extra }); arrDraw(); } catch (e) { toast(e.message); } };
+  if ($("#aCm")) $("#aCm").onfocus = () => { const t = cur(); $("#aCm").placeholder = t > 0 ? `${fmt(t)} 위치에 의견 달기` : "곡 전체 의견"; };
+  if ($("#aCmGo")) $("#aCmGo").onclick = async () => { const text = $("#aCm").value.trim(), t = cur(); if (!text) return;
+    try { ARR = Object.assign(await api(`/api/songs/${s.id}/comments`, jsonOpt("POST", { text, t: t > 0 ? t : null })), { extra: ARR.extra }); arrDraw(); } catch (e) { toast(e.message); } };
+  $$("#pArr [data-acd]").forEach(b => b.onclick = async () => { try { ARR = Object.assign(await api(`/api/songs/${s.id}/comments/${b.dataset.acd}`, { method: "DELETE" }), { extra: ARR.extra }); arrDraw(); } catch (e) { toast(e.message); } });
+  if ($("#aTkGo")) $("#aTkGo").onclick = () => $("#aTkFile").click();
+  if ($("#aTkFile")) $("#aTkFile").onchange = async e => { const f = e.target.files[0]; if (!f) return;
+    const fd = new FormData(); fd.append("file", f); fd.append("part", $("#aTkPart").value); fd.append("semi", P.semi); const done = busy("트랙 올리는 중…");
+    try { await api(`/api/songs/${s.id}/tracks`, { method: "POST", body: fd }); await extrasSync(); toast("믹서에 트랙이 생겼어요"); } catch (err) { toast(err.message, 4000); }
+    done(); arrLoad(); };
+  $$("#pArr [data-ao]").forEach(b => b.onclick = async () => { const e = s.extra.find(x => x.id === b.dataset.ai), done = busy("트랙 시작을 옮기는 중…");
+    try { await api(`/api/songs/${s.id}/tracks/${e.id}`, jsonOpt("PUT", { offset: +((e.offset || 0) + +b.dataset.ao).toFixed(3) })); await extrasSync(); } catch (err) { toast(err.message); } done(); arrLoad(); });
+  $$("#pArr [data-atd]").forEach(b => b.onclick = async () => { if (!confirm("이 트랙을 지울까요?")) return;
+    try { await api(`/api/songs/${s.id}/tracks/${b.dataset.atd}`, { method: "DELETE" }); await extrasSync(); } catch (err) { toast(err.message); } arrLoad(); });
+  arrTick(cur());
+}
+function arrTick(t) { $$("#pArr .asec").forEach(el => el.classList.toggle("cur", t >= +el.dataset.a && t < +el.dataset.z)); }
+async function extrasSync() { // 파트 트랙이 늘거나 바뀐 뒤: 곡 정보만 다시 받아 믹서 · 소리를 바꿔 끼움 (트랙 6개를 다시 받지 않게)
+  const s = P.song, m = await api("/api/songs/" + s.id); if (P.song !== s) return;
+  if (!WAE) return openSong(s.id);
+  const old = Object.fromEntries((s.extra || []).map(e => [e.id, e.v]));
+  s.stems = m.stems; s.extra = m.extra || []; ARR_SIG = "";
+  buildMixer(); waExtraGains();
+  for (const k of Object.keys(P.files)) if (!s.stems.includes(k)) { delete P.files[k]; delete WA.bufs[k]; }
+  const todo = s.extra.filter(e => old[e.id] !== e.v);
+  if (todo.length) {
+    const names = WA.baseSemi ? (await api(`/api/songs/${s.id}/pitch`, jsonOpt("POST", { semi: WA.baseSemi }))).files : Object.fromEntries(todo.map(e => [e.id, e.id + ".mp3"]));
+    const files = Object.fromEntries(todo.map(e => [e.id, names[e.id]]));
+    const bufs = await loadAB(files, "파트 트랙 받는 중", (n, ab) => waDecode(ab, files[n])); if (P.song !== s) return;
+    Object.assign(P.files, files); Object.assign(WA.bufs, bufs);
+  }
+  if (WA.playing) waStart(waPos(), true);
+  waVol(); applyMix();
 }
 $$("#tabs [data-v]").forEach(b => b.onclick = () => { VIEW = VIEW === b.dataset.v ? null : b.dataset.v; applyViews(); });
 // 타브 출처: score(올린 악보) > ss(Songsterr, 우리 마디에 맞춰 서버가 만든 score_ss.gp5) > auto(자동 채보)
@@ -2238,6 +2397,7 @@ function render(force) {
     const lp = P.loop ? `🔁 ${barLabel(P.loop.a)}~${barLabel(P.loop.b)}마디` : ""; if ($("#lyLoop").textContent !== lp) $("#lyLoop").textContent = lp; }
   const bk = barAt(t);
   if (bk !== lastBar || force) {
+    if (VIEW === "arr") arrTick(t);
     lastBar = bk;
     $$("#cgrid .bar").forEach(el => { const i = +el.dataset.k; el.classList.toggle("cur", i === bk); el.classList.toggle("loop", !!(P.loop && i >= P.loop.a && i <= P.loop.b)); });
     const el = document.querySelector(`#cgrid .bar[data-k="${bk}"]`); const g = $("#cgrid");
@@ -2338,8 +2498,12 @@ function goHome(fromNav) {
   location.hash = ""; showMain("songs");
 }
 let RETURN_TO = null, MAIN = "songs";
+let JOIN_NEXT = ""; // 밴드매니저 '작업실' 링크로 왔는데 아직 허용 전이면, 허용된 뒤 그 프로젝트로
 function showMain(view, arg) {
-  if (isLink() && view !== "songs") { view = "songs"; arg = undefined; }
+  if (isLink() && view !== "songs") {
+    if (view === "write" && arg) { JOIN_NEXT = "#write/" + arg; setTimeout(() => { showLogin(); toast("작곡 작업실은 이름을 알려 주고 허용받은 기기로 들어와요", 5000); }, 300); }
+    view = "songs"; arg = undefined;
+  }
   if (view !== "write") { clearTimeout(WGEN); wSaveNow(); }
   MAIN = view; $("#vHome").hidden = view !== "songs"; $("#vBook").hidden = view !== "book"; $("#vWrite").hidden = view !== "write"; $("#mainnav").hidden = false;
   $$("#mainnav button").forEach(b => b.classList.toggle("on", b.dataset.main === view));
@@ -2438,8 +2602,15 @@ async function playExample(e, pid) { // 그 곡 그 마디로 → 곡 화면에�
    11-01 Benny "메인은 AI 로 노래 만들기, 스타일 넣고 만들면 프로젝트 하나, 디벨롭하는 과정도 보이고 누적" · "구간 카드(코드 칸)는 별로"
    첫 화면 = 만들기 칸(스타일 · 가사 · 키 · 템포 · 길이) + 프로젝트 목록. 프로젝트 = 판(만들기 한 번)이 쌓이는 진행 과정 + 다음 판 만들기.
    권한 compose: Benny 는 늘, 친구는 '사용 요청' → Benny 가 기기마다 허용 (베니 아케이드처럼) */
-let WN = null, WGEN = null, WSAVE = null, WPATCH = {}, WBASE = null, ACCESS = null;
-let WDRAFT = Object.assign({ title: "", style: "", lyrics: "", inst: false, idea: "", key: "", tempo: 0, sec: 120, engine: "ace" }, LS.get("wDraft", null) || {}); // 쓰던 것은 기기에 (다른 화면 다녀와도)
+let WN = null, WGEN = null, WSAVE = null, WPATCH = {}, WBASE = null, ACCESS = null, WPOLL = null, WCONF = null, WCM_OPEN = new Set();
+let WDRAFT = Object.assign({ title: "", style: "", lyrics: "", inst: false, idea: "", key: "", tempo: 0, sec: 120, engine: "ace", band: "" }, LS.get("wDraft", null) || {}); // 쓰던 것은 기기에 (다른 화면 다녀와도)
+// 11-05 밴드와 같이 만들기: Benny 는 바로 돌고, 친구 요청은 승인 뒤 — 버튼 말도 다름
+const wMe = () => PERMS?.who || (isAdmin() ? "Benny" : "");
+const wBandName = k => BANDS.find(b => b.key === k)?.name || "";
+const wGoWord = n => (isAdmin() ? "🎤 " : "🙋 ") + (n ? n + "판 " : "노래 ") + (isAdmin() ? "만들기" : "만들기 요청");
+const W_WHEN = { "": "승인 기다리는 중", now: "▶ 승인됨 · GPU 가 비면 바로 만들어요", night: "🌙 오늘 밤에 만들어요 (새벽 1~7시)" };
+const W_FIELD = { title: "제목", style: "스타일", lyrics: "가사", inst: "종류", key: "키", tempo: "템포", sec: "길이", engine: "엔진", notes: "메모" };
+const W_INPUT = { title: "#wTitle", notes: "#wNotes", style: "#wfStyle", lyrics: "#wfLyr", key: "#wfKey", tempo: "#wfTempo", sec: "#wfSec" };
 let WMODE = LS.get("wMode", "simple"), WCHIP = 0;
 // 11-04 작곡 앱 벤치마크: Suno 는 글 칸 + 추천 말, Soundraw 는 장르 · 분위기 고르기 → 눌러서 고르면 글 칸에 영어로 들어감 (글 칸이 원본, 모델은 영어를 더 잘 알아들음)
 const STYLE_CHIPS = [
@@ -2549,10 +2720,12 @@ function wFormBind(d, changed) {
 }
 
 // ---- 첫 화면: 만들기 + 프로젝트 목록
+const bandsReady = async () => { if (!BANDS.length) try { BANDS = await api("/api/bands"); LS.set("bands", BANDS); } catch {} }; // 작곡 링크로 바로 들어온 새 기기 — 곡 목록을 안 거쳐 밴드 이름이 비어 있음
 async function writeHome() {
-  location.hash = "write"; await wSaveNow(); WN = null; WPATCH = {}; clearTimeout(WGEN); // 실패해 남은 변경분이 다른 프로젝트로 가지 않게
+  location.hash = "write"; await wSaveNow(); WN = null; WPATCH = {}; WCONF = null; clearTimeout(WGEN); clearTimeout(WPOLL); // 실패해 남은 변경분이 다른 프로젝트로 가지 않게
+  await bandsReady();
   const box = $("#writeBox"), ok = can("compose"); box.className = "wr";
-  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">이 PC 그래픽카드로 노래를 만들어요 (무료, 3~11분). 만든 노래는 프로젝트로 남고, 다듬을 때마다 판이 쌓여요.</div>
+  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">${isAdmin() ? "이 PC 그래픽카드로 노래를 만들어요 (무료, 3~11분). 만든 노래는 프로젝트로 남고, 다듬을 때마다 판이 쌓여요." : `${esc(wBandName(AUTH?.band)) || "우리 밴드"} 곡 작업실이에요. 가사 · 스타일 · 의견은 바로 같이 고치고, 노래는 Benny 가 승인하면 만들어요 (3~11분).`}</div>
     <div class="wcard" id="wMake">${ok ? "" : wLockHtml()}</div>
     <h2 class="wh">프로젝트</h2><div id="wList"></div>`;
   if (ok) wMakeDraw(); else wLockBind();
@@ -2566,12 +2739,13 @@ function wMakeDraw() {
   const box = $("#wMake"), d = WDRAFT, save = () => LS.set("wDraft", d);
   const seg = `<div class="seg" id="wMode"><button data-m="simple" class="${WMODE === "simple" ? "on" : ""}">간단히</button><button data-m="full" class="${WMODE === "full" ? "on" : ""}">직접 쓰기</button></div>`;
   const setMode = m => { WMODE = m; LS.set("wMode", m); wMakeDraw(); };
+  const bandSel = isAdmin() && BANDS.length ? `<label class="fl">밴드 <span class="mute">— 고른 밴드 멤버에게 보여요</span></label><select id="wfBand">${[["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, n]) => `<option value="${esc(k)}" ${(d.band || "") === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>` : "";
   if (WMODE === "simple") {
     box.innerHTML = seg + `<label class="fl" style="margin-top:12px">어떤 노래를 만들까요? <span class="mute">— 한 줄이면 제목 · 스타일 · 가사는 AI 가 써요</span></label>
       <textarea class="gst" id="wfIdea" style="margin-top:0" placeholder="예: 퇴근하고 합주실 가는 길의 설렘, 신나는 밴드 록, 여자 보컬">${esc(d.idea || "")}</textarea>
       <div class="row3"><label>종류<select id="wfKind"><option value="0">노래</option><option value="1" ${d.inst ? "selected" : ""}>연주곡</option></select></label>
-      <label>엔진<select id="wfEng2">${W_ENGINES.map(([v, n]) => `<option value="${v}" ${v === (d.engine || "ace") ? "selected" : ""} ${v === "yue" && d.inst ? "disabled" : ""}>${n}</option>`).join("")}</select></label></div>
-      <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">🎤 노래 만들기</button><button class="btn sm" id="wPeek">초안 먼저 보기</button><span class="small mute" id="wSt"></span></div>`;
+      <label>엔진<select id="wfEng2">${W_ENGINES.map(([v, n]) => `<option value="${v}" ${v === (d.engine || "ace") ? "selected" : ""} ${v === "yue" && d.inst ? "disabled" : ""}>${n}</option>`).join("")}</select></label></div>${bandSel}
+      <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">${wGoWord()}</button><button class="btn sm" id="wPeek">초안 먼저 보기</button><span class="small mute" id="wSt"></span></div>`;
     const busy = on => { $("#wGo").disabled = $("#wPeek").disabled = on; $("#wSt").textContent = on ? "AI 가 제목 · 스타일 · 가사를 쓰는 중… (10~20초)" : ""; };
     const draft = async () => {
       const topic = d.idea.trim(); if (!topic) { toast("어떤 노래인지 한 줄 적어 주세요"); return null; }
@@ -2589,7 +2763,7 @@ function wMakeDraw() {
       Object.assign(d, { title: r.title, style: r.style, lyrics: r.lyrics, tempo: r.tempo }); save(); setMode("full"); toast("초안이에요 · 고친 뒤 만들어 주세요");
     };
   } else {
-    box.innerHTML = seg + `<div style="margin-top:12px">${wFormHtml(d, true)}</div><div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">🎤 노래 만들기</button></div>`;
+    box.innerHTML = seg + `<div style="margin-top:12px">${wFormHtml(d, true)}</div>${bandSel}<div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">${wGoWord()}</button></div>`;
     wFormBind(d, save);
     $("#wGo").onclick = () => {
       if (!d.style.trim()) return toast("스타일을 고르거나 적어 주세요");
@@ -2598,32 +2772,38 @@ function wMakeDraw() {
     };
   }
   $$("#wMode button").forEach(b => b.onclick = () => setMode(b.dataset.m));
+  if ($("#wfBand")) $("#wfBand").onchange = e => { d.band = e.target.value; save(); };
 }
-async function wCreate(body) { // 프로젝트 만들고 1판 시작
+async function wCreate(body) { // 프로젝트 만들고 1판 시작 (친구는 승인 대기)
   $("#wGo").disabled = true;
   try {
     const w = await api("/api/write", jsonOpt("POST", Object.assign({}, body, { go: true })));
     if (w.gen?.state === "error") toast(w.gen.detail, 4000);
+    if (w.gen?.state === "held") toast("요청을 보냈어요 · Benny 가 승인하면 만들어요", 4000);
     const d = WDRAFT;
-    WDRAFT = { title: "", style: d.style, lyrics: "", inst: d.inst, idea: "", key: "", tempo: 0, sec: d.sec, engine: d.engine }; LS.set("wDraft", WDRAFT); // 스타일 · 종류 · 길이 · 엔진은 다음에도
+    WDRAFT = { title: "", style: d.style, lyrics: "", inst: d.inst, idea: "", key: "", tempo: 0, sec: d.sec, engine: d.engine, band: d.band }; LS.set("wDraft", WDRAFT); // 스타일 · 종류 · 길이 · 엔진 · 밴드는 다음에도
     writeOpen(w.id);
   } catch (e) { toast(e.message); $("#wGo").disabled = false; if ($("#wSt")) $("#wSt").textContent = ""; if ($("#wPeek")) $("#wPeek").disabled = false; }
 }
 function wListDraw(list) {
   const box = $("#wList"); if (!box) return;
   if (!list) { box.innerHTML = `<div class="mute" style="padding:12px 2px">불러오는 중…</div>`; return; }
-  box.innerHTML = list.length ? list.map(w => `<div class="it" data-w="${w.id}"><div class="t"><b>${esc(w.title)}</b>
-      <span>${w.gen === "queued" || w.gen === "running" ? "⏳ 만드는 중 · " : ""}${w.nver}판 · ${w.ntake}곡 · ${new Date((w.updated || 0) * 1000).toLocaleDateString("ko-KR")}${w.style ? " · " + esc(w.style) : ""}</span>
-      ${w.pick ? `<audio controls preload="none" src="${wFileOf(w.id, w.pick)}"></audio>` : ""}</div>›</div>`).join("")
-    : `<div class="empty" style="margin-top:8px">아직 프로젝트가 없어요. 위에서 첫 노래를 만들어 보세요.</div>`;
+  const fol = isAdmin() ? LS.get("wFolder", "all") : "all", show = fol === "all" ? list : list.filter(w => (w.band || "") === fol); // Benny: 밴드마다 나눠 보기
+  const heads = isAdmin() && BANDS.length ? `<div class="chips">${[["all", "전체"], ["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, n]) => `<button class="chip ${fol === k ? "on" : ""}" data-wf="${esc(k)}">${esc(n)}</button>`).join("")}</div>` : "";
+  box.innerHTML = heads + (show.length ? show.map(w => { const nw = (w.ncomment || 0) - LS.get("wseen:" + w.id, 0);
+      return `<div class="it" data-w="${w.id}"><div class="t"><b>${esc(w.title)}</b>
+      <span>${w.gen === "queued" || w.gen === "running" ? "⏳ 만드는 중 · " : ""}${w.nhold ? `🙋 요청 ${w.nhold} · ` : ""}${isAdmin() && w.band ? esc(wBandName(w.band)) + " · " : ""}${w.by && w.by !== wMe() ? esc(w.by) + " · " : ""}${w.nver}판 · ${w.ntake}곡${w.ncomment ? ` · 💬 ${w.ncomment}${nw > 0 ? ` <b style="color:var(--accent)">새 의견 ${nw}</b>` : ""}` : ""} · ${new Date((w.updated || 0) * 1000).toLocaleDateString("ko-KR")}${w.style ? " · " + esc(w.style) : ""}</span>
+      ${w.pick ? `<audio controls preload="none" src="${wFileOf(w.id, w.pick)}"></audio>` : ""}</div>›</div>`; }).join("")
+    : `<div class="empty" style="margin-top:8px">${list.length ? "이 밴드 프로젝트가 아직 없어요." : "아직 프로젝트가 없어요. 위에서 첫 노래를 만들어 보세요."}</div>`);
   $$("#wList [data-w]").forEach(el => el.onclick = e => { if (!e.target.closest("audio")) writeOpen(el.dataset.w); });
+  $$("#wList [data-wf]").forEach(b => b.onclick = () => { LS.set("wFolder", b.dataset.wf); wListDraw(list); });
 }
 
 // ---- 사용 요청 (친구) · 허용 (Benny)
 function wLockHtml() {
   const st = PERMS?.req;
-  return `<div class="lock"><b>🔒 AI 노래 만들기는 지금 Benny 만 쓸 수 있어요</b>
-    <div class="small mute" style="margin:4px 0 10px">써 보고 싶으면 요청해 주세요. Benny 가 허용하면 이 기기에서 바로 쓸 수 있어요. 만든 노래 듣기는 누구나 돼요.</div>
+  return `<div class="lock"><b>🔒 작곡 같이 하기는 지금 꺼져 있어요</b>
+    <div class="small mute" style="margin:4px 0 10px">같이 쓰려면 요청해 주세요. Benny 가 허용하면 이 기기에서 바로 쓸 수 있어요. 우리 밴드 곡 듣기 · 의견 달기는 그대로 돼요.</div>
     ${st === "pending" ? `<div class="acts">⏳ 요청을 보냈어요 — Benny 가 허용하면 열려요. <button class="btn xs" id="wReqChk">다시 확인</button></div>`
       : `${st === "denied" ? `<div class="small" style="color:var(--warn);margin-bottom:6px">지난 요청은 허용되지 않았어요. 다시 요청할 수 있어요.</div>` : ""}
         <div class="acts"><input class="ti" id="wReqName" placeholder="이름 (Benny 가 알아보게)" value="${esc(LS.get("myName", ""))}" style="flex:1;min-width:140px;width:auto">
@@ -2640,11 +2820,11 @@ function wLockBind() {
   };
 }
 // ---- Benny: 🔔 기기 허용 (들어오기 · AI 노래 만들기 요청, 허용한 기기) — 머리 단추 숫자, 1분마다·화면 돌아올 때 새로
-const PERM_LABEL = { enter: "들어오기", compose: "AI 노래 만들기" }, SPAN_LABEL = [["today", "하루"], ["week", "1주"], ["month", "1달"], ["always", "계속"]];
+const PERM_LABEL = { enter: "들어오기", compose: "작곡 같이 하기" }, SPAN_LABEL = [["today", "하루"], ["week", "1주"], ["month", "1달"], ["always", "계속"]];
 async function accessLoad() {
   if (!isAdmin()) return;
   try { ACCESS = await api("/api/access"); } catch { return; }
-  const n = ACCESS.requests.length;
+  const n = ACCESS.requests.length + (ACCESS.gens || []).filter(g => !g.when).length; // 아직 안 정한 노래 만들기 요청도
   $("#reqBtn").innerHTML = "🔔" + (n ? `<span class="nbadge">${n}</span>` : "");
   if ($("#reqDlg").open) accessDraw();
 }
@@ -2653,7 +2833,12 @@ function accessDraw() {
   const R = ACCESS.requests, D = ACCESS.devices, bn = k => BANDS.find(b => b.key === k)?.name || "";
   const ago = t => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 60 ? m + "분 전" : m < 1440 ? Math.round(m / 60) + "시간 전" : new Date(t * 1000).toLocaleDateString("ko-KR"); };
   const left = u => !u ? "계속" : u * 1000 < Date.now() ? "끝남" : new Date(u * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) + "까지";
-  box.innerHTML = (R.length ? R.map(r => `<div class="rq"><div class="t"><b>${esc(r.name)}</b> <span class="pchip">${PERM_LABEL[r.perm] || r.perm}</span>
+  const G = ACCESS.gens || [], genAct = g => [["now", "▶ 지금"], ["night", "🌙 오늘 밤"], ["deny", "거절"]].map(([k, l]) => `<button class="btn xs ${g.when === k ? "pri" : ""}" data-gen="${k}" data-g="${g.id}">${l}</button>`).join("");
+  box.innerHTML = (G.length ? `<div class="small" style="margin:4px 0"><b>🎤 노래 만들기 요청 ${G.length}</b> <span class="mute">— 승인한 것만 GPU 를 써요</span></div>` + G.map(g => `<div class="rq"><div class="t"><b>${esc(g.by)}</b> <span class="pchip">${esc(g.kind)}</span> ${esc(g.title)}
+        <div class="small mute">${[esc(bn(g.band)), ago(g.at), `${esc(g.engine)} 약 ${g.min}분`].filter(Boolean).join(" · ")}</div>
+        <div class="small ${g.error ? "" : "mute"}" ${g.error ? 'style="color:var(--warn)"' : ""}>${g.error ? "지난번 실패: " + esc(g.error) : W_WHEN[g.when || ""]}</div>${g.note ? `<div class="small">${esc(g.note)}</div>` : ""}</div>${genAct(g)}</div>`).join("")
+      + (G.length > 1 ? `<div class="rq"><span class="small mute t">한꺼번에</span><button class="btn xs" data-genall="now">모두 지금</button><button class="btn xs" data-genall="night">모두 오늘 밤</button></div>` : "") + `<div class="small" style="margin:10px 0 2px"><b>기기 허용</b></div>` : "")
+    + (R.length ? R.map(r => `<div class="rq"><div class="t"><b>${esc(r.name)}</b> <span class="pchip">${PERM_LABEL[r.perm] || r.perm}</span>
         <div class="small mute">${[esc(bn(r.band)), ago(r.at)].filter(Boolean).join(" · ")}${r.perm === "compose" ? (r.want === "today" ? " · 오늘만 원함" : " · 계속 원함") : ""}</div>${r.net ? `<div class="small mute">${esc(r.net)}</div>` : ""}${r.note ? `<div class="small">${esc(r.note)}</div>` : ""}</div>
       ${SPAN_LABEL.map(([k, l]) => `<button class="btn xs ${(r.want === "today" ? "today" : "always") === k ? "pri" : ""}" data-ac="${k}" data-h="${r.id}">${l}</button>`).join("")}<button class="btn xs" data-ac="deny" data-h="${r.id}">거절</button></div>`).join("")
       : `<div class="small mute" style="padding:8px 0">기다리는 요청이 없어요.</div>`)
@@ -2666,6 +2851,9 @@ function accessDraw() {
     catch (e) { toast("실패: " + e.message); }
     accessLoad();
   });
+  const said = { now: "GPU 가 비면 바로 만들어요", night: "오늘 밤에 만들어요", deny: "거절했어요" };
+  $$("#reqList [data-gen]").forEach(b => b.onclick = async () => { try { await api(`/api/gen-holds/${b.dataset.g}`, jsonOpt("POST", { action: b.dataset.gen })); toast(said[b.dataset.gen]); } catch (e) { toast("실패: " + e.message); } accessLoad(); });
+  $$("#reqList [data-genall]").forEach(b => b.onclick = async () => { for (const g of ACCESS.gens) { try { await api(`/api/gen-holds/${g.id}`, jsonOpt("POST", { action: b.dataset.genall })); } catch {} } toast(said[b.dataset.genall]); accessLoad(); });
 }
 $("#reqBtn").onclick = async () => { $("#reqDlg").showModal(); accessDraw(); accessLoad(); };
 $("#reqClose").onclick = () => $("#reqDlg").close();
@@ -2674,17 +2862,128 @@ document.addEventListener("visibilitychange", () => { if (isAdmin() && !document
 
 // ---- 프로젝트: 진행 과정(판) + 다음 판 만들기
 async function writeOpen(id) {
-  location.hash = "write/" + id; clearTimeout(WGEN); WBASE = null; if (WN?.id !== id) WPATCH = {};
+  location.hash = "write/" + id; clearTimeout(WGEN); clearTimeout(WPOLL); WBASE = null; if (WN?.id !== id) { WPATCH = {}; WCONF = null; WCM_OPEN = new Set(); }
   const c = LS.get("wn:" + id, null); // 지난번 본 것 먼저 그리고, 새로 받아 바뀌었으면 다시
   if (c) { WN = c; writeRender(); }
   else { $("#writeBox").innerHTML = `<button class="btn xs" id="wBack">← 작곡</button><div class="mute" style="padding:20px">불러오는 중…</div>`; $("#wBack").onclick = () => writeHome(); }
+  await bandsReady();
   let w; try { w = await api(`/api/write/${id}`); } catch (e) { toast(e.message); return writeHome(); }
   if (location.hash !== "#write/" + id) return;
   LS.set("wn:" + id, w);
   const sig = x => JSON.stringify([x.title, x.style, x.lyrics, x.inst, x.engine, x.key, x.tempo, x.sec, x.notes]);
   if (!c || (sig(c) !== sig(w) && !WN._dirty)) { WN = w; writeRender(); }
-  else if (JSON.stringify(c.versions) !== JSON.stringify(w.versions)) { WN.versions = w.versions; wVersDraw(); }
-  wGenPoll();
+  else { const v0 = JSON.stringify(c.versions) !== JSON.stringify(w.versions); Object.assign(WN, { versions: w.versions, comments: w.comments, holds: w.holds, edits: w.edits, fv: w.fv, fby: w.fby, band: w.band, by: w.by, bm_song: w.bm_song }); if (v0) wVersDraw(); wCmDraw(); wHoldsDraw(); wEditsDraw(); wBandDraw(); }
+  LS.set("wseen:" + id, (w.comments || []).length);
+  wGenPoll(); WPOLL = setTimeout(wPollTick, 20000);
+}
+// ---- 다른 멤버가 고친 것 받아 오기: 20초마다. 재생 · 입력을 끊지 않게 바뀐 칸만 바꿔 끼움
+function wInUse() { return $$("#wVers audio").some(a => !a.paused || a.currentTime > 0); }
+function wSetField(k, v) { const w = WN; w[k] = v; if (w._d && k in w._d) w._d[k] = v; const el = W_INPUT[k] && $(W_INPUT[k]); if (el) el.value = k === "tempo" ? (v || "") : (v ?? ""); return !el; } // 칸이 없으면(종류 · 엔진) 화면을 다시 그려야 함
+function wMerge(r) {
+  const w = WN, me = wMe(); let redraw = false; const said = [];
+  w.fv = w.fv || {};
+  for (const k of Object.keys(W_FIELD)) {
+    if ((r.fv?.[k] || 0) <= (w.fv[k] || 0)) continue;
+    const el = W_INPUT[k] && $(W_INPUT[k]);
+    if (k in WPATCH || (el && document.activeElement === el)) continue; // 내가 쓰는 칸은 그대로 → 저장할 때 충돌 안내
+    if (!el && wInUse()) continue;                                      // 종류 · 엔진은 다시 그려야 해서 듣는 중엔 미룸
+    w.fv[k] = r.fv[k];
+    if (r.fby?.[k] !== me) said.push(`${r.fby?.[k] || "다른 분"} 님이 ${W_FIELD[k]}`);
+    if (wSetField(k, r[k])) redraw = true;
+  }
+  w.fby = r.fby; w.edits = r.edits; w.updated = r.updated; w.by = r.by;
+  if (w.band !== r.band || w.bm_song !== r.bm_song) { w.band = r.band; w.bm_song = r.bm_song; wBandDraw(); }
+  if (JSON.stringify(w.holds || []) !== JSON.stringify(r.holds || [])) { w.holds = r.holds; wHoldsDraw(); }
+  if (JSON.stringify(w.comments || []) !== JSON.stringify(r.comments || [])) { w.comments = r.comments; if (!$("#writeBox .wcomment:focus")) wCmDraw(); LS.set("wseen:" + w.id, (r.comments || []).length); }
+  const files = x => JSON.stringify((x || []).map(v => v.takes.map(t => t.file)));
+  if (files(w.versions) === files(r.versions)) { w.versions = r.versions; wLikesPaint(); }
+  else if (!wInUse()) { w.versions = r.versions; wVersDraw(); }       // 판이 늘었는데 듣는 중이면 다 듣고 나서
+  if (redraw) writeRender(); else wEditsDraw();
+  if (said.length) toast(`${said.join(" · ")} 고쳤어요`, 3500);
+}
+async function wPollTick() {
+  clearTimeout(WPOLL); if (!WN || MAIN !== "write" || !location.hash.startsWith("#write/")) return;
+  const id = WN.id;
+  if (!document.hidden) {
+    try { const r = await api(`/api/write/${id}`); if (WN?.id !== id) return; wMerge(r); LS.set("wn:" + id, r); if (!WN._genOn) wGenPoll(); } catch {}
+  }
+  WPOLL = setTimeout(wPollTick, 20000);
+}
+function wBandDraw() {
+  const el = $("#wBand"), w = WN; if (!el || !w) return;
+  const n = wBandName(w.band), ed = can("compose");
+  el.innerHTML = (isAdmin() && BANDS.length ? `<label class="small mute">밴드 <select id="wBandSel">${[["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, x]) => `<option value="${esc(k)}" ${(w.band || "") === k ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : n ? `<span class="pchip">${esc(n)}</span>` : "")
+    + (w.by ? `<span class="small mute">${esc(w.by)} 시작</span>` : "")
+    + (w.band && ed ? `<button class="btn xs" id="wBmGo"${w.bm_song ? ' style="display:none"' : ""}>🗳 밴드매니저 투표곡에 올리기</button><span class="small mute" id="wBmSt"></span>` : "");
+  if ($("#wBandSel")) $("#wBandSel").onchange = async e => { const v = e.target.value;
+    if (v && !confirm(`이 프로젝트를 '${wBandName(v)}' 멤버 모두에게 보여 줄까요?`)) { e.target.value = w.band || ""; return; }
+    try { const r = await api(`/api/write/${w.id}/band`, jsonOpt("PUT", { band: v })); w.band = r.band; w.fv = r.fv; wBandDraw(); toast(v ? "밴드 프로젝트로 옮겼어요" : "Benny 만 보이게 했어요"); } catch (err) { toast(err.message); e.target.value = w.band || ""; } };
+  if ($("#wBmGo")) $("#wBmGo").onclick = async () => { $("#wBmGo").disabled = true;
+    try { const r = await api(`/api/write/${w.id}/post`, { method: "POST" }); w.bm_song = r.bm_song; wBandDraw(); toast("밴드매니저 투표곡에 올렸어요"); } catch (err) { toast(err.message, 4000); $("#wBmGo").disabled = false; } };
+  if (w.band && w.bm_song) api(`/api/write/${w.id}/bm`).then(b => { const st = $("#wBmSt"); if (!st || WN?.id !== w.id) return;
+    st.textContent = b.status ? "🗳 밴드매니저 " + ({ 연습중: "합주곡", 후보: "투표곡", 보류: "보류" }[b.status] || b.status) + " · 제목 · 링크는 여기 따라 바뀜" : "밴드매니저에서 카드가 지워졌어요";
+    if (!b.status && $("#wBmGo")) $("#wBmGo").style.display = ""; }).catch(() => {});
+}
+function wHoldsDraw() {
+  const el = $("#wHolds"), w = WN; if (!el || !w) return;
+  el.innerHTML = (w.holds || []).map(h => { const o = h.opts || {}, kind = o.repaint ? "구간 다시" : o.base ? "다듬기" : "새 판";
+    return `<div class="wcard req"><b>🙋 ${esc(h.by)} 요청</b> <span class="small mute">· ${kind} · ${wEngName(o.engine)} · ${wDate(h.at)}</span>
+      <div class="small ${h.error ? "" : "mute"}" ${h.error ? 'style="color:var(--warn)"' : ""}>${h.error ? "지난번 실패: " + esc(h.error) : W_WHEN[h.when || ""]}</div>${h.note ? `<div class="small">${esc(h.note)}</div>` : ""}
+      <div class="acts">${isAdmin() ? `<button class="btn xs ${h.when === "now" ? "pri" : ""}" data-hg="now" data-h="${h.id}">▶ 지금</button><button class="btn xs ${h.when === "night" ? "pri" : ""}" data-hg="night" data-h="${h.id}">🌙 오늘 밤</button><button class="btn xs" data-hg="deny" data-h="${h.id}">거절</button>` : h.by === wMe() ? `<button class="btn xs" data-hx="${h.id}">요청 취소</button>` : ""}</div></div>`; }).join("");
+  $$("#wHolds [data-hg]").forEach(b => b.onclick = async () => { b.disabled = true;
+    try { await api(`/api/gen-holds/${b.dataset.h}`, jsonOpt("POST", { action: b.dataset.hg })); accessLoad(); wMerge(await api(`/api/write/${w.id}`)); if (!w._genOn) wGenPoll(); } catch (e) { toast(e.message); b.disabled = false; } });
+  $$("#wHolds [data-hx]").forEach(b => b.onclick = async () => { b.disabled = true;
+    try { w.holds = (await api(`/api/write/${w.id}/holds/${b.dataset.hx}`, { method: "DELETE" })).holds; wHoldsDraw(); toast("요청을 취소했어요"); } catch (e) { toast(e.message); b.disabled = false; } });
+}
+function wCmHtml(list) { // 의견 줄 — 곡 위치가 있으면 눌러서 그 자리부터 듣기
+  return list.map(c => `<div class="cm">${c.t != null ? `<button class="linkbtn" data-cmt="${c.t}" data-take="${esc(c.take || "")}">${wClock(c.t)}</button> ` : ""}<b>${esc(c.by)}</b> ${esc(c.text)} <span class="small mute">${wDate(c.at)}</span>${isAdmin() || c.by === wMe() ? ` <button class="linkbtn" data-cmdel="${c.id}">✕</button>` : ""}</div>`).join("");
+}
+const wCmIn = (take) => `<div class="cmin"><input class="wcomment" maxlength="500" data-cmin="${esc(take)}" placeholder="${take ? "의견 (재생 위치에 달려요)" : "이 곡 전체에 의견"}"><button class="btn xs" data-cmgo="${esc(take)}">올리기</button></div>`;
+function wCmDraw() {
+  const w = WN; if (!w || !$("#wCmAll")) return; const C = w.comments || [];
+  $("#wCmAll").innerHTML = wCmHtml(C.filter(c => !c.take)) + wCmIn("");
+  $$("#wVers .tcm").forEach(el => { const f = el.dataset.for, L = C.filter(c => c.take === f); el.innerHTML = wCmHtml(L) + wCmIn(f); el.hidden = !WCM_OPEN.has(f); });
+  $$("#wVers [data-cm]").forEach(b => { const n = C.filter(c => c.take === b.dataset.cm).length; b.textContent = "💬" + (n ? " " + n : ""); });
+}
+function wLikesPaint() {
+  const me = wMe();
+  $$("#wVers [data-like]").forEach(b => { const t = (WN.versions || []).flatMap(v => v.takes).find(x => x.file === b.dataset.like); if (!t) return;
+    const L = t.likes || []; b.textContent = (L.includes(me) ? "♥" : "♡") + (L.length ? " " + L.length : ""); b.title = L.join(", ") || "좋아요"; b.classList.toggle("on", L.includes(me)); });
+}
+function wEditsDraw() {
+  const el = $("#wEdits"), w = WN; if (!el || !w) return; const E = (w.edits || []).slice().reverse();
+  el.hidden = !E.length;
+  el.innerHTML = `<summary class="small mute">고친 기록 ${E.length}</summary>` + E.map((x, i) => `<div class="edit"><div class="t"><b>${W_FIELD[x.field] || x.field}</b> ${esc(x.by || "")} <span class="mute">${wDate(x.at)} 전 글: ${esc(String(x.before).replace(/\s+/g, " ").slice(0, 40))}${String(x.before).length > 40 ? "…" : ""}</span></div>${can("compose") ? `<button class="btn xs" data-undo="${i}">되돌리기</button>` : ""}</div>`).join("");
+  $$("#wEdits [data-undo]").forEach(b => b.onclick = () => { const x = E[+b.dataset.undo]; if (!confirm(`${W_FIELD[x.field]}을 이 글로 되돌릴까요?\n\n${String(x.before).slice(0, 300)}`)) return; if (wSetField(x.field, x.before)) writeRender(); wSaveSoon({ [x.field]: x.before }); toast("되돌렸어요"); });
+}
+function wConfDraw() { // 다른 분이 먼저 고친 칸 — 말없이 덮지 않고 고르게 함
+  const el = $("#wConf"); if (!el) return;
+  if (!WCONF) { el.innerHTML = ""; return; }
+  const F = WCONF.fields;
+  el.innerHTML = `<div class="wcard confl"><b>⚠ ${F.map(x => `${esc(x.by || "다른 분")} 님이 ${W_FIELD[x.field] || x.field}`).join(" · ")} 칸을 먼저 고쳤어요</b>
+    <div class="small mute">내 글은 아직 저장되지 않았어요. 어느 쪽으로 할지 골라 주세요.</div>
+    ${F.map(x => `<details><summary class="small">그분 ${W_FIELD[x.field] || x.field} 보기</summary><pre>${esc(String(x.value ?? ""))}</pre></details>`).join("")}
+    <div class="acts"><button class="btn xs" id="wConfTheirs">그분 것으로 바꾸기</button><button class="btn xs" id="wConfMine">내 글로 덮어쓰기</button></div></div>`;
+  $("#wConfTheirs").onclick = () => { let redraw = false; for (const x of F) { delete WPATCH[x.field]; if (wSetField(x.field, x.value)) redraw = true; } Object.assign(WN.fv = WN.fv || {}, WCONF.fv); WCONF = null; delete WN._dirty; if (redraw) writeRender(); else wConfDraw(); };
+  $("#wConfMine").onclick = () => { const mine = WCONF.mine; Object.assign(WN.fv = WN.fv || {}, WCONF.fv); WCONF = null; wConfDraw(); wSaveSoon(Object.fromEntries(F.map(x => [x.field, mine[x.field]]))); wSaveNow(); };
+}
+function wConflict(d, p) {
+  const clash = new Set(d.conflict.map(x => x.field));
+  for (const k of Object.keys(p)) if (!clash.has(k) && !(k in WPATCH)) WPATCH[k] = p[k]; // 안 겹친 칸은 그대로 저장
+  WCONF = { fields: d.conflict, fv: d.fv, mine: p }; wConfDraw();
+  if (Object.keys(WPATCH).some(k => !clash.has(k))) { clearTimeout(WSAVE); WSAVE = setTimeout(wSaveNow, 1000); }
+  $("#wConf").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+function wBoxClick(e) { // 판 · 의견 칸은 자주 다시 그려져서 한곳에서 받음
+  const w = WN, b = e.target.closest("button"); if (!b || !w) return;
+  if (b.dataset.like) { const t = w.versions.flatMap(v => v.takes).find(x => x.file === b.dataset.like), on = !(t?.likes || []).includes(wMe());
+    api(`/api/write/${w.id}/takes/${b.dataset.like}/like`, jsonOpt("PUT", { on })).then(r => { w.versions = r.versions; wLikesPaint(); }).catch(err => toast(err.message)); }
+  else if (b.dataset.cm) { const f = b.dataset.cm; WCM_OPEN.has(f) ? WCM_OPEN.delete(f) : WCM_OPEN.add(f); wCmDraw(); }
+  else if (b.dataset.cmt) { const a = b.dataset.take ? $(`#wVers audio[data-f="${b.dataset.take}"]`) : null; if (a) { a.currentTime = +b.dataset.cmt; a.play().catch(() => {}); } }
+  else if (b.dataset.cmdel) { api(`/api/write/${w.id}/comments/${b.dataset.cmdel}`, { method: "DELETE" }).then(r => { w.comments = r.comments; wCmDraw(); }).catch(err => toast(err.message)); }
+  else if (b.dataset.cmgo !== undefined) { const take = b.dataset.cmgo, inp = b.parentElement.querySelector("input"), text = inp.value.trim(); if (!text) return;
+    const a = take ? $(`#wVers audio[data-f="${take}"]`) : null, t = a && a.currentTime > 0 ? a.currentTime : null;
+    api(`/api/write/${w.id}/comments`, jsonOpt("POST", { text, take: take || undefined, t })).then(r => { w.comments = r.comments; LS.set("wseen:" + w.id, r.comments.length); wCmDraw(); }).catch(err => toast(err.message)); }
 }
 function writeRender() {
   const w = WN, ed = can("compose");
@@ -2692,22 +2991,28 @@ function writeRender() {
   $("#writeBox").innerHTML = `<button class="btn xs" id="wBack">← 작곡</button>
     <div class="hdr"><input class="ttl" id="wTitle" value="${esc(w.title)}" ${ed ? "" : "disabled"}></div>
     <div class="small mute" id="wSum"></div>
+    <div class="wband" id="wBand"></div>
+    <div id="wConf"></div><div id="wHolds"></div>
     <div id="wGenSt"></div>
     <h2 class="wh">진행 과정</h2><div id="wVers"></div>
+    <h2 class="wh">의견</h2><div id="wCmAll"></div>
     ${ed ? `<h2 class="wh" id="wNextH">다음 판 만들기</h2><div class="wcard"><div id="wBase"></div>${wFormHtml(w._d, false)}
-      <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">🎤 ${(w.versions || []).length + 1}판 만들기</button></div>
+      <label class="fl">이 판에 남길 말 <span class="mute">— 선택</span></label><input class="ti" id="wNote" maxlength="200" placeholder="예: 후렴을 더 세게">
+      <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">${wGoWord((w.versions || []).length + 1)}</button></div>
       <div class="small mute" style="margin-top:8px">바꾼 스타일 · 가사 · 키 · 템포로 새 판을 만들어요. 판마다 설정이 남아서 무엇을 바꿨는지 위에 보여요.
-        곡 옆 <b>⋯</b> 에서 다듬기 · 구간 다시 만들기(시험 기능) · 연습으로 보내기를 할 수 있어요. 코드 진행은 넣을 수 없어요.</div></div>` : ""}
+        곡 옆 <b>⋯</b> 에서 다듬기 · 구간 다시 만들기(시험 기능) · 연습으로 보내기를 할 수 있어요. 코드 진행은 넣을 수 없어요.${isAdmin() ? "" : " 요청은 Benny 가 승인하면 지금 또는 밤에 돌아가요."}</div></div>` : ""}
     <details class="wnotes" ${w.notes ? "open" : ""}><summary class="small mute">메모</summary><textarea id="wNotes" ${ed ? "" : "disabled"} placeholder="아이디어, 고칠 점…">${esc(w.notes || "")}</textarea></details>
-    ${ed ? `<div class="hdr"><button class="btn sm" id="wDel" style="margin-left:auto">프로젝트 지우기</button></div>` : ""}`;
-  wVersDraw(); wBaseDraw();
+    <details class="wnotes" id="wEdits" hidden></details>
+    ${ed && (isAdmin() || w.by === wMe()) ? `<div class="hdr"><button class="btn sm" id="wDel" style="margin-left:auto">프로젝트 지우기</button></div>` : ""}`;
+  $("#writeBox").onclick = wBoxClick;
+  wVersDraw(); wBaseDraw(); wBandDraw(); wHoldsDraw(); wEditsDraw(); wConfDraw();
   $("#wBack").onclick = () => writeHome();
   if (!ed) return;
   $("#wTitle").oninput = e => { w.title = e.target.value; wSaveSoon({ title: w.title }); };
   $("#wNotes").oninput = e => { w.notes = e.target.value; wSaveSoon({ notes: w.notes }); };
-  wFormBind(w._d, () => { w._dirty = true; wSaveSoon(Object.assign({}, w._d)); });
+  wFormBind(w._d, () => { w._dirty = true; const p = {}; for (const k in w._d) if (w._d[k] !== w[k]) { p[k] = w._d[k]; w[k] = w._d[k]; } wSaveSoon(p); }); // 바뀐 칸만 보냄 — 전엔 칸 전부를 보내 다른 분이 고친 가사까지 옛 글로 덮었음
   $("#wGo").onclick = wGo;
-  $("#wDel").onclick = async () => { if (!confirm("이 프로젝트를 지울까요? (만든 노래까지 따로 보관돼요)")) return; try { await api(`/api/write/${w.id}`, { method: "DELETE" }); } catch (e) { return toast("실패: " + e.message); } LS.set("wn:" + w.id, null); WN = null; writeHome(); };
+  if ($("#wDel")) $("#wDel").onclick = async () => { if (!confirm("이 프로젝트를 지울까요? (만든 노래까지 따로 보관돼요)")) return; try { await api(`/api/write/${w.id}`, { method: "DELETE" }); } catch (e) { return toast("실패: " + e.message); } LS.set("wn:" + w.id, null); WN = null; writeHome(); };
 }
 function wDiff(a, b) { // 앞 판과 바뀐 것
   if (!a) return "처음 만든 판";
@@ -2725,15 +3030,16 @@ function wVersDraw() {
   const box = $("#wVers"); if (!box || !WN) return;
   const w = WN, ed = can("compose"), V = w.versions || [];
   $("#wSum").textContent = `${V.length}판 · ${V.reduce((a, v) => a + v.takes.length, 0)}곡 · ${new Date((w.created || w.updated || 0) * 1000).toLocaleDateString("ko-KR")} 시작`;
-  if ($("#wGo") && !w._genOn) $("#wGo").textContent = `🎤 ${V.length + 1}판 만들기`;
-  if (!V.length) { box.innerHTML = `<div class="empty">아직 만든 판이 없어요.</div>`; return; }
+  if ($("#wGo") && !w._genOn) $("#wGo").textContent = wGoWord(V.length + 1);
+  if (!V.length) { box.innerHTML = `<div class="empty">${(w.holds || []).length ? "승인되면 첫 판을 만들어요." : "아직 만든 판이 없어요."}</div>`; wCmDraw(); return; }
   const label = {}; V.forEach(v => v.takes.forEach((t, i) => label[t.file] = `${v.n}판 ${TAKE_ABC[i]}`));
   box.innerHTML = V.map((v, k) => `<div class="ver">
       <div class="vh"><b>${v.n}판</b><span class="small mute">${wDate(v.at)} · ${v.engine === "yue" ? "YuE2" : Math.round(v.sec / 60) + "분"}</span>${v.base ? `<span class="tagb">${esc(label[v.base] || "지운 곡")} ${v.repaint ? `${wClock(v.repaint[0])}~${wClock(v.repaint[1])} 다시` : `다듬기 · ${strengthName(v.strength)}`}</span>` : ""}</div>
-      <div class="chg small">${esc(wDiff(V[k - 1], v))}</div>
-      ${v.takes.length ? v.takes.map((t, i) => `<div class="take${t.star ? " star" : ""}"><span class="ab">${TAKE_ABC[i]}</span><audio controls preload="none" src="${wFileOf(w.id, t.file)}"></audio>
+      <div class="chg small">${esc(wDiff(V[k - 1], v))}${v.by ? ` · ${esc(v.by)}` : ""}</div>${v.note ? `<div class="vnote small">${esc(v.note)}</div>` : ""}
+      ${v.takes.length ? v.takes.map((t, i) => `<div class="take${t.star ? " star" : ""}"><span class="ab">${TAKE_ABC[i]}</span><audio controls preload="none" data-f="${t.file}" src="${wFileOf(w.id, t.file)}"></audio>
+        <span class="tb"><button class="btn xs" data-like="${t.file}">♡</button><button class="btn xs" data-cm="${t.file}">💬</button></span><div class="tcm" data-for="${t.file}" hidden></div>
         ${ed ? `<span class="tb"><button class="btn xs ${t.star ? "on" : ""}" data-star="${t.file}" title="마음에 듦">${t.star ? "★" : "☆"}</button><button class="btn xs" data-more="${t.file}" title="더 보기">⋯</button></span>
-          <div class="tmore" data-for="${t.file}" hidden><button class="btn xs" data-base="${t.file}">이 곡으로 다듬기</button><button class="btn xs" data-rp="${t.file}">구간 다시 만들기</button><button class="btn xs" data-prac="${t.file}">🎸 ${t.song ? "연습 화면 열기" : "연습으로 보내기"}</button><a class="btn xs" href="${wFileOf(w.id, t.file)}&dl=${encodeURIComponent(`${w.title || "노래"} ${v.n}판 ${TAKE_ABC[i]}`)}" target="_blank" rel="noopener">⬇ 받기</a><button class="btn xs" data-tdel="${t.file}">🗑 지우기</button></div>` : t.star ? "★" : ""}</div>`).join("")
+          <div class="tmore" data-for="${t.file}" hidden><button class="btn xs" data-base="${t.file}">이 곡으로 다듬기</button><button class="btn xs" data-rp="${t.file}">구간 다시 만들기</button><button class="btn xs" data-prac="${t.file}">🎸 ${t.song ? "연습 화면 열기" : "연습으로 보내기"}</button><a class="btn xs" href="${wFileOf(w.id, t.file)}&dl=${encodeURIComponent(`${w.title || "노래"} ${v.n}판 ${TAKE_ABC[i]}`)}" target="_blank" rel="noopener">⬇ 받기</a>${isAdmin() || w.by === wMe() || v.by === wMe() ? `<button class="btn xs" data-tdel="${t.file}">🗑 지우기</button>` : ""}</div>` : t.star ? "★" : ""}</div>`).join("")
         : `<div class="small mute">이 판 곡은 지웠어요.</div>`}
       <details class="vset"><summary class="small mute">이 판 설정</summary><div class="small"><b>스타일</b> ${esc(v.style)}<br>${v.engine ? `<b>엔진</b> ${wEngName(v.engine)} · ` : ""}<b>키</b> ${esc(v.key || "AI")} · <b>템포</b> ${v.tempo || "AI"} · <b>길이</b> ${v.engine === "yue" ? "AI" : Math.round(v.sec / 60) + "분"}</div>
         <pre class="vly">${esc(v.lyrics || "(연주곡)")}</pre>${ed ? `<button class="btn xs" data-load="${k}">이 설정을 다음 판에 불러오기</button>` : ""}</details></div>`).reverse().join(""); // 새 판이 위
@@ -2765,6 +3071,7 @@ function wVersDraw() {
     Object.assign(w, { style: v.style, lyrics: lyr, inst, key: v.key, tempo: v.tempo, sec: v.sec, engine: eng });
     wSaveSoon({ style: v.style, lyrics: lyr, inst, key: v.key, tempo: v.tempo, sec: v.sec, engine: eng }); const base = WBASE; writeRender(); WBASE = base; wBaseDraw();
     $("#wNextH")?.scrollIntoView({ behavior: "smooth", block: "start" }); toast(`${v.n}판 설정을 불러왔어요`); });
+  wCmDraw(); wLikesPaint();
 }
 function wBaseDraw() {
   const el = $("#wBase"); if (!el) return;
@@ -2788,8 +3095,11 @@ function wSaveSoon(patch) { if (!can("compose") || !WN) return; Object.assign(WP
 async function wSaveNow() {
   clearTimeout(WSAVE); const p = WPATCH, w = WN; WPATCH = {};
   if (!w || !Object.keys(p).length) return;
-  try { const r = await api(`/api/write/${w.id}`, jsonOpt("PUT", p)); w.updated = r.updated; delete w._dirty; LS.set("wn:" + w.id, r); }
-  catch (e) { toast("저장 실패: " + e.message); if (WN?.id === w.id) WPATCH = Object.assign({}, p, WPATCH); } // 보낸 변경분은 다음 저장에 합침(그사이 고친 것이 이김) — 전엔 그대로 사라졌음 (11-05 점검)
+  try { const r = await api(`/api/write/${w.id}`, jsonOpt("PUT", Object.assign({}, p, { _base: w.fv || {} }))); w.updated = r.updated; w.fv = r.fv; w.fby = r.fby; w.edits = r.edits; delete w._dirty; LS.set("wn:" + w.id, r); if (WN === w) wEditsDraw(); }
+  catch (e) {
+    if (e.status === 409 && e.data?.conflict) { if (WN?.id === w.id) wConflict(e.data, p); return; } // 다른 분이 먼저 고친 칸
+    toast("저장 실패: " + e.message); if (WN?.id === w.id) WPATCH = Object.assign({}, p, WPATCH); // 보낸 변경분은 다음 저장에 합침(그사이 고친 것이 이김) — 전엔 그대로 사라졌음 (11-05 점검)
+  }
 }
 async function wGo() {
   const w = WN, d = w._d;
@@ -2801,17 +3111,24 @@ async function wGo() {
     if (!(z - a >= 3)) return toast("시작 · 끝을 3초 이상 벌려 주세요 (예: 0:20 · 0:35)");
     extra.repaint = [a, z];
   }
-  clearTimeout(WSAVE); WPATCH = {}; $("#wGo").disabled = true;
+  clearTimeout(WSAVE); const keep = WPATCH; WPATCH = {}; $("#wGo").disabled = true;
   try {
-    const st = await api(`/api/write/${w.id}/gen`, jsonOpt("POST", Object.assign({ title: w.title }, d, extra)));
-    delete w._dirty; WBASE = null; wBaseDraw(); wGenShow(st); wGenPoll();
+    const st = await api(`/api/write/${w.id}/gen`, jsonOpt("POST", Object.assign({ title: w.title, note: $("#wNote")?.value || "", _base: w.fv || {} }, d, extra)));
+    delete w._dirty; WBASE = null; wBaseDraw(); if ($("#wNote")) $("#wNote").value = "";
+    const r = await api(`/api/write/${w.id}`); w.fv = r.fv; w.fby = r.fby; if (WN === w) wMerge(r);
+    if (st.state === "held") { $("#wGo").disabled = false; toast("요청을 보냈어요 · Benny 가 승인하면 만들어요", 4000); $("#wHolds")?.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+    wGenShow(st); wGenPoll();
     $("#wGenSt").scrollIntoView({ behavior: "smooth", block: "center" });
-  } catch (e) { toast(e.message, 4000); $("#wGo").disabled = false; }
+  } catch (e) {
+    $("#wGo").disabled = false; WPATCH = Object.assign({}, keep, WPATCH);
+    if (e.status === 409 && e.data?.conflict) return wConflict(e.data, Object.assign({ title: w.title }, d));
+    toast(e.message, 4000);
+  }
 }
 function wGenShow(st) {
   const el = $("#wGenSt"); if (!el || !WN) return;
   const on = st.state === "queued" || st.state === "running", n = (WN.versions || []).length + 1, sec = st.elapsed || 0;
-  const go = $("#wGo"); if (go) { go.disabled = on || st.available === false; go.textContent = on ? "⏳ 만드는 중…" : `🎤 ${n}판 만들기`; if (st.available === false) go.title = "이 PC 에 모델이 없어요"; }
+  const go = $("#wGo"); if (go) { go.disabled = on || st.available === false; go.textContent = on ? "⏳ 만드는 중…" : wGoWord(n); if (st.available === false) go.title = "이 PC 에 모델이 없어요"; }
   el.innerHTML = on ? `<div class="wcard gen">⏳ <b>${n}판 만드는 중</b> · ${esc(st.detail || "")}
       <div class="small mute">${Math.floor(sec / 60)}분 ${sec % 60}초 지남 · 전체 약 ${Math.ceil((st.eta || 300) / 60)}분 · 다른 화면에 가 있어도 계속 만들어요</div>
       <div class="pbar"><i style="width:${Math.min(95, sec / (st.eta || 300) * 100)}%"></i></div></div>`
