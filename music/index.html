@@ -588,14 +588,18 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-04d";
+const BUILD = "2026-11-05a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 const DEFAULT_SRV = "https://desktop-ijcbddr.tail4df4c9.ts.net";
 const sameOrigin = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === "8765") || location.hostname.endsWith(".ts.net");
 const srvParam = new URLSearchParams(location.search).get("srv"); // 비상용: ?srv=주소 (화면에는 주소 창 없음)
-let SRV = sameOrigin ? "" : srvParam ? srvParam.replace(/\/$/, "") : null;
+const SRV_OK = [DEFAULT_SRV, "http://127.0.0.1:8765", "http://localhost:8765"];
+function safeSrv(v) { // 우리 서버 주소만 — 아무 주소나 받으면 로그인 토큰이 그쪽으로 감 (11-05 점검). 그 밖은 무시하고 자동 선택
+  try { const u = new URL(String(v || "")); return !u.username && !u.password && u.pathname === "/" && !u.search && !u.hash && SRV_OK.includes(u.origin) ? u.origin : null; } catch { return null; }
+}
+let SRV = sameOrigin ? "" : safeSrv(srvParam);
 const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 const OPUS_OK = (() => { try { return !!new Audio().canPlayType('audio/ogg; codecs="opus"'); } catch { return false; } })();
 let NO_OPUS = LS.get("noOpus", false); // Opus 를 받았는데 못 풀었던 기기 → 이후 mp3
@@ -631,7 +635,7 @@ async function api(path, opt = {}) {
   opt.headers = Object.assign({ "X-Dev": DEV }, opt.headers || {}, AUTH ? { Authorization: "Bearer " + AUTH.token } : {});
   const r = await fetch(SRV + path, opt);
   if (r.status === 401 && path !== "/api/login") { AUTH = null; LS.set("auth", null); showLogin(); throw new Error("로그인이 필요해요"); }
-  if (!r.ok) { let m = r.status + ""; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
+  if (!r.ok) { let m = r.status + ""; try { m = (await r.json()).detail || m; } catch {} throw Object.assign(new Error(m), { status: r.status }); }
   return r.json();
 }
 function applyRole() {
@@ -1455,7 +1459,7 @@ async function openSong(id) {
   lyFull(false, true); CHV.capo = LS.get("capo:" + id, 0); CH_REP = [];
   P.metroSolo = false; P.secEdit = false; P.loopPick = null; // 앞 곡의 메트로놈만 듣기 · 구조 고치기가 남아 소리 0 · 실수로 구조가 바뀌던 것 (10-29 점검)
   if (PQ && !PQ.opening) PQ = null; // 손으로 다른 곡을 열면 이어 듣기는 끝
-  P.song = s; P.semi = 0;
+  P.song = s; P.semi = 0; P.secOk = JSON.parse(JSON.stringify(s.sections || [])); // 구조 저장이 실패하면 되돌릴 기준
   if (location.hash !== "#song=" + id) {
     const st = { song: id }, url = "#song=" + id;
     try { if (PQ?.opening && /^#song=/.test(location.hash)) history.replaceState(st, "", url); else history.pushState(st, "", url); } // 이어 듣기로 넘어간 곡은 기록을 쌓지 않음 (뒤로가기 한 번에 목록)
@@ -1601,9 +1605,28 @@ function renumber() {
   S.forEach(s => tot[s.label] = (tot[s.label] || 0) + 1);
   S.forEach(s => { cnt[s.label] = (cnt[s.label] || 0) + 1; s.name = s.label + (tot[s.label] > 1 && !["인트로", "아웃트로"].includes(s.label) ? " " + cnt[s.label] : ""); });
 }
+let secSaving = false, secAgain = false;
 async function saveSections() {
   renumber();
-  try { await api(`/api/songs/${P.song.id}/sections`, jsonOpt("PUT", { sections: secs() })); } catch (e) { toast("저장 실패: " + e.message); }
+  // 저장은 한 줄로: 나가 있는 동안 또 불리면 끝난 뒤 그때의 최신 상태를 한 번 더 보냄 (같은 base_v 로 겹쳐 보내면 서버가 409 로 거절하고 편집이 되돌아갔음, 11-05 점검)
+  if (secSaving) { secAgain = true; return; }
+  secSaving = true;
+  try {
+    do {
+      secAgain = false;
+      const song = P.song, sent = JSON.parse(JSON.stringify(secs()));
+      // base_v: 고치기 시작한 판 — 그사이 다른 사람이 저장했으면 서버가 거절. 실패하면 저장 전 구조로 되돌림(전엔 저장된 것처럼 보였음, 11-05 점검)
+      try { const r = await api(`/api/songs/${song.id}/sections`, jsonOpt("PUT", { sections: sent, base_v: song.sections_v ?? null })); if (r.sections_v) song.sections_v = r.sections_v; if (P.song === song) P.secOk = sent; }
+      catch (e) {
+        toast("저장 실패: " + e.message, 4000);
+        if (e.status === 409) { // 진짜 충돌: 곡 정보를 다시 받아 판 번호 · 구조를 서버 것에 맞춤 (안 맞추면 다음 저장도 계속 거절)
+          try { const f = await api("/api/songs/" + song.id); song.sections_v = f.sections_v; song.sections = f.sections || []; if (P.song === song) P.secOk = JSON.parse(JSON.stringify(song.sections)); } catch {}
+        }
+        secAgain = false;
+        if (P.song === song && P.secOk) song.sections = JSON.parse(JSON.stringify(P.secOk));
+      }
+    } while (secAgain);
+  } finally { secSaving = false; }
   buildSections(); buildChords(); buildStrip(); render(true);
 }
 function buildSections() {
@@ -1741,18 +1764,20 @@ function loopOff() {
 function loopRange() { return P.loop ? { a: P.bars[P.loop.a].start, b: P.bars[P.loop.b].end } : null; }
 function openLoopPop() { loopUI(); $("#lSec").value = ""; buildSaved(); }
 function loopName(a, b) { const si = secAt(P.bars[a].start + 0.01); const sec = si >= 0 ? secs()[si].name : ""; return `${barLabel(a)}~${barLabel(b)}마디${sec ? " · " + sec : ""}`; }
-async function saveLoops(L) { P.song.loops = L; try { await api(`/api/songs/${P.song.id}/prefs`, jsonOpt("PUT", { loops: L })); } catch (e) { toast("저장 실패: " + e.message); } buildSaved(); }
+// 구간 하나만 넣고 빼기(ch = {loop_add}|{loop_del}) → 서버가 돌려준 목록으로. 목록 통째로 보내면 비슷한 때 저장한 다른 사람 구간이 사라졌음 (11-05 점검)
+// L(바뀐 목록)은 옛 서버용으로만 같이 보냄 (새 서버는 무시)
+async function saveLoops(ch, L) { let ok = false; const sid = P.song.id; try { const r = await api(`/api/songs/${sid}/prefs`, jsonOpt("PUT", Object.assign({ loops: L }, ch))); if (P.song.id === sid) P.song.loops = r.loops || L; ok = true; } catch (e) { toast("저장 실패: " + e.message); } buildSaved(); return ok; }  // 기다리는 사이 다른 곡을 열었으면 그 곡 구간을 덮지 않음 (11-05 점검)
 function buildSaved() {
   const L = P.song.loops || [];
   $("#lSaved").innerHTML = L.map((x, i) => `<div class="saved"><button class="go" data-i="${i}">▶ ${esc(x.name)}</button><button class="x" data-i="${i}" title="지우기">×</button></div>`).join("");
   $$("#lSaved .go").forEach(b => b.onclick = () => { const x = L[+b.dataset.i]; setLoop(Math.min(x.a, P.bars.length - 1), Math.min(x.b, P.bars.length - 1), true); });
-  $$("#lSaved .x").forEach(b => b.onclick = () => { if (!confirm(`'${L[+b.dataset.i].name}' 구간을 지울까요? (밴드 모두에게서 지워져요)`)) return; L.splice(+b.dataset.i, 1); saveLoops(L); });
+  $$("#lSaved .x").forEach(b => b.onclick = () => { if (!confirm(`'${L[+b.dataset.i].name}' 구간을 지울까요? (밴드 모두에게서 지워져요)`)) return; const x = L[+b.dataset.i]; saveLoops({ loop_del: { a: x.a, b: x.b } }, L.filter(y => y !== x)); });
 }
 $("#lSave").onclick = () => {
   if (!P.loop) return toast("먼저 구간을 잡아 주세요");
   const L = (P.song.loops || []).slice(); const name = loopName(P.loop.a, P.loop.b);
   if (L.some(x => x.a === P.loop.a && x.b === P.loop.b)) return toast("이미 저장된 구간이에요");
-  L.push({ a: P.loop.a, b: P.loop.b, name }); saveLoops(L); toast("구간을 저장했어요 · 밴드 모두에게 보여요");
+  const x = { a: P.loop.a, b: P.loop.b, name }; L.push(x); saveLoops({ loop_add: x }, L).then(ok => ok && toast("구간을 저장했어요 · 밴드 모두에게 보여요"));
 };
 $("#lOn").onclick = () => { if (P.loop) return loopOff(); const k = barAt(cur()); const si = secAt(cur());
   if (si >= 0) { const s = secs()[si]; setLoop(nearestBar(s.start), Math.max(nearestBar(s.start), nearestBar(s.end) - 1), true); }
@@ -1836,7 +1861,7 @@ function renderLyrics() {
   $("#lyrSrc").innerHTML = `<span class="small mute" style="flex:1">${LYR?.busy ? "가사 찾는 중… (벅스·NetEase·LRCLIB → 없으면 보컬에서 받아 적기, 30초~1분)" : esc((LYR_SRC[src] || "") + how)}</span>` +
     `<button class="btn xs" id="lyrPaste" data-perm="edit">가사 붙여넣기</button>` + (src === "user" ? `<button class="btn xs" id="lyrUndo" data-perm="edit">자동 가사로</button>` : "");
   $("#lyrPaste").onclick = () => { $("#lyrText").value = L.map(l => l.text).join("\n"); $("#lyrDlg").showModal(); };
-  if ($("#lyrUndo")) $("#lyrUndo").onclick = async () => { await api(`/api/songs/${P.song.id}/lyrics`, jsonOpt("PUT", { clear: true })); loadLyrics(); };
+  if ($("#lyrUndo")) $("#lyrUndo").onclick = async () => { try { await api(`/api/songs/${P.song.id}/lyrics`, jsonOpt("PUT", { clear: true })); loadLyrics(); } catch (e) { toast("실패: " + e.message); } };
   lyrRows = []; lastLyr = -2; lastLyrCi = -2; lastLyrBar = -2;
   if (!L.length) { $("#lyrBox").innerHTML = `<div class="empty" style="padding:18px">${LYR?.busy ? "잠시만요…" : "가사를 찾지 못했어요. 위의 <b>가사 붙여넣기</b>로 넣어 주세요."}</div>`; return; }
   if (L.some(l => l.t == null) || !P.bars?.length) return renderLyricsPlain(L);
@@ -2032,7 +2057,7 @@ function buildTabBar() {
   if ($("#tabSrc")) $("#tabSrc").onchange = e => { tabMode = e.target.value; LS.set(`tsrc:${s.id}:${tabPart}`, tabMode); tabbarMenu = false; loadTab(); };
   $$("#tabbar [data-part]").forEach(b => b.onclick = () => { tabPart = b.dataset.part; LS.set("tpart:" + s.id, tabPart); tabMode = defaultTabMode(s); tabbarMenu = false; loadTab(); });
   $("#tabUp").onclick = () => { tabbarMenu = !tabbarMenu; $("#upMenu").hidden = !tabbarMenu; $("#tabUp").classList.toggle("on", tabbarMenu); };
-  if ($("#pdfDel")) $("#pdfDel").onclick = async () => { if (!confirm("올린 PDF를 지울까요?")) return; await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove_pdf: tabPart })); if (s.pdfs) delete s.pdfs[tabPart]; delete s.pdfscore; tabbarMenu = false; tabMode = defaultTabMode(s); loadTab(); };
+  if ($("#pdfDel")) $("#pdfDel").onclick = async () => { if (!confirm("올린 PDF를 지울까요?")) return; try { await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove_pdf: tabPart })); } catch (e) { return toast("실패: " + e.message); } if (s.pdfs) delete s.pdfs[tabPart]; delete s.pdfscore; tabbarMenu = false; tabMode = defaultTabMode(s); loadTab(); };
   if ($("#ssFind")) $("#ssFind").onclick = async () => {
     const done = busy("Songsterr에서 같은 곡을 찾아 마디를 맞추는 중… (몇 초)");
     try { const r = await api(`/api/songs/${s.id}/songsterr`, jsonOpt("POST", {}));
@@ -2047,8 +2072,8 @@ function buildTabBar() {
     catch (e) { toast("실패: " + e.message); }
   };
   $("#scoreUp").onclick = () => $("#scoreFile").click();
-  if ($("#bar1")) $("#bar1").onclick = async () => { const t = cur(); await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { bar1: t })); s.score.bar1 = t; computeScoreBars(); toast("지금 위치를 1마디로 맞췄어요"); };
-  if ($("#scoreDel")) $("#scoreDel").onclick = async () => { if (!confirm("올린 악보를 지울까요?")) return; await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove: true })); delete s.score; tabMode = "auto"; loadTab(); };
+  if ($("#bar1")) $("#bar1").onclick = async () => { const t = cur(); try { await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { bar1: t })); } catch (e) { return toast("실패: " + e.message); } s.score.bar1 = t; computeScoreBars(); toast("지금 위치를 1마디로 맞췄어요"); };
+  if ($("#scoreDel")) $("#scoreDel").onclick = async () => { if (!confirm("올린 악보를 지울까요?")) return; try { await api(`/api/songs/${s.id}/score`, jsonOpt("PUT", { remove: true })); } catch (e) { return toast("실패: " + e.message); } delete s.score; tabMode = "auto"; loadTab(); };
 }
 async function pollVideoTab(s) { // 영상 악보 진행 상황 (10초마다, 곡을 떠나면 멈춤)
   await new Promise(r => setTimeout(r, 10000));
@@ -2359,7 +2384,7 @@ function bookTocDraw() {
           ${p.nex ? `<span class="badge">예 ${p.nex}</span>` : ""}<span class="badge ${p.has ? "ok" : ""}">${p.has ? (p.by === "AI 초안" ? "AI 초안" : "본문") : "비어 있음"}</span></div>`; }).join("")
         : `<div class="small mute" style="padding:6px 2px">아직 페이지가 없어요${ed ? " · + 페이지로 내 공부 노트를 써 보세요" : ""}.</div>`)).join("");
   $$("#bookToc .pg").forEach(el => el.onclick = () => bookOpen(el.dataset.p));
-  $$("#bookToc [data-newp]").forEach(b => b.onclick = async () => { const t = prompt("페이지 제목"); if (!t) return; const p = await api("/api/book/pages", jsonOpt("POST", { chapter: b.dataset.newp, title: t })); bookOpen(p.id, true); });
+  $$("#bookToc [data-newp]").forEach(b => b.onclick = async () => { const t = prompt("페이지 제목"); if (!t) return; try { const p = await api("/api/book/pages", jsonOpt("POST", { chapter: b.dataset.newp, title: t })); bookOpen(p.id, true); } catch (e) { toast("실패: " + e.message); } });
   if ($("#bkNewCh")) $("#bkNewCh").onclick = async () => { const t = prompt("장 제목 (예: 8장 · 리듬)"); if (!t) return; await api("/api/book/chapters", jsonOpt("POST", { title: t })); bookToc(); };
   if ($("#bkRebuild")) $("#bkRebuild").onclick = async () => { const done = busy("합주곡 분석에서 예제를 다시 모으는 중… (1분쯤)"); try { await api("/api/book/rebuild", { method: "POST" }); toast("예제를 다시 모았어요"); } catch (e) { toast("실패: " + e.message); } done(); bookToc(); };
 }
@@ -2396,7 +2421,7 @@ async function bookOpen(pid, edit) {
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn sm pri" id="bkSave">저장</button><button class="btn sm" id="bkDel" style="margin-left:auto">이 페이지 지우기</button></div>`;
     $("#bkCancel").onclick = view;
     $("#bkSave").onclick = async () => { try { const r = await api(`/api/book/pages/${pid}`, jsonOpt("PUT", { title: $("#bkT").value, lead: $("#bkL").value, body: $("#bkB").value })); Object.assign(p, r); bookSaved(pid, { title: r.title, lead: r.lead, body: r.body, by: r.by, updated: r.updated }); view(); toast("저장했어요"); } catch (e) { toast("저장 실패: " + e.message); } };
-    $("#bkDel").onclick = async () => { if (!confirm("이 페이지를 지울까요? (따로 보관돼요)")) return; await api(`/api/book/pages/${pid}`, { method: "DELETE" }); bookToc(); };
+    $("#bkDel").onclick = async () => { if (!confirm("이 페이지를 지울까요? (따로 보관돼요)")) return; try { await api(`/api/book/pages/${pid}`, { method: "DELETE" }); bookToc(); } catch (e) { toast("실패: " + e.message); } };
   };
   edit && ed ? editor() : view();
 }
@@ -2525,7 +2550,7 @@ function wFormBind(d, changed) {
 
 // ---- 첫 화면: 만들기 + 프로젝트 목록
 async function writeHome() {
-  location.hash = "write"; await wSaveNow(); WN = null; clearTimeout(WGEN);
+  location.hash = "write"; await wSaveNow(); WN = null; WPATCH = {}; clearTimeout(WGEN); // 실패해 남은 변경분이 다른 프로젝트로 가지 않게
   const box = $("#writeBox"), ok = can("compose"); box.className = "wr";
   box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">이 PC 그래픽카드로 노래를 만들어요 (무료, 3~11분). 만든 노래는 프로젝트로 남고, 다듬을 때마다 판이 쌓여요.</div>
     <div class="wcard" id="wMake">${ok ? "" : wLockHtml()}</div>
@@ -2649,7 +2674,7 @@ document.addEventListener("visibilitychange", () => { if (isAdmin() && !document
 
 // ---- 프로젝트: 진행 과정(판) + 다음 판 만들기
 async function writeOpen(id) {
-  location.hash = "write/" + id; clearTimeout(WGEN); WBASE = null;
+  location.hash = "write/" + id; clearTimeout(WGEN); WBASE = null; if (WN?.id !== id) WPATCH = {};
   const c = LS.get("wn:" + id, null); // 지난번 본 것 먼저 그리고, 새로 받아 바뀌었으면 다시
   if (c) { WN = c; writeRender(); }
   else { $("#writeBox").innerHTML = `<button class="btn xs" id="wBack">← 작곡</button><div class="mute" style="padding:20px">불러오는 중…</div>`; $("#wBack").onclick = () => writeHome(); }
@@ -2682,7 +2707,7 @@ function writeRender() {
   $("#wNotes").oninput = e => { w.notes = e.target.value; wSaveSoon({ notes: w.notes }); };
   wFormBind(w._d, () => { w._dirty = true; wSaveSoon(Object.assign({}, w._d)); });
   $("#wGo").onclick = wGo;
-  $("#wDel").onclick = async () => { if (!confirm("이 프로젝트를 지울까요? (만든 노래까지 따로 보관돼요)")) return; await api(`/api/write/${w.id}`, { method: "DELETE" }); LS.set("wn:" + w.id, null); WN = null; writeHome(); };
+  $("#wDel").onclick = async () => { if (!confirm("이 프로젝트를 지울까요? (만든 노래까지 따로 보관돼요)")) return; try { await api(`/api/write/${w.id}`, { method: "DELETE" }); } catch (e) { return toast("실패: " + e.message); } LS.set("wn:" + w.id, null); WN = null; writeHome(); };
 }
 function wDiff(a, b) { // 앞 판과 바뀐 것
   if (!a) return "처음 만든 판";
@@ -2764,7 +2789,7 @@ async function wSaveNow() {
   clearTimeout(WSAVE); const p = WPATCH, w = WN; WPATCH = {};
   if (!w || !Object.keys(p).length) return;
   try { const r = await api(`/api/write/${w.id}`, jsonOpt("PUT", p)); w.updated = r.updated; delete w._dirty; LS.set("wn:" + w.id, r); }
-  catch (e) { toast("저장 실패: " + e.message); }
+  catch (e) { toast("저장 실패: " + e.message); if (WN?.id === w.id) WPATCH = Object.assign({}, p, WPATCH); } // 보낸 변경분은 다음 저장에 합침(그사이 고친 것이 이김) — 전엔 그대로 사라졌음 (11-05 점검)
 }
 async function wGo() {
   const w = WN, d = w._d;
