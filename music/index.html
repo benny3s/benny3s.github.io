@@ -151,6 +151,8 @@ body.no-add [data-perm=add],body.no-edit [data-perm=edit],body.no-study [data-pe
 #permList .pr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)} #permList .pr .t{flex:1} #permList .pr .t div{font-size:12px;color:var(--mute)}
 .mvrow{display:flex;align-items:center;gap:10px;padding:4px 0 8px;border-bottom:1px solid var(--line)} .mvrow input{flex:1} .mvrow b{min-width:40px;text-align:right}
 .cgrid .bar span.weak{opacity:.55;font-style:italic}
+.dg{margin-left:3px;font-size:.82em;font-weight:600;color:var(--mute);font-style:normal} .dgo sup{font-size:.6em;margin-left:1px;font-weight:600}
+.cgrid .bar span.dg,.cc .nm .dg{display:block;margin:0;font-size:11px;line-height:1.15} .cc .nm .dg{font-size:13px}
 .upmenu{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 #tabSrc{height:34px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);padding:0 8px;max-width:62%}
 .tablyr{font-size:15px;padding:6px 10px;margin-bottom:6px;border-radius:9px;background:var(--panel2);min-height:34px}
@@ -190,17 +192,17 @@ body.no-add [data-perm=add],body.no-edit [data-perm=edit],body.no-study [data-pe
 .lyr i{font-style:normal;border-radius:4px;padding:0 3px;margin-left:-3px}
 .lyr i+i{margin-left:5px}
 .lyr i.cont,.lyr i.weak{opacity:.5}
-.lyr i.on{background:var(--accent);color:#06201b;opacity:1}
+.lyr i.on{background:var(--accent);color:#06201b;opacity:1} .lyr i.on .dg{color:inherit;opacity:.75}
 .lyr .inst .ib{display:flex;flex-wrap:wrap;row-gap:4px}
-.lyr .inst .ib span{min-width:62px;padding:1px 8px;border-left:1px solid var(--line);font-size:13.5px;font-weight:800;color:var(--accent);line-height:20px}
-.lyr .inst .ib span:last-child{border-right:1px solid var(--line)}
-.lyr .inst .ib span.on{background:#14332e}
-.lyr .inst .ib span.mute{color:#4b535b;font-weight:400}
+.lyr .inst .ib>span{min-width:62px;padding:1px 8px;border-left:1px solid var(--line);font-size:13.5px;font-weight:800;color:var(--accent);line-height:20px}
+.lyr .inst .ib>span:last-child{border-right:1px solid var(--line)}
+.lyr .inst .ib>span.on{background:#14332e}
+.lyr .inst .ib>span.mute{color:#4b535b;font-weight:400}
 /* 코드 보기 (2026-10-29 Benny "Moises 에서 코드 보는 게 편함, 가사랑 같이"): 지금·다음 코드 줄 · 난이도 3단계 · 카포 · 글자 크기 · 크게 보기 */
 .lyr{--lyfs:17px}
 .lyr .tx{font-size:var(--lyfs)}
 .lyr .cl .u>b{font-size:calc(var(--lyfs)*.76);min-height:calc(var(--lyfs)*1.06);line-height:calc(var(--lyfs)*1.06)}
-.lyr .inst .ib span{font-size:calc(var(--lyfs)*.8)}
+.lyr .inst .ib>span{font-size:calc(var(--lyfs)*.8)}
 .lynow{display:flex;gap:8px;align-items:stretch;margin:0 0 8px;overflow:hidden;min-height:58px}
 .lynow .k{flex:0 0 auto;min-width:58px;padding:6px 12px 8px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);text-align:center;position:relative;opacity:.55;font-weight:800;font-size:17px;line-height:1.2;display:flex;flex-direction:column;justify-content:center}
 .lynow .k.cur{opacity:1;border-color:var(--accent);font-size:27px;min-width:86px;box-shadow:0 0 0 1px var(--accent) inset}
@@ -400,6 +402,15 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .wr .confl{border-color:var(--warn)} .wr .confl pre{white-space:pre-wrap;max-height:200px;overflow:auto;font-size:13px;margin:6px 0;font-family:inherit} .wr .vnote{margin:2px 0 4px}
 .wr .edit{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:13px} .wr .edit .t{flex:1;min-width:0}
 #pArr .achips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+#pArr .amap{border:1px solid var(--line);border-radius:10px;padding:2px 10px;margin:10px 0}
+#pArr .amap summary{cursor:pointer;list-style:none;min-height:40px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px} #pArr .amap summary::-webkit-details-marker{display:none}
+#pArr .amg{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--n),32px) 40px;gap:3px 4px;align-items:center;margin:2px 0 8px;font-size:12.5px}
+#pArr .amg .h{color:var(--mute);font-size:11px;text-align:center;white-space:nowrap;overflow:hidden}
+#pArr .amg .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;min-height:26px;line-height:26px}
+#pArr .amg i{display:block;height:22px;border-radius:4px;background:var(--panel2);position:relative;overflow:hidden}
+#pArr .amg i::after{content:"";position:absolute;inset:0;background:var(--accent);opacity:var(--a)}
+#pArr .amg b{display:block;height:6px;border-radius:3px;background:var(--mute);width:var(--w)}
+#pArr .amnote{display:flex;gap:6px;padding:5px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.45} #pArr .amnote .linkbtn{color:var(--accent);text-decoration:none;padding:0 2px}
 #pArr select{height:36px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);padding:0 8px}
 #pArr .asec{border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:6px 0} #pArr .asec.cur{border-color:var(--accent)}
 #pArr .ah{display:flex;align-items:center;gap:8px;min-height:32px} #pArr .ah .linkbtn{color:var(--accent);text-decoration:none;font-size:14px;padding:6px 2px}
@@ -659,7 +670,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-06e";
+const BUILD = "2026-11-06f";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -1002,7 +1013,7 @@ function keyAt(t) { const K = P.song.keys || []; const s = K.find(x => x.start <
 function keysText() { const K = P.song.keys || []; return K.length > 1 ? K.map((s, i) => i ? `${keyAt(s.start + 0.01)} (${fmt(s.start)}~)` : keyAt(0.01)).join(" → ") : tKey(); }
 // 코드 보기 (2026-10-29, Moises 의 코드 난이도 3단계 · 카포 모드): 화면에 보이는 코드 이름만 바꿈 — 소리 · 키 · 해설 글은 그대로
 // lv 0 쉬움(3화음) · 1 보통(7 까지, 베이스 음 뺌) · 2 원래대로 (기기별) / capo = 카포 낀 칸 → 그 자리에서 잡는 모양 (곡마다 · 기기별) / fs = 가사 글자 크기
-const CHV = { lv: LS.get("chLv", 2), capo: 0, fs: LS.get("lyFs", 17), open: false };
+const CHV = { lv: LS.get("chLv", 2), capo: 0, fs: LS.get("lyFs", 17), open: false, dg: LS.get("chDg", 0) };
 const CHV_LV = ["쉬움", "보통", "원래대로"];
 function simpChord(q, lv) { // q = 근음 뒤 (m7 · M7/G# · 7sus4 · add9 · m7b5 …)
   if (lv >= 2) return q;
@@ -1025,6 +1036,22 @@ function tChord(ch, t) {
   if (CHV.lv < 2) return N[pc] + simpChord(m[2], CHV.lv);
   return N[pc] + m[2].replace(/\/([A-G][#b]?)$/, (_, b) => "/" + N[(NOTE_PC[b] + sh + 120) % 12]); // AM7/G# 의 베이스도
 }
+// 도수 보기 (11-06, Hooktheory TheoryTab 처럼 곡 위에서 이론 보기): 코드 · 코드+도수 · 도수만 (기기별 LS chDg). 이론 책과 같은 규칙 —
+// 단조 키는 나란한 장조 기준(Am 키의 Am = 6m), 덧붙임(7 · M7 · sus4)은 '도수만' 일 때만 작게. 원래 키 · 원래 코드로 세서 키 바꾸기 · 카포에도 그대로
+const CHV_DG = ["코드", "코드+도수", "도수만"];
+function chDeg(ch, t) {
+  const m = String(ch || "").match(/^([A-G][#b]?)([^/]*)(?:\/([A-G][#b]?))?$/); if (!m) return null;
+  const K = P.song.keys || [], s = K.find(x => x.start <= t && t < x.end) || K[0], k = parseKey(s ? s.key : P.song.key); if (!k) return null;
+  const tonic = (k.pc + (k.minor ? 3 : 0)) % 12, deg = pc => NOTE_PC[pc] == null ? "?" : CP_DEG[(NOTE_PC[pc] - tonic + 12) % 12];
+  const dim = /^(dim|°|ø|m7b5)/.test(m[2]), minor = !dim && /^m(?!aj)/.test(m[2]);
+  const shown = tChord(ch, t), q = shown.replace(/^[A-G][#b]?/, "").replace(/\/.*$/, "");
+  return { d: deg(m[1]) + (dim ? "°" : minor ? "m" : "") + (m[3] && shown.includes("/") ? "/" + deg(m[3]) : ""), ext: q.replace(/^(m7b5|m7♭5|ø7?|dim|°|m(?!aj)|min)/, "") }; // 책처럼 m7b5 도 ° (dim7 은 °⁷)
+}
+function chHtml(ch, t) { // 화면에 보이는 코드 글자 (HTML). 같은 코드인지 보기 · 운지표는 tChord 그대로
+  const nm = tChord(ch, t); if (!CHV.dg || ch === "N") return esc(nm);
+  const g = chDeg(ch, t); if (!g) return esc(nm);
+  return CHV.dg === 1 ? `${esc(nm)}<span class="dg">${esc(g.d)}</span>` : `<span class="dgo">${esc(g.d)}${g.ext ? `<sup>${esc(g.ext)}</sup>` : ""}</span>`;
+}
 // 난이도를 낮추면 이어진 같은 이름(E · E7 → E · E)이 생김 → 앞 코드 번호로 묶어 한 번만 보임 (가사 위 · 지금·다음 줄)
 let CH_REP = [];
 function chordReps() {
@@ -1033,7 +1060,7 @@ function chordReps() {
     if (C[i].chord !== "N" && C[p].chord !== "N" && C[i].start - C[p].end < 0.08 && tChord(C[i].chord, C[i].start) === tChord(C[p].chord, C[p].start)) CH_REP[i] = CH_REP[p]; }
   return CH_REP;
 }
-function chvLabel() { return (CHV.lv < 2 ? CHV_LV[CHV.lv] : "") + (CHV.lv < 2 && CHV.capo ? " · " : "") + (CHV.capo ? `카포 ${CHV.capo}` : ""); }
+function chvLabel() { return [CHV.lv < 2 ? CHV_LV[CHV.lv] : "", CHV.capo ? `카포 ${CHV.capo}` : "", CHV.dg ? (CHV.dg === 1 ? "도수" : "도수만") : ""].filter(Boolean).join(" · "); }
 function upNext(ci, n) { // 지금 코드 + 다음 코드들 (같은 이름이 이어지면 하나로)
   const C = P.song.chords, out = [];
   for (let i = Math.max(0, ci); i < C.length && out.length < n; i++) {
@@ -1048,15 +1075,17 @@ function chvBar(extra) { // 🎚 코드 보기 (가사 · 코드 탭 공용) —
   const lab = chvLabel();
   return `<button class="btn xs ${lab ? "on" : ""}" data-chv="t">🎚 코드 보기${lab ? " · " + esc(lab) : ""} ${CHV.open ? "▴" : "▾"}</button>` + (extra || "") +
     (CHV.open ? `<div class="chvp">
+      <div class="r"><span>보기</span><span class="seg">${CHV_DG.map((n, i) => `<button data-chv="dg" data-v="${i}" class="${CHV.dg === i ? "on" : ""}">${n}</button>`).join("")}</span></div>
       <div class="r"><span>난이도</span><span class="seg">${CHV_LV.map((n, i) => `<button data-chv="lv" data-v="${i}" class="${CHV.lv === i ? "on" : ""}">${n}</button>`).join("")}</span></div>
       <div class="r"><span>카포</span><span class="stepper"><button data-chv="c-">−</button><b style="min-width:62px;text-align:center">${CHV.capo ? CHV.capo + "번 칸" : "없음"}</b><button data-chv="c+">+</button></span></div>
-      <div class="hint">쉬움 = 3화음만 (C · Am · G) · 보통 = 7 까지 (C7 · Am7 · GM7) · 원래대로 = 텐션 · 베이스 음까지. 카포는 끼운 칸에서 잡는 모양으로 보여 줘요 (소리 · 키는 그대로). 이 기기에만 저장돼요.</div></div>` : "");
+      <div class="hint">도수 = 키의 몇 번째 음에서 시작하는 코드인지 (이론 책 '화음 기초'와 같은 숫자, 단조 곡은 나란한 장조 기준 — Am 키의 Am = 6m). 키를 바꿔도 도수는 그대로예요. 쉬움 = 3화음만 (C · Am · G) · 보통 = 7 까지 (C7 · Am7 · GM7) · 원래대로 = 텐션 · 베이스 음까지. 카포는 끼운 칸에서 잡는 모양으로 보여 줘요 (소리 · 키는 그대로). 이 기기에만 저장돼요.</div></div>` : "");
 }
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-chv]"); if (!b || !P.song) return;
   const k = b.dataset.chv;
   if (k === "t") CHV.open = !CHV.open;
   else if (k === "lv") { CHV.lv = +b.dataset.v; LS.set("chLv", CHV.lv); }
+  else if (k === "dg") { CHV.dg = +b.dataset.v; LS.set("chDg", CHV.dg); lastIdx = -2; }
   else if (k === "c-" || k === "c+") { CHV.capo = Math.max(0, Math.min(9, CHV.capo + (k === "c+" ? 1 : -1))); LS.set("capo:" + P.song.id, CHV.capo); }
   else if (k === "f-" || k === "f+") { CHV.fs = Math.max(13, Math.min(34, CHV.fs + (k === "f+" ? 2 : -2))); LS.set("lyFs", CHV.fs); $("#lyrBox").style.setProperty("--lyfs", CHV.fs + "px"); return; }
   else if (k === "full") return lyFull(!document.body.classList.contains("lyfull"));
@@ -1696,7 +1725,7 @@ async function saveSections() {
       secAgain = false;
       const song = P.song, sent = JSON.parse(JSON.stringify(secs()));
       // base_v: 고치기 시작한 판 — 그사이 다른 사람이 저장했으면 서버가 거절. 실패하면 저장 전 구조로 되돌림(전엔 저장된 것처럼 보였음, 11-05 점검)
-      try { const r = await api(`/api/songs/${song.id}/sections`, jsonOpt("PUT", { sections: sent, base_v: song.sections_v ?? null })); if (r.sections_v) song.sections_v = r.sections_v; if (P.song === song) P.secOk = sent; }
+      try { const r = await api(`/api/songs/${song.id}/sections`, jsonOpt("PUT", { sections: sent, base_v: song.sections_v ?? null })); if (r.sections_v) song.sections_v = r.sections_v; if (P.song === song) P.secOk = sent; delete AMAP[song.id]; }
       catch (e) {
         toast("저장 실패: " + e.message, 4000);
         if (e.status === 409) { // 진짜 충돌: 곡 정보를 다시 받아 판 번호 · 구조를 서버 것에 맞춤 (안 맞추면 다음 저장도 계속 거절)
@@ -1792,9 +1821,9 @@ function buildChords() {
   const heads = new Map(S.map((s, i) => [nearestBar(s.start), s]));
   B.forEach((b, k) => {
     if (heads.has(k)) { const s = heads.get(k); html += `<div class="shd">${esc(s.name)}</div>`; }
-    const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push({ n: tChord(c.chord, c.start), weak: c.src === "auto" && !c.sure }); });
+    const names = []; P.song.chords.forEach(c => { if (c.end > b.start + 0.05 && c.start < b.end - 0.05 && c.chord !== "N") names.push({ n: tChord(c.chord, c.start), h: chHtml(c.chord, c.start), weak: c.src === "auto" && !c.sure }); });
     const uniq = names.filter((x, i) => names[i - 1]?.n !== x.n); // 추천 코드표에서 자동 분석만 근거인 코드는 흐리게 (확인 필요)
-    html += `<div class="bar" data-k="${k}"><small>${barLabel(k) || ""}</small>${uniq.map(x => `<span${x.weak ? ' class="weak"' : ""}>${esc(x.n)}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
+    html += `<div class="bar" data-k="${k}"><small>${barLabel(k) || ""}</small>${uniq.map(x => `<span${x.weak ? ' class="weak"' : ""}>${x.h}</span>`).join("") || '<span class="mute">·</span>'}</div>`;
   });
   $("#cgrid").innerHTML = html;
   $$("#cgrid .bar").forEach(el => el.onclick = () => {
@@ -2004,7 +2033,7 @@ function renderLyricsFlow(L) {
     if (j - k >= 2 || B[k].start < L[0].t || B[j - 1].end > vt.at(-1).b) for (let x = k; x < j; x++) inst.add(x); k = j; }
   for (let x = 0; x < B.length && inst.has(x) && !hasCh(B[x]); x++) inst.delete(x); // 맨 앞 소리 없는 마디
   for (let x = B.length - 1; x >= 0 && inst.has(x) && !hasCh(B[x]); x--) inst.delete(x); // 맨 뒤 소리 없는 마디
-  const ci = i => { const c = C[i]; return `<i data-ci="${i}"${c.src === "auto" && !c.sure ? ' class="weak"' : ""}>${esc(tChord(c.chord, c.start))}</i>`; };
+  const ci = i => { const c = C[i]; return `<i data-ci="${i}"${c.src === "auto" && !c.sure ? ' class="weak"' : ""}>${chHtml(c.chord, c.start)}</i>`; };
   // 코드 바뀜마다 한 번씩: 간주 마디면 간주 칸, 아니면 그 시각을 가진 줄 (다음 줄 0.6초 앞부터는 다음 줄 첫 글자)
   const own = L.map(() => []);
   C.forEach((c, i) => { if (c.chord === "N" || (CH_REP[i] ?? i) !== i || inst.has(barAt(c.start + 0.01))) return; // 난이도를 낮춰 앞 코드와 같아진 코드는 한 번만
@@ -2062,7 +2091,7 @@ function renderLyricsPlain(L) { // 시간 없는 가사(옛 형식) — 예전�
       const span = Math.max(0.5, l.e - l.t); let lastPos = -99;
       C.forEach(c => { if (c.end <= l.t + 0.1 || c.start >= l.e - 0.1) return;
         const pos = Math.max(0, (c.start - l.t) / span * 100); if (pos - lastPos < 9) return; lastPos = pos;
-        ch += `<span style="left:${Math.min(pos, 92)}%">${esc(tChord(c.chord, c.start))}</span>`; });
+        ch += `<span style="left:${Math.min(pos, 92)}%">${chHtml(c.chord, c.start)}</span>`; });
     }
     html += `<div class="ln" data-i="${i}">${ch ? `<div class="ch">${ch}</div>` : ""}<div class="tx">${esc(l.text)}</div></div>`;
   });
@@ -2143,7 +2172,7 @@ function arrDraw() {
   const edHtml = (r, p) => `<div class="aed">${one ? "" : `<select id="aPart">${ARR.parts.map(n => `<option ${n === p ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`}
       <textarea id="aText" maxlength="500" placeholder="예: 8마디까지 팜뮤트, 후렴 전 한 박 쉬기">${esc(notes(r, p).map(n => n.text).join("\n"))}</textarea>
       <div class="acts"><button class="btn xs pri" id="aOk">저장</button><button class="btn xs" id="aNo">취소</button></div></div>`;
-  box.innerHTML = `<div class="achips"><button class="btn xs ${one ? "" : "on"}" data-af="">전체</button>${ARR.parts.map(n => `<button class="btn xs ${fil === n ? "on" : ""}" data-af="${esc(n)}">${esc(n)}</button>`).join("")}${ed ? `<button class="btn xs" id="aParts">✎ 파트</button>` : ""}</div>`
+  box.innerHTML = `<details class="amap" id="aMap"${LS.get("amapOpen", 0) ? " open" : ""}></details><div class="achips"><button class="btn xs ${one ? "" : "on"}" data-af="">전체</button>${ARR.parts.map(n => `<button class="btn xs ${fil === n ? "on" : ""}" data-af="${esc(n)}">${esc(n)}</button>`).join("")}${ed ? `<button class="btn xs" id="aParts">✎ 파트</button>` : ""}</div>`
     + R.map((r, i) => { const rows = parts.map(p => {
         if (ARR_ED?.i === i && ARR_ED.p === p) return edHtml(r, p);
         const N = notes(r, p); if (!N.length && !one) return "";
@@ -2178,7 +2207,34 @@ function arrDraw() {
     try { await api(`/api/songs/${s.id}/tracks/${e.id}`, jsonOpt("PUT", { offset: +((e.offset || 0) + +b.dataset.ao).toFixed(3) })); await extrasSync(); } catch (err) { toast(err.message); } done(); arrLoad(); });
   $$("#pArr [data-atd]").forEach(b => b.onclick = async () => { if (!confirm("이 트랙을 지울까요?")) return;
     try { await api(`/api/songs/${s.id}/tracks/${b.dataset.atd}`, { method: "DELETE" }); await extrasSync(); } catch (err) { toast(err.message); } arrLoad(); });
+  amapDraw();
   arrTick(cur());
+}
+/* 원곡 편성 지도 (11-06, arrange.py): 구간 × 악기 — 칸이 진할수록 그 악기가 많이 · 크게 나옴, 막대 = 구간 세기. 곡마다 한 번 받음 (편곡 글과 따로).
+   보컬 '나옴' 은 가사 시간과 구간 87.7% 일치 (bench_arrange.py, 21곡) */
+const AMAP = {};
+async function amapLoad(s) {
+  if (AMAP[s.id]) return;
+  AMAP[s.id] = { busy: true };
+  try { AMAP[s.id] = await api(`/api/songs/${s.id}/arrange`); } catch (e) { AMAP[s.id] = { err: e.message }; }
+  if (P.song === s && VIEW === "arr") amapDraw();
+}
+function amapDraw() {
+  const box = $("#aMap"), s = P.song; if (!box || !s) return;
+  const M = AMAP[s.id], head = `<summary><span style="white-space:nowrap">🗺 원곡 편성</span><span class="small mute" style="font-weight:400">구간 × 악기 · 세기</span></summary>`;
+  box.ontoggle = () => { LS.set("amapOpen", box.open ? 1 : 0); amapDraw(); };
+  if (!box.open) { box.innerHTML = head; return; }
+  if (!M || M.busy) { box.innerHTML = head + `<div class="small mute" style="padding:0 0 10px">악기 트랙 세기를 재는 중… (처음 한 번 몇 초)</div>`; amapLoad(s); return; }
+  if (M.err) { box.innerHTML = head + `<div class="small mute" style="padding:0 0 10px">${esc(M.err)}</div>`; return; }
+  const live = M.stems.filter(r => Math.max(...r.cells.map(c => c.act)) >= 0.15); // 곡 내내 거의 없는 트랙(분리 찌꺼기)은 칸 없이
+  const v = c => (c.act * Math.min(1, Math.max(0.25, (c.rel + 24) / 24))).toFixed(2);
+  const cells = M.sections.map((x, i) => `<span class="nm" data-mt="${x.start}" title="${esc(x.name)}">${esc(x.name)}</span>`
+    + live.map(r => `<i style="--a:${v(r.cells[i])}" title="${esc(r.name)} · 나옴 ${Math.round(r.cells[i].act * 100)}% · ${r.cells[i].rel} dB"></i>`).join("")
+    + `<b style="--w:${Math.max(6, Math.round((M.mix[i] + 20) / 20 * 100))}%" title="세기 ${M.mix[i]} dB"></b>`).join("");
+  box.innerHTML = head + `<div class="amg" style="--n:${live.length}"><span></span>${live.map(r => `<span class="h">${esc(r.name)}</span>`).join("")}<span class="h">세기</span>${cells}</div>`
+    + (M.notes || []).map(n => `<div class="amnote"><button class="linkbtn" data-mt="${M.sections[n.i].start}">▶</button><span><b>${esc(M.sections[n.i].name)}</b> ${esc(n.text)}</span></div>`).join("")
+    + `<div class="small mute" style="padding:6px 0 10px">악기마다 자기 가장 큰 소리를 기준으로 셈 · 나눈 트랙이라 다른 악기 소리가 조금 섞일 수 있어요</div>`;
+  $$("#aMap [data-mt]").forEach(el => el.onclick = () => goTo(+el.dataset.mt));
 }
 function arrTick(t) { $$("#pArr .asec").forEach(el => el.classList.toggle("cur", t >= +el.dataset.a && t < +el.dataset.z)); }
 async function extrasSync() { // 파트 트랙이 늘거나 바뀐 뒤: 곡 정보만 다시 받아 믹서 · 소리를 바꿔 끼움 (트랙 6개를 다시 받지 않게)
@@ -2432,9 +2488,10 @@ function render(force) {
   const lyOn = !$("#pLyrics").hidden;
   if (ci !== lastIdx || force) {
     lastIdx = ci; const c = s.chords; const list = upNext(ci, 4);
-    $("#now").innerHTML = list.map((x, k) => `<div class="cc ${k === 0 && x.i === ci ? "cur" : ""}"><div class="nm">${x.nm === "N" ? "–" : esc(x.nm)}</div>${x.nm === "N" ? "" : diagram(x.nm)}${k === 0 ? '<div class="bar" id="ccbar"></div>' : ""}</div>`).join("");
+    const shown = x => x.nm === "N" ? "–" : chHtml(c[x.i].chord, c[x.i].start); // 도수 보기면 도수도
+    $("#now").innerHTML = list.map((x, k) => `<div class="cc ${k === 0 && x.i === ci ? "cur" : ""}"><div class="nm">${shown(x)}</div>${x.nm === "N" ? "" : diagram(x.nm)}${k === 0 ? '<div class="bar" id="ccbar"></div>' : ""}</div>`).join("");
     const nx = list.findIndex(x => x.i !== ci);
-    if (lyOn) $("#lyNow").innerHTML = list.length ? list.map((x, k) => `<div class="k${x.i === ci ? " cur" : ""}"><small>${x.i === ci ? "지금" : k === nx ? "다음" : "&nbsp;"}</small>${x.nm === "N" ? "–" : esc(x.nm)}${x.i === ci ? '<i class="bar" id="lybar"></i>' : ""}</div>`).join("") : `<span class="empty">코드 없음</span>`;
+    if (lyOn) $("#lyNow").innerHTML = list.length ? list.map((x, k) => `<div class="k${x.i === ci ? " cur" : ""}"><small>${x.i === ci ? "지금" : k === nx ? "다음" : "&nbsp;"}</small>${shown(x)}${x.i === ci ? '<i class="bar" id="lybar"></i>' : ""}</div>`).join("") : `<span class="empty">코드 없음</span>`;
   }
   if (ci >= 0) { const c = s.chords, e = c[lastRepEnd(ci0)].end, w = Math.min(100, (t - c[ci].start) / (e - c[ci].start) * 100) + "%";
     const b = $("#ccbar"); if (b) b.style.width = w; const b2 = $("#lybar"); if (b2) b2.style.width = w; }
@@ -2936,7 +2993,9 @@ function cpIntervals(q) {
   return out;
 }
 const CP_DEG = ["1", "b2", "2", "b3", "3", "4", "#4", "5", "b6", "6", "b7", "7"];
-function cpDegree(sym, key) { const c = cpSplit(sym), k = cpSplit(key); if (!c || !k) return ""; const q = /^(dim|°)/.test(c.q) ? "°" : cpMinor(c.q) ? "m" : ""; return CP_DEG[(pcOf(c.root) - pcOf(k.root) + 12) % 12] + q + (c.bass ? "/" + CP_DEG[(pcOf(c.bass) - pcOf(k.root) + 12) % 12] : ""); }
+function cpDegree(sym, key) { // 단조 키는 나란한 장조 기준 (이론 책 · 곡 코드표 도수와 같게, 11-06 — 전엔 Am 키의 Am 이 1m 이었음)
+  const c = cpSplit(sym), k = cpSplit(key); if (!c || !k) return ""; const q = /^(dim|°|ø|m7b5)/.test(c.q) ? "°" : cpMinor(c.q) ? "m" : "", tonic = pcOf(k.root) + (cpMinor(k.q) ? 3 : 0);
+  return CP_DEG[(pcOf(c.root) - tonic + 24) % 12] + q + (c.bass ? "/" + CP_DEG[(pcOf(c.bass) - tonic + 24) % 12] : ""); }
 function cpBars(text) { // "| G | D | Em C |" → 마디별 코드, 세로줄이 없으면 코드 하나가 한 마디
   const t = String(text || ""), bars = [];
   t.split(t.includes("|") ? "|" : /\s+/).map(x => x.trim()).filter(Boolean).forEach(seg => bars.push(seg === "%" ? (bars[bars.length - 1] || []) : seg.split(/\s+/).filter(x => cpSplit(x))));
