@@ -659,7 +659,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-06d";
+const BUILD = "2026-11-06e";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -2546,8 +2546,8 @@ function goHome(fromNav) {
 let RETURN_TO = null, MAIN = "songs";
 let JOIN_NEXT = ""; // 밴드매니저 '작업실' 링크로 왔는데 아직 허용 전이면, 허용된 뒤 그 프로젝트로
 function showMain(view, arg) {
-  if (isLink() && view !== "songs") {
-    if (view === "write" && arg) { JOIN_NEXT = "#write/" + arg; setTimeout(() => { showLogin(); toast("작곡 작업실은 이름을 알려 주고 허용받은 기기로 들어와요", 5000); }, 300); }
+  if (isLink() && view !== "songs") { // 밴드매니저 ✍️ 작곡(#write) · 작업실(#write/<id>) 링크 → 요청 창, 허용되면 그리로 (11-06: #write 만이면 말없이 곡 화면이었음)
+    if (view === "write") { JOIN_NEXT = "#write" + (arg ? "/" + arg : ""); setTimeout(() => { showLogin(); toast("작곡은 이름을 알려 주고 허용받은 기기로 들어와요", 5000); }, 300); }
     view = "songs"; arg = undefined;
   }
   if (view !== "write") { clearTimeout(WGEN); wSaveNow(); cpStop(); }
