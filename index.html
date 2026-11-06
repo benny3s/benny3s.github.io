@@ -575,12 +575,15 @@ function syncAdminKey() {   // 미니 앱 관리자 열쇠 = SHA-256("benny-apps
   })().finally(() => { keyP = null; });
   return keyP;
 }
-function maybeEnroll() {   // 로그인돼 있던 이 기기를 '믿을 기기'로 — 열쇠가 있으면 서버는 마지막 시각만 고쳐서 하루 한 번 (11-06, 전엔 열 때마다 5초)
-  try { if (localStorage.getItem("bennyAdminDeviceKey") && Date.now() - Number(localStorage.getItem(ENROLL_AT) || 0) < 864e5) return; } catch (e) {}
+/* 이 기기의 '마지막 접속'을 서버에 — 하루 한 번 (11-06, 전엔 열 때마다 5초 + functions SDK).
+   서버 enroll 은 믿을 기기면 시각만 고치고, 열쇠 없는 기기에는 (전체에서 한 번뿐인 첫 열쇠 말고는) 열쇠를 안 줌(10-29) → 열쇠가 없어도 매번 부를 까닭이 없음.
+   열쇠는 베니브릿지 📱 관리자 기기 [이 기기 열쇠 받기]에서 */
+function maybeEnroll() {
+  try { if (Date.now() - Number(localStorage.getItem(ENROLL_AT) || 0) < 864e5) return; } catch (e) {}
   loginKit().then(a => {
     if (!window.bennyAdminEnroll) return;
     window.bennyAdminEnroll(a);
-    try { if (localStorage.getItem("bennyAdminDeviceKey")) localStorage.setItem(ENROLL_AT, String(Date.now())); } catch (e) {}
+    try { localStorage.setItem(ENROLL_AT, String(Date.now())); } catch (e) {}
   }).catch(() => {});
 }
 
