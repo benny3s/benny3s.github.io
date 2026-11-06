@@ -1,10 +1,11 @@
-const CACHE_NAME = "benny-portal-v4";   // v4: 메인에서 목록을 뺌 (옛 화면 지우기) · v2: 공통 토큰 /design/tokens.css 도 오프라인 캐시 · v3: tokens ?v=2, 오프라인 찾는 순서 고침 (2026-10-29)
+const CACHE_NAME = "benny-portal-v5";   // v5: 화면 다시 짬 · maskable 아이콘 (2026-11-06) · v4: 메인에서 목록을 뺌 (옛 화면 지우기) · v2: 공통 토큰 /design/tokens.css 도 오프라인 캐시 · v3: tokens ?v=2, 오프라인 찾는 순서 고침 (2026-10-29)
 const PORTAL_PATHS = new Set([
   "/",
   "/index.html",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
+  "/icon-maskable-512.png",
   "/apple-touch-icon.png",
   "/favicon.svg",
   "/design/tokens.css"   // 포털 색·크기 값이 여기 있음 — 오프라인에서 빠지면 포털이 무늬 없이 뜸

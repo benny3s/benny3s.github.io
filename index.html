@@ -19,232 +19,132 @@
 <style>
 /* 항상 라이트 — 약속 잡자·밴드매니저와 같게 (2026-10-01 Benny: "라이트 모드로 안돼?")
    → <html data-theme="light"> 가 공통 토큰의 다크 값을 끈다.
-   아래엔 색·크기 숫자를 직접 쓰지 않고 var(--bn-…) 만 쓴다. 아이콘 타일 크기(--s)·레이아웃 폭은 예외. */
+   아래엔 색·크기 숫자를 직접 쓰지 않고 var(--bn-…) 만 쓴다. 아이콘 타일 크기(--s)·레이아웃 폭은 예외.
+   2026-11-06 다시 짬 (Benny: "다 개선해줘"): 머리 한 줄 · 묶음별 아이콘 · 숨김 대신 보관 · 편집은 ⚙️ 한 곳 */
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{
   margin:0; background:var(--bn-bg); color:var(--bn-ink);
   font:var(--bn-fs-base)/var(--bn-lh) var(--bn-font);
-  padding:0 var(--bn-sp-4) calc(var(--bn-sp-8) * 2 + env(safe-area-inset-bottom, 0px)); -webkit-text-size-adjust:100%;
+  padding:0 var(--bn-sp-4) calc(var(--bn-sp-8) + env(safe-area-inset-bottom, 0px)); -webkit-text-size-adjust:100%;
 }
 .wrap{max-width:860px;margin:0 auto}
 
-header{padding-block:var(--bn-sp-8) var(--bn-sp-5);display:flex;align-items:center;gap:var(--bn-sp-3);flex-wrap:wrap}
+/* 머리 한 줄 — 제목 · 부제 · 탭 세 줄을 하나로 (폰에서 목록 시작이 166px → 60px 안팎) */
+header{display:flex;align-items:center;gap:var(--bn-sp-3);padding:max(var(--bn-sp-4), env(safe-area-inset-top, 0px)) 0 var(--bn-sp-3)}
+body.editing header{position:sticky;top:0;z-index:5;background:var(--bn-bg)}   /* 고치는 동안 '저장'이 늘 손 닿는 곳에 */
 .mark{
-  --s:42px;width:var(--s);height:var(--s);border-radius:calc(var(--s) * .3);
+  --s:36px;width:var(--s);height:var(--s);border-radius:calc(var(--s) * .3);
   background:linear-gradient(145deg,var(--bn-accent),var(--bn-accent-strong));
   box-shadow:0 2px 6px rgba(var(--bn-accent-rgb),.25);
   display:flex;align-items:center;justify-content:center;
-  color:var(--bn-on-accent);font-weight:800;font-size:var(--bn-fs-xl);letter-spacing:-.03em;
+  color:var(--bn-on-accent);font-weight:800;font-size:var(--bn-fs-lg);letter-spacing:-.03em;
   user-select:none;flex-shrink:0
 }
-.ttl{flex:1;min-width:160px}
-.ttl-row{display:flex;align-items:center;gap:var(--bn-sp-2)}
-h1{margin:0;font-size:var(--bn-fs-xl);font-weight:800;line-height:1.2;letter-spacing:-.03em;user-select:none;cursor:default;display:inline-block}
-.sub{margin:var(--bn-sp-half) 0 0;color:var(--bn-ink-2);font-size:var(--bn-fs-md)}
-.hdr-right{display:flex;align-items:center;gap:var(--bn-sp-2);flex-shrink:0}
-/* 로그인 전에는 제목과 로그인만 (2026-11-05) */
-body:not(.admin) .sub,body:not(.admin) .hdr-right,body:not(.admin) footer span,body:not(.admin) #installBtn{display:none!important}
+h1{margin:0;font-size:var(--bn-fs-xl);font-weight:800;line-height:1.2;letter-spacing:-.03em;user-select:none;cursor:default}
+.sp{flex:1}
+.hdr-right{display:flex;align-items:center;gap:var(--bn-sp-2)}
+body:not(.admin) .hdr-right{display:none}
 
-/* 배지·칩 — 한 크기 (작은 글자 · 알약) */
-.chip,.tag,.admin-badge,.hero .k{font-size:var(--bn-fs-xs);line-height:1.4;padding:var(--bn-sp-half) var(--bn-sp-2);border-radius:var(--bn-r-pill);white-space:nowrap}
-.admin-badge{display:none;align-items:center;gap:var(--bn-sp-1);font-weight:700;background:var(--bn-accent-soft);color:var(--bn-accent)}
-body.admin .admin-badge{display:inline-flex}
-.chip{display:inline-block;font-weight:600;background:var(--bn-fill);color:var(--bn-ink-2);vertical-align:2px;margin-left:var(--bn-sp-2)}
-.chip.s-github{background:var(--bn-ok-soft);color:var(--bn-ok)}
-.chip.s-drive{background:var(--bn-info-soft);color:var(--bn-info)}
-.chip.s-local{background:var(--bn-fill);color:var(--bn-ink-2)}
-.chip.nda{background:var(--bn-bad-soft);color:var(--bn-bad)}
-.chip.warn{background:var(--bn-warn-soft);color:var(--bn-warn)}
-.chip.run{background:var(--bn-accent);color:var(--bn-on-accent)}
-.tag{font-weight:600;background:var(--bn-surface);border:1px solid var(--bn-line);color:var(--bn-warn);flex-shrink:0}
-.tag.grp{color:var(--bn-ink-2)}
-
-/* 묶음 선택 3종(관리자 탭 · 보기 전환 · 프로젝트 범위) — 같은 모양: 회색 바닥 + 흰 알약 */
-.tabs,.viewsw,.tier-bar{gap:var(--bn-sp-1);padding:var(--bn-sp-1);border-radius:var(--bn-r-md);background:var(--bn-track)}
-.tabs button[role="tab"],.viewsw button,.tier-btn{font:inherit;font-weight:600;border:0;border-radius:var(--bn-r-sm);background:none;color:var(--bn-ink-2);cursor:pointer;transition:background var(--bn-dur) var(--bn-ease),color var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease)}
-.tabs button[role="tab"][aria-selected="true"],.viewsw button[aria-pressed="true"],.tier-btn[aria-pressed="true"]{background:var(--bn-surface);color:var(--bn-accent);box-shadow:var(--bn-shadow-1)}
-
-/* 보기 방식: 자세히(대표+묶음) / 간단히(아이콘만) — 2026-10-19 Benny: "간단히 보기 스위치도" */
-.viewsw{display:flex;gap:0;flex-shrink:0}
-.viewsw button{display:flex;align-items:center;justify-content:center;width:32px;height:28px;padding:0;color:var(--bn-ink-3)}
+/* 보기 전환: 아이콘 / 설명까지 — 2026-10-19 Benny: "간단히 보기 스위치도" (11-06 기본 = 아이콘) */
+.viewsw{display:flex;padding:var(--bn-sp-1);border-radius:var(--bn-r-md);background:var(--bn-track)}
+.viewsw button{display:flex;align-items:center;justify-content:center;width:32px;height:28px;padding:0;border:0;border-radius:var(--bn-r-sm);background:none;color:var(--bn-ink-3);cursor:pointer;
+  transition:background var(--bn-dur) var(--bn-ease),color var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease)}
+.viewsw button[aria-pressed="true"]{background:var(--bn-surface);color:var(--bn-accent);box-shadow:var(--bn-shadow-1)}
 .viewsw svg{width:15px;height:15px;fill:currentColor}
-body.admin:not([data-tab="portal"]) .viewsw{display:none}
-
-/* 관리자 상단 탭 — 관리자 로그인 상태면 3번 클릭 없이 항상 자동 표시 */
-.tabs{display:none;margin:0 0 var(--bn-sp-5);overflow-x:auto;scrollbar-width:none;align-items:center}
-.tabs::-webkit-scrollbar{display:none}
-body.admin .tabs{display:flex}
-.tabs button[role="tab"]{flex:1 0 auto;font-size:var(--bn-fs-md);padding:var(--bn-sp-2) var(--bn-sp-3);white-space:nowrap}
-.tabs button[role="tab"]:hover,.tier-btn:hover{color:var(--bn-ink)}
-.tabs button[role="tab"][aria-selected="true"]:hover,.tier-btn[aria-pressed="true"]:hover{color:var(--bn-accent)}
-.tier-bar{display:flex;flex-wrap:wrap}
-.tier-btn{flex:1 1 auto;font-size:var(--bn-fs-sm);padding:var(--bn-sp-2) var(--bn-sp-3)}
-
-/* 초점 테두리 — 모두 같게 */
-.btn:focus-visible,.fchip:focus-visible,.tier-btn:focus-visible,.viewsw button:focus-visible,.tabs button[role="tab"]:focus-visible,
-input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--bn-accent);outline-offset:2px}
-
-/* 손가락 닿는 범위는 최소 44px — 모양은 그대로 두고 보이지 않는 덧칸으로 넓힘 */
-.btn,.fchip,.tier-btn,.tabs button[role="tab"],.viewsw button{position:relative}
-.btn::after,.fchip::after,.tier-btn::after,.tabs button[role="tab"]::after,.viewsw button::after{
-  content:"";position:absolute;left:0;right:0;top:50%;height:max(100%,var(--bn-tap));transform:translateY(-50%)}
-
-/* 방문자 & 포털 홈 화면 */
-.ico{--s:46px;width:var(--s);height:var(--s);border-radius:calc(var(--s) * .3);display:flex;align-items:center;justify-content:center;font-size:calc(var(--s) * .5);line-height:1;flex-shrink:0;
-  background:var(--t,var(--bn-fill));border:1px solid color-mix(in srgb,var(--bn-ink) 4%,transparent)}
-.clamp{margin:var(--bn-sp-half) 0 0;color:var(--bn-ink-2);font-size:var(--bn-fs-md);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.hero{
-  display:flex;align-items:center;gap:var(--bn-sp-4);padding:var(--bn-sp-4) var(--bn-sp-5);border-radius:var(--bn-r-lg);color:var(--bn-ink);text-decoration:none;
-  background:linear-gradient(135deg,var(--bn-surface) 0%,var(--bn-accent-faint) 100%);
-  border:1px solid var(--bn-accent-line);
-  box-shadow:var(--bn-shadow-1);
-  margin-bottom:var(--bn-sp-6);transition:transform var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease),border-color var(--bn-dur) var(--bn-ease)
-}
-.hero:hover{transform:translateY(-2px);box-shadow:var(--bn-shadow-2);border-color:var(--bn-accent)}
-.hero .ico{--s:54px;background:var(--bn-accent-soft);border-color:rgba(var(--bn-accent-rgb),.12)}
-.hero .k{display:inline-block;font-weight:700;color:var(--bn-accent);background:var(--bn-accent-soft);margin-bottom:var(--bn-sp-1)}
-.hero .nm{font-size:var(--bn-fs-lg);font-weight:800;letter-spacing:-.02em;margin:0}
-.hero .go{margin-left:auto;font-size:var(--bn-fs-md);font-weight:700;color:var(--bn-accent);background:var(--bn-accent-soft);padding:var(--bn-sp-1) var(--bn-sp-3);border-radius:var(--bn-r-pill);flex-shrink:0;transition:background var(--bn-dur) var(--bn-ease),color var(--bn-dur) var(--bn-ease)}
-.hero:hover .go{background:var(--bn-accent);color:var(--bn-on-accent)}
-.sec{margin:0 0 var(--bn-sp-6)}
-.sec-head{display:flex;align-items:center;gap:var(--bn-sp-2);margin:0 var(--bn-sp-half) var(--bn-sp-2)}
-.sec h2,.cgrp h2{font-size:var(--bn-fs-md);font-weight:700;color:var(--bn-ink-2);letter-spacing:-.01em}
-.sec h2{margin:0}
-.sec .scnt{font-size:var(--bn-fs-xs);color:var(--bn-ink-2);font-weight:500}
-.rows{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--bn-sp-3)}
-@media(min-width:560px){.rows{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.row{display:flex;align-items:center;gap:var(--bn-sp-3);min-width:0;background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);
-  padding:var(--bn-sp-3) var(--bn-sp-4);box-shadow:var(--bn-shadow-1);text-decoration:none;color:inherit;transition:transform var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease),border-color var(--bn-dur) var(--bn-ease)}
-.row:hover{transform:translateY(-2px);box-shadow:var(--bn-shadow-2);border-color:var(--bn-line-strong)}
-.row.priv-row{background:var(--bn-surface-2);border-style:dashed;border-color:var(--bn-line-strong)}
-.row.priv-row:hover{border-style:solid;border-color:var(--bn-accent)}
-.row .t{flex:1;min-width:0}
-.row .nm{font-weight:700;font-size:var(--bn-fs-base);letter-spacing:-.015em;line-height:var(--bn-lh-tight)}
-.row .go{color:var(--bn-ink-3);font-size:var(--bn-fs-lg);flex-shrink:0;transition:transform var(--bn-dur) var(--bn-ease),color var(--bn-dur) var(--bn-ease)}
-.row:hover .go{transform:translateX(2px);color:var(--bn-accent)}
-.tower-live{font-size:var(--bn-fs-sm) !important;color:var(--bn-accent) !important;font-weight:600;margin-top:var(--bn-sp-1) !important}
-.apps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--bn-sp-5) var(--bn-sp-2);background:var(--bn-surface);border:1px solid var(--bn-line);
-  border-radius:var(--bn-r-lg);padding:var(--bn-sp-6) var(--bn-sp-3);box-shadow:var(--bn-shadow-1)}
-@media(min-width:640px){.apps{grid-template-columns:repeat(6,minmax(0,1fr))}}
-.app{display:flex;flex-direction:column;align-items:center;gap:var(--bn-sp-2);min-width:0;text-align:center;text-decoration:none;color:inherit;position:relative}
-.app .ico{--s:56px;transition:transform var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease)}
-.app:hover .ico{transform:translateY(-2px) scale(1.04);box-shadow:var(--bn-shadow-2)}
-.app .nm{font-size:var(--bn-fs-sm);font-weight:600;letter-spacing:-.02em;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* 카드 — 흰 카드는 모두 같은 둥글기·여백·그림자 */
-.list{display:flex;flex-direction:column;gap:var(--bn-sp-3)}
-.card,.pcard,.scard,.tbox{background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-3) var(--bn-sp-4);box-shadow:var(--bn-shadow-1)}
-.card{display:block;text-decoration:none;color:inherit;transition:border-color var(--bn-dur) var(--bn-ease)}
-.top{display:flex;align-items:center;gap:var(--bn-sp-2)}
-.emoji{font-size:var(--bn-fs-xl);line-height:1;flex-shrink:0}
-.name{font-size:var(--bn-fs-base);font-weight:700;letter-spacing:-.015em;flex:1;min-width:0}
-.desc{margin:var(--bn-sp-1) 0 0;color:var(--bn-ink-2);font-size:var(--bn-fs-md);white-space:pre-line}
-.host{margin:var(--bn-sp-1) 0 0;color:var(--bn-ink-2);font-size:var(--bn-fs-xs);font-family:var(--bn-font-mono);word-break:break-all}
-
-/* 관리자 편집 툴바 (포털 편집 탭에서만 표시) */
-.adminbar{display:none;align-items:center;gap:var(--bn-sp-2);flex-wrap:wrap;margin:0 0 var(--bn-sp-4);padding:var(--bn-sp-3) var(--bn-sp-4);border-radius:var(--bn-r-lg);font-size:var(--bn-fs-md)}
-.adminbar{border:1px solid var(--bn-accent-line);background:var(--bn-accent-faint)}
-body.admin[data-tab="edit"] .adminbar{display:flex}
-.adminbar b{flex:1;min-width:140px;color:var(--bn-accent)}
+body.editing .viewsw{display:none}
 
 /* 버튼 — 한 모양 (보통 · 진한 · 투명 · 작은) */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--bn-sp-1);font:inherit;font-size:var(--bn-fs-sm);font-weight:600;line-height:1.4;padding:var(--bn-sp-2) var(--bn-sp-3);border-radius:var(--bn-r-sm);border:1px solid var(--bn-line);background:var(--bn-surface);color:var(--bn-ink);text-decoration:none;cursor:pointer;transition:border-color var(--bn-dur) var(--bn-ease),background var(--bn-dur) var(--bn-ease)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--bn-sp-1);font:inherit;font-size:var(--bn-fs-sm);font-weight:600;line-height:1.4;padding:var(--bn-sp-2) var(--bn-sp-3);border-radius:var(--bn-r-sm);border:1px solid var(--bn-line);background:var(--bn-surface);color:var(--bn-ink);text-decoration:none;cursor:pointer;white-space:nowrap;transition:border-color var(--bn-dur) var(--bn-ease),background var(--bn-dur) var(--bn-ease)}
 .btn:hover{border-color:var(--bn-accent)}
+.btn:disabled{opacity:.4;cursor:default;border-color:var(--bn-line)}
 .btn.primary{background:var(--bn-accent);border-color:var(--bn-accent);color:var(--bn-on-accent)}
 .btn.primary:hover{background:var(--bn-accent-strong);border-color:var(--bn-accent-strong)}
 .btn.ghost{background:transparent;border-color:transparent;color:var(--bn-ink-2)}
 .btn.ghost:hover{background:var(--bn-fill);color:var(--bn-ink)}
-.btn.sm{font-size:var(--bn-fs-xs);padding:var(--bn-sp-half) var(--bn-sp-2)}
-.card.hidden-item{background:var(--bn-fill);border-style:dashed}
-.tools{display:flex;gap:var(--bn-sp-2);flex-wrap:wrap;margin-top:var(--bn-sp-3)}
-details.titem .tools{margin-top:var(--bn-sp-1)}
-.edit{display:grid;gap:var(--bn-sp-2);margin-top:var(--bn-sp-3);padding-top:var(--bn-sp-3);border-top:1px solid var(--bn-line)}
-.edit[hidden]{display:none}
-.edit label{font-size:var(--bn-fs-sm);color:var(--bn-ink-2);display:grid;gap:var(--bn-sp-1)}
+.btn.sm{font-size:var(--bn-fs-xs);padding:var(--bn-sp-1) var(--bn-sp-2)}
+.btn[data-armed]{background:var(--bn-warn-soft);border-color:var(--bn-warn-line);color:var(--bn-warn)}
 
-/* 입력칸 — 한 모양 (편집 · 검색 · 폴더명 · 로그인 · AI 질문) */
-.edit input,.edit textarea,.edit select,.rn input,.ctool input,.ctool select,dialog input{
-  font:inherit;font-size:var(--bn-fs-base);color:var(--bn-ink);padding:var(--bn-sp-2) var(--bn-sp-3);border:1px solid var(--bn-line);border-radius:var(--bn-r-sm);background:var(--bn-surface)}
-.edit input,.edit select,.rn input,.ctool input,.ctool select,dialog input{min-height:var(--bn-tap)}
-.edit input,.edit textarea,.edit select,dialog input{width:100%}
-.edit textarea{min-height:58px;resize:vertical}
-.edit .acts{display:flex;gap:var(--bn-sp-2);justify-content:flex-end}
-.rn{display:flex;gap:var(--bn-sp-2);flex-wrap:wrap;margin-top:var(--bn-sp-3)}
-.rn[hidden]{display:none}
-.rn input{flex:1;min-width:140px;font-family:var(--bn-font-mono)}
-.ctool{display:flex;gap:var(--bn-sp-2);flex-wrap:wrap;align-items:center}
-.ctool input{flex:1;min-width:160px}
-.ctool select{max-width:100%}
-.ctool .cnt{font-size:var(--bn-fs-sm);color:var(--bn-ink-2)}
-.dirty{color:var(--bn-warn);font-size:var(--bn-fs-sm);font-weight:700}
+/* 초점 테두리 — 모두 같게 */
+.btn:focus-visible,.viewsw button:focus-visible,.ehead:focus-visible,.app:focus-visible,.row:focus-visible,
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--bn-accent);outline-offset:2px}
+
+/* 손가락 닿는 범위는 최소 44px — 모양은 그대로 두고 보이지 않는 덧칸으로 넓힘 */
+.btn,.viewsw button{position:relative}
+.btn::after,.viewsw button::after{content:"";position:absolute;left:0;right:0;top:50%;height:max(100%,var(--bn-tap));transform:translateY(-50%)}
+
+/* 알림 한 줄 — 인터넷 끊김 · 저장됨 */
+.note{display:flex;align-items:center;gap:var(--bn-sp-2);margin:0 0 var(--bn-sp-3);padding:var(--bn-sp-2) var(--bn-sp-3);border-radius:var(--bn-r-md);background:var(--bn-warn-soft);color:var(--bn-warn);font-size:var(--bn-fs-sm);font-weight:600}
+.note.ok{background:var(--bn-ok-soft);color:var(--bn-ok)}
+.note span{flex:1;min-width:0}
+
+/* 묶음 */
+.sec{margin:0 0 var(--bn-sp-5)}
+.sec h2{margin:0 var(--bn-sp-1) var(--bn-sp-2);font-size:var(--bn-fs-md);font-weight:700;color:var(--bn-ink-2);letter-spacing:-.01em}
+.ico{--s:46px;width:var(--s);height:var(--s);border-radius:calc(var(--s) * .3);display:flex;align-items:center;justify-content:center;font-size:calc(var(--s) * .5);line-height:1;flex-shrink:0;
+  background:var(--t,var(--bn-fill));border:1px solid color-mix(in srgb,var(--bn-ink) 4%,transparent)}
+
+/* 아이콘 보기 — 폰 4칸 · PC 는 폭만큼 */
+.apps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--bn-sp-4) var(--bn-sp-2);background:var(--bn-surface);border:1px solid var(--bn-line);
+  border-radius:var(--bn-r-lg);padding:var(--bn-sp-4) var(--bn-sp-2);box-shadow:var(--bn-shadow-1)}
+@media(min-width:640px){.apps{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}}
+.app{display:flex;flex-direction:column;align-items:center;gap:var(--bn-sp-2);min-width:0;text-align:center;text-decoration:none;color:inherit;border-radius:var(--bn-r-md)}
+.app .ico{--s:56px;transition:transform var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease)}
+.app:hover .ico{transform:translateY(-2px) scale(1.04);box-shadow:var(--bn-shadow-2)}
+.app .nm{font-size:var(--bn-fs-sm);font-weight:600;letter-spacing:-.02em;line-height:var(--bn-lh-tight);max-width:100%;padding:0 var(--bn-sp-1);
+  word-break:keep-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}   /* 긴 이름은 자르지 않고 두 줄 */
+
+/* 설명까지 보기 */
+.rows{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--bn-sp-2)}
+@media(min-width:560px){.rows{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--bn-sp-3)}}
+.row{display:flex;align-items:center;gap:var(--bn-sp-3);min-width:0;background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);
+  padding:var(--bn-sp-3) var(--bn-sp-4);box-shadow:var(--bn-shadow-1);text-decoration:none;color:inherit;transition:transform var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease),border-color var(--bn-dur) var(--bn-ease)}
+.row:hover{transform:translateY(-2px);box-shadow:var(--bn-shadow-2);border-color:var(--bn-line-strong)}
+.row .t{flex:1;min-width:0}
+.row .nm{font-weight:700;font-size:var(--bn-fs-base);letter-spacing:-.015em;line-height:var(--bn-lh-tight)}
+.row .go{color:var(--bn-ink-3);font-size:var(--bn-fs-lg);flex-shrink:0;transition:transform var(--bn-dur) var(--bn-ease),color var(--bn-dur) var(--bn-ease)}
+.row:hover .go{transform:translateX(2px);color:var(--bn-accent)}
+.clamp{margin:var(--bn-sp-half) 0 0;color:var(--bn-ink-2);font-size:var(--bn-fs-md);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.chip{display:inline-block;font-size:var(--bn-fs-xs);font-weight:600;line-height:1.4;padding:var(--bn-sp-half) var(--bn-sp-2);border-radius:var(--bn-r-pill);white-space:nowrap;background:var(--bn-fill);color:var(--bn-ink-2);vertical-align:2px;margin-left:var(--bn-sp-2)}
+.tower-live{margin:var(--bn-sp-1) 0 0;font-size:var(--bn-fs-sm);color:var(--bn-accent);font-weight:600}
+
+/* 편집 — 카드를 누르면 고치는 칸이 열림 */
+.editbar{display:none;align-items:center;gap:var(--bn-sp-3) var(--bn-sp-2);flex-wrap:wrap;margin:0 0 var(--bn-sp-3);padding:var(--bn-sp-2) var(--bn-sp-3);border-radius:var(--bn-r-lg);border:1px solid var(--bn-accent-line);background:var(--bn-accent-faint);font-size:var(--bn-fs-sm)}
+body.editing .editbar{display:flex}
+.editbar .st{flex:1;min-width:120px;color:var(--bn-ink-2);display:flex;align-items:center;gap:var(--bn-sp-3) var(--bn-sp-2);flex-wrap:wrap}
+.editbar .st.warn{color:var(--bn-warn);font-weight:700}
+.elist{display:grid;gap:var(--bn-sp-2)}
+.card{background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);box-shadow:var(--bn-shadow-1);min-width:0}
+.card.open{border-color:var(--bn-accent-line)}
+.ehead{display:flex;align-items:center;gap:var(--bn-sp-3);width:100%;min-height:var(--bn-tap);padding:var(--bn-sp-2) var(--bn-sp-3);border:0;border-radius:var(--bn-r-lg);background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.ehead .ico{--s:36px}
+.ehead .t{flex:1;min-width:0;display:grid}
+.ehead .name{font-weight:700;letter-spacing:-.015em;line-height:var(--bn-lh-tight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ehead .host{font-size:var(--bn-fs-xs);color:var(--bn-ink-2);font-family:var(--bn-font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ehead .chev{color:var(--bn-ink-3);font-size:var(--bn-fs-sm)}
+.edit{display:grid;gap:var(--bn-sp-2);padding:var(--bn-sp-3);border-top:1px solid var(--bn-line)}
+.edit .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--bn-sp-2)}
+.edit label{display:grid;gap:var(--bn-sp-1);font-size:var(--bn-fs-sm);color:var(--bn-ink-2)}
+.edit input,.edit textarea,.edit select,dialog input{
+  font:inherit;font-size:var(--bn-fs-base);color:var(--bn-ink);width:100%;min-height:var(--bn-tap);padding:var(--bn-sp-2) var(--bn-sp-3);border:1px solid var(--bn-line);border-radius:var(--bn-r-sm);background:var(--bn-surface)}
+.edit textarea{min-height:64px;resize:vertical}
+.edit .acts{display:flex;gap:var(--bn-sp-3) var(--bn-sp-2);flex-wrap:wrap;align-items:center;margin-top:var(--bn-sp-1)}   /* 두 줄로 접혀도 넓힌 손가락 칸이 옆 단추 · 위 칸을 덮지 않게 (11-06 Argon) */
+.edit .acts a{margin-left:auto}
+
+.empty{background:var(--bn-surface);border:1px dashed var(--bn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-6);text-align:center;color:var(--bn-ink-2);font-size:var(--bn-fs-md)}
+.empty .btn{margin-top:var(--bn-sp-3)}
 
 dialog{border:0;border-radius:var(--bn-r-lg);padding:var(--bn-sp-6);background:var(--bn-surface);color:var(--bn-ink);box-shadow:var(--bn-shadow-2);max-width:min(340px,calc(100vw - var(--bn-sp-8)))}
 dialog::backdrop{background:var(--bn-overlay, rgba(0,0,0,.35))}  /* 옛 브라우저는 ::backdrop 이 :root 변수를 못 받아서 기본값 */
 dialog h2{margin:0 0 var(--bn-sp-3);font-size:var(--bn-fs-lg)}
-dialog .row,dialog .row:hover{display:flex;gap:var(--bn-sp-2);justify-content:flex-end;margin-top:var(--bn-sp-3);border:0;border-radius:0;padding:0;box-shadow:none;background:none;transform:none}
 dialog .msg{font-size:var(--bn-fs-sm);color:var(--bn-warn);min-height:18px;margin-top:var(--bn-sp-1)}
+.dlg-acts{display:flex;gap:var(--bn-sp-2);justify-content:flex-end;margin-top:var(--bn-sp-3)}
 .install-help{font-size:var(--bn-fs-md);color:var(--bn-ink-2);line-height:1.55;display:grid;gap:var(--bn-sp-2)}
 .install-help div>b:first-child{color:var(--bn-ink)}
 
-/* 관리자 PC · 예약 탭 */
-.fchips{display:flex;gap:var(--bn-sp-2);flex-wrap:wrap}
-.fchip{font:inherit;font-size:var(--bn-fs-sm);font-weight:600;padding:var(--bn-sp-1) var(--bn-sp-3);border-radius:var(--bn-r-pill);border:1px solid var(--bn-line);background:var(--bn-surface);color:var(--bn-ink-2);cursor:pointer}
-.fchip[aria-pressed="true"]{background:var(--bn-accent);border-color:var(--bn-accent);color:var(--bn-on-accent)}
-.cgrp h2{margin:var(--bn-sp-3) var(--bn-sp-half) var(--bn-sp-2)}
-.cgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--bn-sp-3)}
-@media(min-width:640px){.cgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.pcard{min-width:0}
-.pcard.missing{opacity:.65;border-style:dashed}
-.pcard .top{flex-wrap:wrap;gap:var(--bn-sp-1) var(--bn-sp-2)}
-.pcard .name{flex:1 1 auto}
-.pcard .chip{margin-left:0}
-.pcard .desc{white-space:pre-line}
-.ai-box{background:var(--bn-surface-2);display:grid;gap:var(--bn-sp-2)}
-.mono{margin:var(--bn-sp-2) 0 0;font-family:var(--bn-font-mono);font-size:var(--bn-fs-xs);color:var(--bn-ink-2);word-break:break-all}
-.msgline{font-size:var(--bn-fs-sm);margin:var(--bn-sp-1) 0 0;color:var(--bn-ink-2);min-height:0}
-.msgline.err{color:var(--bn-warn)}
-.msgline.ok{color:var(--bn-ok)}
-.msgline[data-box]{white-space:pre-wrap;line-height:1.55;font-size:var(--bn-fs-md);background:var(--bn-surface);padding:var(--bn-sp-3);border-radius:var(--bn-r-md);border:1px solid var(--bn-line)}
-.empty{background:var(--bn-surface);border:1px dashed var(--bn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-6);text-align:center;color:var(--bn-ink-2);font-size:var(--bn-fs-md)}
-.empty .btn{margin-top:var(--bn-sp-3)}
-.scard{display:flex;gap:var(--bn-sp-3);align-items:flex-start;min-width:0}
-.scard .ico{--s:38px}
-.scard .t{flex:1;min-width:0}
-.scard .nm{font-weight:700;font-size:var(--bn-fs-base);letter-spacing:-.015em;word-break:break-all}
-.scard .chip{margin-left:0;margin-top:var(--bn-sp-1)}
-.ssum{display:flex;gap:var(--bn-sp-2);flex-wrap:wrap;align-items:center;font-size:var(--bn-fs-sm);color:var(--bn-ink-2)}
-.ssum b{color:var(--bn-ink)}
-.todo-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--bn-sp-3)}
-@media(min-width:680px){.todo-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}}
-.tbox,.titem,details.titem>summary{min-width:0}
-.tbox{border-color:var(--bn-accent-line);display:grid;gap:var(--bn-sp-2);align-content:start}
-.tbox-head{display:flex;align-items:center;justify-content:space-between;gap:var(--bn-sp-2);flex-wrap:wrap}
-.tbox-ttl{font-size:var(--bn-fs-base);font-weight:800;letter-spacing:-.02em;color:var(--bn-ink);display:flex;align-items:center;gap:var(--bn-sp-2)}
-/* 카드 안쪽 상자 — 같은 연한 면 */
-.titem,.ptodo-row,.pstate{background:var(--bn-surface-2);border:1px solid var(--bn-line)}
-.titem{border-radius:var(--bn-r-md);padding:var(--bn-sp-2) var(--bn-sp-3);display:grid;gap:var(--bn-sp-1)}
-.titem.blocked{background:color-mix(in srgb,var(--bn-bad-soft) 40%,var(--bn-surface));border-color:var(--bn-bad-line)}
-.titem-top{display:flex;align-items:center;gap:var(--bn-sp-2);flex-wrap:wrap;font-size:var(--bn-fs-md);font-weight:700}
-.titem-ul{margin:var(--bn-sp-half) 0 0;padding-left:var(--bn-sp-5);font-size:var(--bn-fs-md);color:var(--bn-ink);line-height:1.45}
-.titem-ul li{margin-bottom:var(--bn-sp-half)}
-.titem-now{font-size:var(--bn-fs-sm);color:var(--bn-ink-2);font-weight:500}
-summary .titem-now{flex-basis:100%;order:3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-/* 접는 칸 (10-27) — 제목 줄만 보이고 누르면 펼침 */
-details.titem>summary,details.fold>summary{list-style:none;cursor:pointer}
-details.titem>summary::-webkit-details-marker,details.fold>summary::-webkit-details-marker{display:none}
-details.titem>summary::after,details.fold>summary::after{content:"▸";margin-left:auto;color:var(--bn-ink-3);font-size:var(--bn-fs-sm)}
-details.titem[open]>summary::after,details.fold[open]>summary::after{content:"▾"}
-details.titem[open]>summary{margin-bottom:var(--bn-sp-1)}
-details.fold[open]>summary{margin-bottom:var(--bn-sp-2)}
-.ptodo-row{display:flex;align-items:center;gap:var(--bn-sp-2);padding:var(--bn-sp-2) var(--bn-sp-3);border-radius:var(--bn-r-sm);font-size:var(--bn-fs-md)}
-.ptodo-row .pt-txt{flex:1;min-width:0;word-break:break-word}
-.ptodo-row .pt-at{font-size:var(--bn-fs-xs);color:var(--bn-warn);font-weight:600;white-space:nowrap}
-.clean-box{background:color-mix(in srgb,var(--bn-warn-soft) 40%,var(--bn-surface));border:1px solid var(--bn-warn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-3) var(--bn-sp-4);display:grid;gap:var(--bn-sp-2)}
-.clean-row{display:flex;align-items:center;justify-content:space-between;gap:var(--bn-sp-3);flex-wrap:wrap;padding-top:var(--bn-sp-2);border-top:1px dashed var(--bn-warn-line)}
-.clean-row:first-of-type{border-top:0;padding-top:0}
-.pstate{margin-top:var(--bn-sp-2);padding:var(--bn-sp-2) var(--bn-sp-3);border-radius:var(--bn-r-md);font-size:var(--bn-fs-sm);display:grid;gap:var(--bn-sp-1)}
-.pstate b{color:var(--bn-accent)}
-footer{margin-top:var(--bn-sp-10);color:var(--bn-ink-2);font-size:var(--bn-fs-sm);text-align:center;display:flex;align-items:center;justify-content:center;gap:var(--bn-sp-2);flex-wrap:wrap}
+footer{margin-top:var(--bn-sp-8);display:flex;align-items:center;justify-content:center;gap:var(--bn-sp-2);flex-wrap:wrap}
+body:not(.admin) #installBtn,#offBtn{display:none}
+body.editing #offBtn{display:inline-flex}
 body.admin #adminEnterBtn{display:none}
 </style>
 </head>
@@ -252,40 +152,31 @@ body.admin #adminEnterBtn{display:none}
 <div class="wrap">
 
   <header>
-    <div class="mark">B</div>
-    <div class="ttl">
-      <div class="ttl-row">
-        <h1 id="brand">Benny</h1>
-        <span class="admin-badge">👑 관리자</span>
-      </div>
-      <p class="sub">만들어 둔 것들 모아놓은 곳</p>
-    </div>
+    <div class="mark" aria-hidden="true">B</div>
+    <h1 id="brand">Benny</h1>
+    <div class="sp"></div>
     <div class="hdr-right">
       <div class="viewsw" role="group" aria-label="보기 방식">
-        <button type="button" data-view="full" title="자세히 보기" aria-label="자세히 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="4.5" rx="1.2"/><rect x="2" y="9" width="12" height="4.5" rx="1.2"/></svg></button><button type="button" data-view="simple" title="간단히 보기" aria-label="간단히 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></button>
+        <button type="button" data-view="simple" title="아이콘으로 보기" aria-label="아이콘으로 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></button><button type="button" data-view="full" title="설명까지 보기" aria-label="설명까지 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="4.5" rx="1.2"/><rect x="2" y="9" width="12" height="4.5" rx="1.2"/></svg></button>
       </div>
+      <button class="btn" id="editBtn" type="button">⚙️ 편집</button>
     </div>
   </header>
 
-  <nav class="tabs" id="tabs" role="tablist" aria-label="관리 메뉴">
-    <!-- 폰에서 안 잘리게 짧게 (10-27) -->
-    <button type="button" role="tab" data-tab="portal">🏠 홈</button>
-    <button type="button" role="tab" data-tab="edit" id="tabEditBtn">⚙️ 편집</button>
-  </nav>
-
-  <div class="adminbar">
-    <b>포털 카드 관리 <span class="dirty" id="dirty"></span></b>
-    <button class="btn" id="add" type="button">+ 새 항목</button>
-    <button class="btn primary" id="save" type="button">저장</button>
-    <button class="btn" id="logout" type="button">나가기</button>
+  <div class="editbar">
+    <button class="btn sm" id="add" type="button">+ 새 항목</button>
+    <span class="st" id="st" role="status" aria-live="polite"></span>
+    <button class="btn sm ghost" id="revert" type="button" hidden>되돌리기</button>
   </div>
+  <p class="note" id="note" role="status" hidden><span id="noteText"></span><button class="btn sm" id="noteRetry" type="button">다시</button></p>
 
-  <div class="list" id="list"></div>
+  <main id="list"></main>
+  <datalist id="groups"></datalist>
 
   <footer>
-    <span>github.com/benny3s</span>
     <!-- 앱 설치는 머리에서 아래로 (10-27, 머리 한 줄) -->
     <button class="btn ghost sm" id="installBtn" type="button" title="홈 화면·바탕화면에 앱으로 설치">📲 앱 설치</button>
+    <button class="btn ghost sm" id="offBtn" type="button">이 기기에서 관리자 끄기</button>
     <button class="btn ghost sm" id="adminEnterBtn" type="button">🔒 관리자</button>
   </footer>
 </div>
@@ -295,7 +186,7 @@ body.admin #adminEnterBtn{display:none}
     <h2>관리자</h2>
     <input type="password" id="pw" autocomplete="current-password" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호">
     <div class="msg" id="loginMsg"></div>
-    <div class="row">
+    <div class="dlg-acts">
       <button class="btn" type="button" id="cancel">취소</button>
       <button class="btn primary" type="submit" id="go">들어가기</button>
     </div>
@@ -309,7 +200,7 @@ body.admin #adminEnterBtn{display:none}
     <div><b>🍎 아이폰 (Safari)</b><br>하단 <b>공유(□↑)</b> 버튼 → <b>홈 화면에 추가</b></div>
     <div><b>💻 PC (Chrome / Edge)</b><br>주소창 오른쪽 끝 <b>모니터+화살표(설치) 아이콘</b> 클릭</div>
   </div>
-  <div class="row">
+  <div class="dlg-acts">
     <button class="btn primary" type="button" id="installDlgClose">확인</button>
   </div>
 </dialog>
@@ -318,7 +209,9 @@ body.admin #adminEnterBtn{display:none}
 /* 2026-11-05 Benny: 메인은 나만 — 로그인 전에는 제목과 로그인만 보이고, 소스에도 목록이 없다.
    목록은 Firestore portal/config 문서(json 필드)에만 있고, 서버 규칙이 관리자에게만 읽기를 연다.
    관리자 확인은 베니브릿지 서버 adminLogin(같은 관리자 비번, 실패 잠금 포함) — 이 페이지엔 비번이 남지 않음.
-   로그인은 베니브릿지와 공유(같은 주소·같은 Firebase 프로젝트의 기본 앱): 한쪽에서 관리자로 로그인하면 다른 쪽도 관리자. */
+   로그인은 베니브릿지와 공유(같은 주소·같은 Firebase 프로젝트의 기본 앱): 한쪽에서 관리자로 로그인하면 다른 쪽도 관리자.
+   2026-11-06: 목록 · 레이더 열쇠는 REST 로 읽고 씀(Firestore SDK gzip 101KB 안 받음), 비번 로그인 · 기기 등록 코드는 쓸 때만 받음.
+   관리자 확인이 안 되면(인터넷 끊김 · 늦음) '모름'으로 두고 지난 목록을 그대로 보임 — '아니다'가 확실할 때만 지운다. */
 const FB = {
   apiKey: "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs",
   authDomain: "benny-meeting.firebaseapp.com",
@@ -328,234 +221,122 @@ const FB = {
   appId: "1:925758544707:web:a0c55e596ae0b15e7fadf6"
 };
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
-const CACHE_KEY = "portalItems";
-let items = [], itemsLoaded = false, loadError = "";
-var admin = false; let dirty = false, app = null;
-const listEl = document.getElementById("list");
+const FS = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents/";
+const CACHE_KEY = "portalItems", VIEW_KEY = "portalView";
+// 다른 앱(약속 잡자 · 밴드매니저 · 아케이드 …)도 읽는 이름 — 바꾸지 말 것
+const ADMIN_AT = "bennyAdminAt", ADMIN_SESSION_KEY = "bennyAdminSession", ADMIN_OFF_KEY = "bennyAdminOff", ADMIN_KEY_LS = "bennyAdminKey";
+const ENROLL_AT = "bennyAdminEnrollAt";
+const AUTH_KEY = "firebase:authUser:" + FB.apiKey + ":[DEFAULT]";
 
-/* ── 목록 받기: 관리자 로그인이 복원된 뒤 SDK 로 (로그인 없이 읽으면 서버 규칙이 막음) */
-async function loadItems() {
-  try {
-    const a = await ensureFirebase();
-    await new Promise(ok => { const off = a.auth().onAuthStateChanged(() => { off(); ok(); }); });
-    const s = await a.firestore().doc("portal/config").get();
-    const cfg = s.exists ? JSON.parse(s.data().json || "null") : null;
-    if (!cfg || !Array.isArray(cfg.items)) throw new Error("저장된 목록이 없어요");
-    if (!admin) return;   // 받는 사이 '나가기'를 눌렀으면 버림
-    itemsLoaded = true; loadError = "";
-    if (dirty) return;
-    const changed = JSON.stringify(items) !== JSON.stringify(cfg.items);
-    items = cfg.items;
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(items)); } catch (e) {}   // 다음 방문 땐 이걸 바로 그린다
-    if (changed && admin) render();
-  } catch (e) {
-    loadError = e && e.code === "permission-denied" ? "로그인이 끝났어요. 다시 로그인해 주세요." : "목록을 받지 못했어요. 잠시 뒤 다시 열어 주세요.";
-    if (admin) render();
-  }
-}
+let items = [], saved = [], baseTime = null, itemsLoaded = false, loadError = "", loadKind = "";
+let admin = false, editing = false, dirty = false, unsure = false, lastSync = 0;
+let view = "simple";
+let flashing = 0, keyP = null, fbP = null, kitP = null, readyP = null, glanceP = null, glanceAt = 0;
+const openIds = new Set(), scripts = {};
+const $ = id => document.getElementById(id);
+const listEl = $("list");
+const clone = v => JSON.parse(JSON.stringify(v));
 
+/* ── 그리기 */
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function host(u) { return String(u || "").replace(/^https?:\/\//, ""); }
-
-/* ── 포털 홈 (2026-10-19 Benny: "1열로 쭉 깔리니까 보기 힘들다" → 시안 B 대표+묶음, 간단히 보기 = 아이콘만)
-   맨 위 공개 항목 = 대표 카드(순서는 관리자 ↑↓). 나머지는 항목의 group(관리자 '묶음' 칸) → 없으면 '그 밖에'. */
 /* 아이콘 타일 색 = 공통 토큰 /design/tokens.css 의 --bn-tint-* (2026-10-29) — 항목의 tint, 없으면 id 해시 */
-const tintVar = n => "var(--bn-tint-" + n + ")";
-const TINTS = ["green", "orange", "blue", "yellow", "pink", "purple", "red", "teal"].map(tintVar);
+const TINT_NAMES = { green: "초록", orange: "주황", blue: "파랑", yellow: "노랑", pink: "분홍", purple: "보라", red: "빨강", teal: "청록", sand: "모래" };
+const HASH_TINTS = ["green", "orange", "blue", "yellow", "pink", "purple", "red", "teal"];
 function tint(p) {
-  if (p.tint) return tintVar(p.tint);
+  if (p.tint) return "var(--bn-tint-" + p.tint + ")";
   let h = 0; for (const c of String(p.id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return TINTS[h % TINTS.length];
+  return "var(--bn-tint-" + HASH_TINTS[h % HASH_TINTS.length] + ")";
 }
 // 설명 끝의 "(PC 필요)" 같은 괄호는 이름 옆 작은 표시로
 function splitDesc(d) { d = String(d || ""); const m = /\s*\(([^()]+)\)\s*$/.exec(d); return m ? [d.slice(0, m.index), m[1]] : [d, ""]; }
-function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function icon(p) { const s = el("span", "ico", p.emoji || "•"); s.style.setProperty("--t", tint(p)); return s; }
-function nameEl(p, cls, chip) { const n = el("div", cls, p.name); if (chip) n.appendChild(el("span", "chip", chip)); return n; }
+const gname = p => String(p.group || "").trim() || "그 밖에";
+function groupsOf(list) { const m = new Map(); list.forEach(p => { const g = gname(p); if (!m.has(g)) m.set(g, []); m.get(g).push(p); }); return m; }   // 묶음 순서 = 처음 나온 순서
+function section(title, nodes, cls) { const s = el("section", "sec"), box = el("div", cls); s.appendChild(el("h2", null, title)); box.append(...nodes); s.appendChild(box); return s; }
 
-const VIEW_KEY = "portalView";
-let view = "full";
-try { if (localStorage.getItem(VIEW_KEY) === "simple") view = "simple"; } catch (e) {}
-function syncViewButtons() { document.querySelectorAll(".viewsw button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view))); }
-document.querySelectorAll(".viewsw button").forEach(b => b.onclick = () => {
-  view = b.dataset.view; try { localStorage.setItem(VIEW_KEY, view); } catch (e) {}
-  syncViewButtons(); render();
-});
-syncViewButtons();
-
+/* ── 홈: 묶음별 (2026-10-19 Benny: "1열로 쭉 깔리니까 보기 힘들다" → 묶음 · 간단히 보기.
+   11-06: 대표 카드 · '🔒 나만 보는' 칸은 방문자가 있던 때 것이라 뺌, 기본 = 아이콘, 보관한 것은 편집에서만) */
 function renderHome() {
-  const shown = items.filter(p => !p.hidden);
-  const hiddenList = items.filter(p => p.hidden);
-  if (view === "simple") {
-    const grid = el("div", "apps");
-    [...shown, ...hiddenList].forEach(p => {
-      const a = el("a", "app"); a.href = p.url; a.title = p.desc || "";
-      a.append(icon(p), el("span", "nm", (p.hidden ? "🔒 " : "") + p.name));
-      grid.appendChild(a);
-    });
-    listEl.appendChild(grid);
-    return;
-  }
-  const [hero, ...rest] = shown;
-  if (hero) {
-    const a = el("a", "hero"); a.href = hero.url;
-    const t = el("div"); t.style.minWidth = "0";
-    t.append(el("div", "k", "대표 프로젝트"), el("div", "nm", hero.name), el("p", "clamp", hero.desc || ""));
-    a.append(icon(hero), t, el("span", "go", "열기 →"));
-    listEl.appendChild(a);
-  }
-  const groups = new Map();
-  rest.forEach(p => {
-    const g = (p.group || "").trim() || "그 밖에";
-    if (!groups.has(g)) groups.set(g, []);
-    groups.get(g).push(p);
-  });
-  groups.forEach((list, g) => {
-    const sec = el("section", "sec"), head = el("div", "sec-head"), rows = el("div", "rows");
-    head.append(el("h2", null, g), el("span", "scnt", String(list.length)));
-    sec.append(head, rows);
-    list.forEach(p => {
-      const [d, chip] = splitDesc(p.desc);
-      const a = el("a", "row"); a.href = p.url;
-      const t = el("div", "t"); t.append(nameEl(p, "nm", chip), el("p", "clamp", d));
-      a.append(icon(p), t, el("span", "go", "›"));
-      rows.appendChild(a);
-    });
-    listEl.appendChild(sec);
-  });
-  if (hiddenList.length) {
-    const sec = el("section", "sec"), head = el("div", "sec-head"), rows = el("div", "rows");
-    head.append(el("h2", null, "🔒 나만 보는 도구 (비공개)"), el("span", "scnt", String(hiddenList.length)));
-    sec.append(head, rows);
-    hiddenList.forEach(p => {
-      const [d, chip] = splitDesc(p.desc);
-      const a = el("a", "row priv-row"); a.href = p.url;
-      const t = el("div", "t");
-      t.append(nameEl(p, "nm", chip), el("p", "clamp", d));   // '비공개' 배지는 묶음 제목과 겹쳐 뺌 (10-27)
-      if (p.id === "tower") t.appendChild(towerGlance());
-      a.append(icon(p), t, el("span", "go", "›"));
-      rows.appendChild(a);
-    });
-    listEl.appendChild(sec);
-  }
+  const simple = view === "simple";
+  groupsOf(items.filter(p => !p.archived)).forEach((list, g) => listEl.appendChild(section(g, list.map(p => simple ? appTile(p) : rowCard(p)), simple ? "apps" : "rows")));
+}
+function appTile(p) {
+  const a = el("a", "app"); a.href = p.url; a.title = p.desc ? p.name + " — " + p.desc : p.name;
+  a.append(icon(p), el("span", "nm", p.name));
+  return a;
+}
+function rowCard(p) {
+  const [d, chip] = splitDesc(p.desc), a = el("a", "row"), t = el("div", "t"), nm = el("div", "nm", p.name);
+  a.href = p.url;
+  if (chip) nm.appendChild(el("span", "chip", chip));
+  t.append(nm, el("p", "clamp", d));
+  if (p.id === "tower") t.appendChild(towerGlance());
+  a.append(icon(p), t, el("span", "go", "›"));
+  return a;
 }
 
 function render() {
+  const f = document.activeElement, fid = f && f.dataset && listEl.contains(f) ? f.dataset.fid : "";
+  const sel = fid && typeof f.selectionStart === "number" ? [f.selectionStart, f.selectionEnd] : null;
   listEl.textContent = "";
-  if (!window.admin) { listEl.className = ""; listEl.appendChild(el("div", "empty", "이 페이지는 관리자 전용이에요. 링크를 받으셨다면 그 링크로 들어가 주세요.")); return; }
-  if (loadError && !items.length) {
-    listEl.className = "";
-    const box = el("div", "empty", loadError), again = el("button", "btn", "다시 로그인");
-    again.type = "button"; again.onclick = openLogin;
-    box.appendChild(el("div")).appendChild(again);
+  syncChrome();
+  if (!admin) { listEl.appendChild(el("div", "empty", "이 페이지는 관리자 전용이에요. 링크를 받으셨다면 그 링크로 들어가 주세요.")); return; }
+  if (editing) renderEdit();
+  else if (items.some(p => !p.archived)) renderHome();
+  else if (loadError) {
+    const box = el("div", "empty", loadError), b = el("button", "btn", relog() ? "다시 로그인" : "다시 시도");
+    b.type = "button"; b.onclick = relog() ? openLogin : () => recheck(true);
+    box.appendChild(el("div")).appendChild(b);
     listEl.appendChild(box);
-    return;
+  } else listEl.appendChild(el("div", "empty", itemsLoaded ? "보이는 항목이 없어요. ⚙️ 편집에서 더해 주세요." : "목록 받는 중…"));
+  if (fid) {   // 다시 그려도 고치던 칸에 그대로 (11-06: 한 칸 고칠 때마다 칸이 닫히던 것)
+    const n = listEl.querySelector('[data-fid="' + CSS.escape(fid) + '"]');
+    if (n) { n.focus(); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} }
   }
-  if (!itemsLoaded && !items.length) { listEl.className = ""; listEl.appendChild(el("div", "empty", "목록 받는 중…")); return; }
-  const curTab = typeof tab !== "undefined" ? tab : "portal";
-  if (curTab === "portal") { listEl.className = ""; renderHome(); return; }
-  // ⚙️ 카드 편집 탭: 순서·숨김·수정 도구
-  listEl.className = "list";
-  items.forEach((p, idx) => {
-    const card = document.createElement("div");
-    card.className = "card" + (p.hidden ? " hidden-item" : "");
-    /* 관리자 화면도 카드 아무 데나 누르면 열기 — 버튼·수정 칸은 빼고 (2026-10-09 Benny: "열기 버튼 따로 없애고") */
-    card.style.cursor = "pointer";
-    card.onclick = e => { if (e.target.closest("button, input, textarea, label, .edit")) return; window.open(p.url, "_blank", "noopener"); };
-    const top = document.createElement("div");
-    top.className = "top";
-    top.innerHTML = '<span class="emoji"></span><span class="name"></span>';
-    top.querySelector(".emoji").textContent = p.emoji || "•";
-    top.querySelector(".name").textContent = p.name;
-    const g = idx === items.findIndex(x => !x.hidden) ? "대표" : ((p.group || "").trim() || "그 밖에");
-    const gt = document.createElement("span"); gt.className = "tag grp"; gt.textContent = g; top.appendChild(gt);
-    if (p.hidden) { const t = document.createElement("span"); t.className = "tag"; t.textContent = "숨김"; top.appendChild(t); }
-    card.appendChild(top);
-    const d = document.createElement("p"); d.className = "desc"; d.textContent = p.desc || ""; card.appendChild(d);
-    const h = document.createElement("p"); h.className = "host"; h.textContent = host(p.url); card.appendChild(h);
-    if (p.id === "tower") card.appendChild(towerGlance());
-    card.appendChild(adminTools(p, idx));
-    listEl.appendChild(card);
-  });
 }
+function syncChrome() {
+  document.body.classList.toggle("admin", admin);
+  document.body.classList.toggle("editing", admin && editing);
+  const b = $("editBtn");
+  b.textContent = !editing ? "⚙️ 편집" : dirty ? "저장" : "완료";
+  b.classList.toggle("primary", editing);
+  $("revert").hidden = !dirty;
+  syncNote();
+}
+const relog = () => loadKind === "auth" || loadKind === "denied";   // 서버가 이 로그인을 안 받음 → '다시 로그인' (11-06 Argon: 지난 목록이 있으면 들어갈 길이 없던 것)
+function syncNote() {
+  if (flashing) return;
+  const msg = !admin ? "" : loadError && items.length ? loadError + (loadKind === "empty" ? "" : " — 지난번 목록이에요") : unsure ? "서버와 연결이 안 돼 확인을 못 했어요 — 지난번 목록이에요" : "";
+  $("noteText").textContent = msg; $("note").className = "note"; $("note").hidden = !msg; $("noteRetry").hidden = false;
+  $("noteRetry").textContent = relog() ? "다시 로그인" : "다시";
+}
+function flash(msg, warn) {   // 잠깐 알림 (2.5초)
+  clearTimeout(flashing);
+  $("noteText").textContent = msg; $("note").className = "note" + (warn ? "" : " ok"); $("note").hidden = false; $("noteRetry").hidden = true;
+  flashing = setTimeout(() => { flashing = 0; syncNote(); }, 2500);
+}
+function setSt(msg, warn) { const s = $("st"); s.textContent = msg; s.classList.toggle("warn", !!warn); }
+function mark() { dirty = true; setSt("저장 안 됨", true); syncChrome(); }
 
-/* 관제판 카드: PC 관제판의 요약 숫자 (2026-10-24 Benny). Tailscale 에 붙은 내 기기에서만 응답이 오고,
-   다른 곳에서는 조용히 "PC 연결 안 됨". 숫자만 받음 (세션 이름 X). 주소는 소스에 두지 않고 그 카드의 주소에서 뺀다. */
+/* 관제판 칸: PC 관제판의 요약 숫자 (2026-10-24 Benny, 10-31 통합 설계에서 그대로 두기로). Tailscale 에 붙은 내 기기에서만 응답이 오고,
+   다른 곳에서는 조용히 "PC 연결 안 됨". 숫자만 받음 (세션 이름 X). 주소는 소스에 두지 않고 그 칸의 주소에서 뺀다. 30초 안엔 받은 것을 다시 씀 */
 function towerOrigin() { const t = items.find(x => x.id === "tower"); try { return new URL(t.url).origin; } catch (e) { return ""; } }
 function towerGlance() {
-  const line = el("p", "desc tower-live", "관제판 확인 중…");
-  towerApi("/api/glance")
-    .then(g => {
-      const parts = [];
-      if (g.claude_working != null) parts.push("Claude 작업 중 " + g.claude_working + " · 내 차례 " + g.claude_waiting);
-      if (g.max_pct != null) parts.push("Max " + g.max_pct + "%");
-      parts.push(g.running ? "● 일꾼 호출 중 " + g.running : "일꾼 쉬는 중", "오늘 " + g.today + "회");
-      if (g.fails) parts.push("⚠ 실패 " + g.fails);
-      if (g.resting) parts.push("쉬는 일꾼 " + g.resting);
-      line.textContent = parts.join(" · ");
-    })
-    .catch(() => { line.textContent = "PC 관제판 연결 안 됨 (Tailscale·PC 꺼짐)"; });
+  const line = el("p", "tower-live", "관제판 확인 중…");
+  if (!glanceP || Date.now() - glanceAt > 30000) { glanceAt = Date.now(); glanceP = towerApi("/api/glance"); }
+  glanceP.then(g => {
+    const parts = [];
+    if (g.claude_working != null) parts.push("Claude 작업 중 " + g.claude_working + " · 내 차례 " + g.claude_waiting);
+    if (g.max_pct != null) parts.push("Max " + g.max_pct + "%");
+    parts.push(g.running ? "● 일꾼 호출 중 " + g.running : "일꾼 쉬는 중", "오늘 " + g.today + "회");
+    if (g.fails) parts.push("⚠ 실패 " + g.fails);
+    if (g.resting) parts.push("쉬는 일꾼 " + g.resting);
+    line.textContent = parts.join(" · ");
+  }).catch(() => { line.textContent = "PC 관제판 연결 안 됨 (Tailscale·PC 꺼짐)"; });
   return line;
 }
-
-function mark() {
-  dirty = true;
-  document.getElementById("dirty").textContent = "· 저장 안 됨";
-  const eb = document.getElementById("tabEditBtn");
-  if (eb) eb.textContent = "⚙️ 편집 ●";
-}
-
-function adminTools(p, idx) {
-  const box = document.createElement("div");
-  const tools = document.createElement("div"); tools.className = "tools";
-  const mk = (label, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = label; b.onclick = fn; tools.appendChild(b); return b; };
-  mk(p.hidden ? "공개하기" : "숨기기", () => { p.hidden = !p.hidden; mark(); render(); });
-  mk("수정", () => { box.querySelector(".edit").hidden = !box.querySelector(".edit").hidden; });
-  mk("↑", () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; mark(); render(); } });
-  mk("↓", () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; mark(); render(); } });
-  box.appendChild(tools);
-  const ed = document.createElement("div"); ed.className = "edit"; ed.hidden = true;
-  [["emoji", "아이콘(이모지)"], ["name", "이름"], ["desc", "설명"], ["url", "주소"], ["group", "묶음 (비우면 기본 묶음 · 맨 위 공개 항목은 대표 카드)"]].forEach(([k, lab]) => {
-    const l = document.createElement("label"); l.textContent = lab;
-    const inp = document.createElement(k === "desc" ? "textarea" : "input");
-    inp.value = p[k] || "";
-    if (k === "group") inp.placeholder = "그 밖에";
-    inp.oninput = () => { p[k] = inp.value; mark(); };
-    inp.onchange = () => render();
-    l.appendChild(inp); ed.appendChild(l);
-  });
-  box.appendChild(ed);
-  return box;
-}
-
-/* ── 관리자 탭: 포털 홈 / 카드 편집 (💻 PC · ⏰ 예약 탭은 2026-10-31 뺌 — 관제판이 같은 일을 하고, PC 쓰기 길은 관제판 화면에서만) */
-const TAB_KEY = "portalAdminTab";
-let tab = "portal";
-try {
-  const qt = new URLSearchParams(location.search).get("tab");
-  const t = qt || sessionStorage.getItem(TAB_KEY);
-  if (["portal", "edit"].includes(t)) tab = t;
-} catch (e) {}
-function syncTabs() {
-  document.body.dataset.tab = tab;
-  document.querySelectorAll("#tabs [data-tab]").forEach(b => {
-    const on = b.dataset.tab === tab;
-    b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1;
-  });
-}
-document.querySelectorAll("#tabs [data-tab]").forEach(b => b.onclick = () => {
-  tab = b.dataset.tab; try { sessionStorage.setItem(TAB_KEY, tab); } catch (e) {}
-  syncTabs(); render(); window.scrollTo(0, 0);
-});
-document.getElementById("tabs").addEventListener("keydown", e => {
-  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-  const bs = [...document.querySelectorAll("#tabs [data-tab]")];
-  const i = bs.findIndex(b => b.dataset.tab === tab);
-  const n = bs[(i + (e.key === "ArrowRight" ? 1 : bs.length - 1)) % bs.length];
-  n.click(); n.focus();
-});
-syncTabs();
-
-async function towerApi(path) {  // 관제판 읽기 (지금은 홈 '관제판' 카드의 /api/glance 숫자만)
+async function towerApi(path) {
   const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 12000);
   try {
     const opt = { cache: "no-store", signal: ctl.signal };
@@ -568,42 +349,194 @@ async function towerApi(path) {  // 관제판 읽기 (지금은 홈 '관제판' 
   } finally { clearTimeout(tm); }
 }
 
-/* ── 관리자 진입: 하단 '🔒 관리자' 1클릭 또는 Benny 3번 클릭 */
-function triggerAdminEnter() {
-  if (admin) return;
-  try { localStorage.removeItem(ADMIN_OFF_KEY); } catch (e) {}
-  if (!app && !loading) ensureFirebase().catch(() => {});
-  isAdminSession().then(ok => { if (ok) enterAdmin(); else openLogin(); });
+/* ── 편집: ⚙️ 한 곳 (11-06 — 탭 두 개 · 숨김/공개 대신). 카드를 누르면 고치는 칸이 열리고, 열린 칸은 다시 그려도 그대로.
+   지우기는 없고 보관만 (2026-10-08 Benny: 삭제 버튼 없음) — 보관한 것은 홈에 안 보이고 여기 맨 아래에 모임 */
+function renderEdit() {
+  const live = items.filter(p => !p.archived), arch = items.filter(p => p.archived), dl = $("groups");
+  dl.textContent = "";
+  new Set(items.map(gname)).forEach(g => dl.appendChild(new Option(g)));
+  groupsOf(live).forEach((list, g) => listEl.appendChild(section(g, list.map(p => editCard(p, list)), "elist")));
+  if (arch.length) listEl.appendChild(section("보관 " + arch.length + " · 홈에는 안 보여요", arch.map(p => editCard(p, null)), "elist"));
+  if (!items.length) listEl.appendChild(el("div", "empty", "항목이 없어요. '+ 새 항목'으로 더해 주세요."));
 }
-document.getElementById("adminEnterBtn").addEventListener("click", triggerAdminEnter);
-let clicks = 0, clickTimer = null;
-document.getElementById("brand").addEventListener("click", () => {
-  if (!app && !loading) ensureFirebase().catch(() => {});
-  clicks++; clearTimeout(clickTimer);
-  clickTimer = setTimeout(() => { clicks = 0; }, 700);
-  if (clicks >= 3) {
-    clicks = 0;
-    triggerAdminEnter();
-  }
-});
+function editCard(p, sib) {
+  const open = openIds.has(p.id), card = el("div", "card" + (open ? " open" : ""));
+  const head = el("button", "ehead"), ic = icon(p), t = el("span", "t"), nm = el("span", "name", p.name || "(이름 없음)"), hs = el("span", "host", host(p.url));
+  head.type = "button"; head.dataset.fid = p.id + ":head"; head.setAttribute("aria-expanded", String(open));
+  t.append(nm, hs); head.append(ic, t, el("span", "chev", open ? "▾" : "▸"));
+  head.onclick = () => { open ? openIds.delete(p.id) : openIds.add(p.id); render(); };
+  card.appendChild(head);
+  if (!open) return card;
+  const ed = el("div", "edit"), two = el("div", "two");
+  const field = (k, lab, box, o = {}) => {
+    const l = el("label", null, lab), inp = document.createElement(o.area ? "textarea" : "input");
+    if (!o.area) inp.type = "text";
+    inp.value = p[k] || ""; inp.dataset.fid = p.id + ":" + k; inp.autocomplete = "off"; inp.spellcheck = false; inp.setAttribute("autocapitalize", "off");
+    if (o.mode) inp.inputMode = o.mode;
+    if (o.list) inp.setAttribute("list", o.list);
+    if (o.ph) inp.placeholder = o.ph;
+    inp.oninput = () => { p[k] = inp.value; if (o.live) o.live(inp.value); mark(); };   // 칸 위 이름 · 아이콘만 바로 고침 (전체 다시 그리지 않음)
+    l.appendChild(inp); box.appendChild(l);
+  };
+  field("emoji", "아이콘", two, { live: v => { ic.textContent = v || "•"; } });
+  const tl = el("label", null, "색"), sel = document.createElement("select");
+  sel.dataset.fid = p.id + ":tint"; sel.appendChild(new Option("자동", ""));
+  Object.entries(TINT_NAMES).forEach(([v, n]) => sel.appendChild(new Option(n, v)));
+  sel.value = p.tint || "";
+  sel.onchange = () => { if (sel.value) p.tint = sel.value; else delete p.tint; ic.style.setProperty("--t", tint(p)); mark(); };
+  tl.appendChild(sel); two.appendChild(tl); ed.appendChild(two);
+  field("name", "이름", ed, { live: v => { nm.textContent = v || "(이름 없음)"; } });
+  field("desc", "설명 (끝의 괄호는 이름 옆 작은 표시)", ed, { area: true });
+  const go = el("a", "btn sm ghost", "열어 보기 ↗"); go.href = p.url || "#"; go.target = "_blank"; go.rel = "noopener";
+  field("url", "주소", ed, { mode: "url", live: v => { hs.textContent = host(v); go.href = v || "#"; } });   // '열어 보기'도 방금 고친 주소로
+  /* 묶음을 고치면 카드를 닫거나 끝낼 때 그 묶음 자리로 옮김 (11-06 Argon: 칸을 벗어나는 순간 다시 그리면 누르던 단추가 사라져 눌림이 씹히고,
+     폰에서는 추천을 고를 때 자판이 흔들림) */
+  field("group", "묶음", ed, { list: "groups", ph: "그 밖에" });
+  const acts = el("div", "acts");
+  const btn = (label, fn, key, off) => { const b = el("button", "btn sm", label); b.type = "button"; b.onclick = fn; b.dataset.fid = p.id + ":" + key; b.disabled = !!off; acts.appendChild(b); };
+  if (sib) {
+    const k = sib.indexOf(p);
+    btn("↑ 위로", () => move(p, -1), "up", k <= 0);
+    btn("↓ 아래로", () => move(p, 1), "down", k >= sib.length - 1);
+    btn("보관", () => { p.archived = true; openIds.delete(p.id); mark(); render(); setSt("보관했어요 (맨 아래) · 저장 안 됨", true); }, "arch");
+  } else btn("꺼내기", () => { delete p.archived; openIds.delete(p.id); mark(); render(); }, "arch");
+  acts.appendChild(go); ed.appendChild(acts); card.appendChild(ed);
+  return card;
+}
+function move(p, d) {   // 같은 묶음 안에서 한 칸 (묶음끼리 순서는 그대로)
+  const g = gname(p), i = items.indexOf(p);
+  let j = i + d;
+  while (j >= 0 && j < items.length && (items[j].archived || gname(items[j]) !== g)) j += d;
+  if (j < 0 || j >= items.length) return;
+  [items[i], items[j]] = [items[j], items[i]]; mark(); render();
+}
 
-function loadScript(src) { return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
-let loading = null;
-function ensureFirebase() {
-  if (app) return Promise.resolve(app);
-  if (loading) return loading;
-  loading = (async () => {
-    await loadScript(SDK + "firebase-app-compat.js");
-    await Promise.all(["firebase-auth-compat.js", "firebase-functions-compat.js", "firebase-firestore-compat.js"].map(f => loadScript(SDK + f)).concat([loadScript("/admin-login.js?v=20261029a")]));   // 관리자 새 기기 확인 (2026-10-27)
-    // 기본 앱 + 기본(브라우저에 남는) 로그인 = 베니브릿지(같은 주소·같은 프로젝트)와 로그인 공유
-    const a = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
-    app = a;
-    return a;
-  })();
-  return loading;
+/* ── 서버 목록 */
+function clean(list) {   // 옛 '숨김(hidden)'은 방문자 화면이 있던 때 것 — 이제 모두 나만 보니 그냥 항목 (11-06)
+  return (Array.isArray(list) ? list : []).filter(p => p && typeof p === "object" && p.id).map(p => { const q = Object.assign({}, p); delete q.hidden; return q; });
 }
-/* ── 로그인 공유: 베니브릿지가 남긴 로그인(IndexedDB)을 먼저 가볍게 보고, 관리자일 때만 SDK를 불러 확인 */
-const AUTH_KEY = "firebase:authUser:" + FB.apiKey + ":[DEFAULT]";
+function keep() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(items)); } catch (e) {} }   // 다음에 열 땐 이걸 바로 그린다
+async function loadItems(take) {   // take = 고치던 것을 버리고 서버 것으로 (충돌 때 '새 목록 받기') · 받았으면 true
+  try {
+    const d = await fsCall("portal/config");
+    const cfg = JSON.parse((d.fields && d.fields.json && d.fields.json.stringValue) || "null");
+    if (!cfg || !Array.isArray(cfg.items)) throw Object.assign(new Error("저장된 목록을 못 읽음"), { kind: "broken" });
+    if (!admin || (dirty && !take)) return false;   // 받는 사이 '끄기'를 눌렀거나 고치는 중이면 버림 (고친 것은 저장할 때 충돌로 알려 줌)
+    const next = clean(cfg.items), changed = take || JSON.stringify(next) !== JSON.stringify(items);
+    items = next; saved = clone(next); baseTime = d.updateTime || null; itemsLoaded = true; loadError = loadKind = ""; unsure = dirty = false;
+    keep();
+    if (changed) render(); else syncNote();
+    return true;
+  } catch (e) {
+    if (!admin) return false;
+    loadKind = e.status === 404 ? "empty" : e.kind || "bad";
+    loadError = { auth: "로그인이 끝났어요. 다시 로그인해 주세요.", denied: "로그인이 끝났어요. 다시 로그인해 주세요.", net: "서버와 연결이 안 돼요",
+      empty: "서버에 목록이 없어요 — ⚙️ 편집에서 저장하면 새로 만들어요", broken: "저장된 목록을 읽지 못했어요 — 백업에서 되살려 주세요" }[loadKind] || "목록을 받지 못했어요";
+    // 문서가 없으면 지금 목록(지난 목록 · 빈 목록)에서 새로 만들 수 있게 — 저장은 '없을 때만' 조건이라 그 사이 생긴 문서는 안 덮음 (11-06 Argon)
+    if (loadKind === "empty" && !dirty) { itemsLoaded = true; baseTime = null; saved = clone(items); }
+    render();
+    return false;
+  }
+}
+async function save(force) {
+  const bad = items.find(p => !p.archived && (!String(p.name || "").trim() || !/^(https?:\/\/[^\s/]+|\/)/.test(String(p.url || "").trim())));
+  if (bad) {
+    openIds.add(bad.id); render(); setSt("이름 · 주소를 채워 주세요", true);
+    const n = listEl.querySelector('[data-fid="' + CSS.escape(bad.id + (String(bad.name || "").trim() ? ":url" : ":name")) + '"]');
+    if (n) n.focus();
+    return false;
+  }
+  const json = JSON.stringify({ items });
+  if (new Blob([json]).size >= 50000) { setSt("목록이 너무 길어요 — 설명을 줄여 주세요 (서버는 50KB 아래만 받아요)", true); return false; }   // 규칙에 걸리면 '권한 없음'으로 와서 먼저 셈
+  setSt("저장 중…");
+  try {
+    /* 받은 뒤 다른 기기에서 바뀌었으면 서버가 거절 (11-06: 오래 열어 둔 창이 새 목록을 덮던 것) */
+    const qs = "?updateMask.fieldPaths=json&updateMask.fieldPaths=updatedAt" + (force ? "" : baseTime ? "&currentDocument.updateTime=" + encodeURIComponent(baseTime) : "&currentDocument.exists=false");
+    const d = await fsCall("portal/config", { method: "PATCH", qs, body: { fields: { json: { stringValue: json }, updatedAt: { timestampValue: new Date().toISOString() } } } });
+    baseTime = d.updateTime || null; saved = clone(items); dirty = false; loadError = loadKind = ""; keep(); setSt(""); flash("저장했어요");
+    return true;
+  } catch (e) {
+    if (e.code === "FAILED_PRECONDITION" || e.code === "ABORTED" || e.code === "ALREADY_EXISTS" || e.status === 409) showConflict();
+    else if (e.kind === "auth" || e.kind === "denied") { setSt("저장할 권한이 없어요", true); stButton("다시 로그인", openLogin); }   // 다시 들어와도 고친 것은 그대로
+    else setSt(e.kind === "net" ? "인터넷이 끊겨 저장 못 했어요 — 다시 눌러 주세요" : "저장 못 했어요: " + e.message, true);
+    window.scrollTo(0, 0);   // 안내 · 고르는 단추는 맨 위 (11-06 Argon: 아래 카드를 고치다 '저장'을 누르면 안 보이던 것) — 부드럽게는 화면이 쉬면 안 움직여서 바로
+    return false;
+  } finally { syncChrome(); }
+}
+function stButton(label, fn) { const b = el("button", "btn sm", label); b.type = "button"; b.onclick = fn; $("st").appendChild(b); }
+function showConflict(msg) {
+  setSt(msg || "다른 기기에서 먼저 바꿨어요.", true);
+  stButton("새 목록 받기", takeServer);
+  stButton("내 것으로 덮어쓰기", async () => { if (await save(true)) { editing = false; openIds.clear(); render(); } });
+}
+function takeServer() {   // 내 것은 버리고 서버 것으로 — 받은 뒤에만 버림 (11-06 Argon: 끊긴 채 누르면 고친 것이 저장된 듯 남던 것)
+  setSt("새 목록을 받는 중…");
+  loadItems(true).then(ok => {
+    if (!ok) return showConflict("새 목록을 못 받았어요 — 고친 것은 그대로예요.");
+    openIds.clear(); render(); setSt("새 목록이에요 — 다시 고쳐 주세요");
+  });
+}
+
+/* ── 서버와 이야기: Firebase 는 로그인(app + auth)만, 목록 · 열쇠는 REST */
+const netErr = m => Object.assign(new Error(m || "인터넷 연결을 확인해 주세요"), { kind: "net" });
+function loadOnce(src) {
+  return scripts[src] || (scripts[src] = new Promise((ok, bad) => {
+    const s = document.createElement("script"); s.src = src; s.onload = ok;
+    s.onerror = () => { delete scripts[src]; s.remove(); bad(netErr("코드를 받지 못했어요")); };
+    document.head.appendChild(s);
+  }));
+}
+function ensureFirebase() {
+  if (!fbP) {
+    fbP = loadOnce(SDK + "firebase-app-compat.js").then(() => loadOnce(SDK + "firebase-auth-compat.js")).then(() => {
+      if (!window.firebase) throw netErr("코드를 받지 못했어요");
+      return firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);   // 기본 앱 + 기본(브라우저에 남는) 로그인 = 베니브릿지와 로그인 공유
+    });
+    fbP.catch(() => { fbP = null; });
+  }
+  return fbP;
+}
+function loginKit() {   // 비번 로그인 · 믿을 기기 등록에만 — functions SDK + 공용 admin-login.js (관리자 새 기기 확인 2026-10-27)
+  if (!kitP) {
+    kitP = ensureFirebase().then(a => Promise.all([loadOnce(SDK + "firebase-functions-compat.js"), loadOnce("/admin-login.js?v=20261029a")]).then(() => a));
+    kitP.catch(() => { kitP = null; });
+  }
+  return kitP;
+}
+function authReady() {   // 저장된 로그인을 SDK 가 되살릴 때까지 — 깨진 로그인은 알림이 안 올 수 있어 8초 넘으면 '모름'
+  if (!readyP) {
+    readyP = ensureFirebase().then(a => new Promise((ok, bad) => {
+      const t = setTimeout(() => bad(netErr("응답이 늦어요")), 8000);
+      const off = a.auth().onAuthStateChanged(() => { clearTimeout(t); off(); ok(a); }, () => { clearTimeout(t); bad(netErr()); });
+    }));
+    readyP.catch(() => { readyP = null; });
+  }
+  return readyP;
+}
+async function me() { return (await authReady()).auth().currentUser; }
+/* 로그인 자체가 끝남(만료 · 취소 · 계정 끔): SDK 가 로그아웃시켜 currentUser 가 바뀜 — 인터넷 끊김(auth/network-request-failed)과 나눔 (11-06 Argon) */
+function gone(e, u) {
+  if (/^auth\/(user-token-expired|invalid-user-token|user-disabled|user-not-found)$/.test((e && e.code) || "")) return true;
+  try { return firebase.app().auth().currentUser !== u; } catch (_) { return false; }   // 이 검사 자체가 던지면 '끊김'으로
+}
+const authErr = () => Object.assign(new Error("로그인이 끝났어요"), { kind: "auth" });
+async function fsCall(path, opt = {}, again = false) {
+  const u = await me();
+  if (!u) throw authErr();
+  let tok, r;
+  try { tok = await u.getIdToken(again); } catch (e) { throw gone(e, u) ? authErr() : netErr(); }
+  try {
+    r = await fetch(FS + path + (opt.qs || ""), { method: opt.method || "GET", cache: "no-store", body: opt.body ? JSON.stringify(opt.body) : undefined,
+      headers: Object.assign({ Authorization: "Bearer " + tok }, opt.body ? { "Content-Type": "application/json" } : {}) });
+  } catch (e) { throw netErr(); }
+  if (r.status === 401 && !again) return fsCall(path, opt, true);   // 토큰이 막 끝났으면 새로 받아 한 번 더
+  const j = await r.json().catch(() => ({}));
+  if (r.ok) return j;
+  const er = j.error || {};
+  throw Object.assign(new Error(er.message || ("HTTP " + r.status)), { status: r.status, code: er.status || "",
+    kind: r.status === 401 ? "auth" : r.status === 403 ? "denied" : r.status >= 500 || r.status === 429 ? "net" : "bad" });
+}
+/* ── 로그인 공유: 베니브릿지가 남긴 로그인(IndexedDB)을 먼저 가볍게 보고, 관리자일 때만 SDK 를 부름 */
 function storedUid() {
   return new Promise(ok => {
     try {
@@ -621,80 +554,47 @@ function storedUid() {
     } catch (e) { ok(""); }
   });
 }
-async function isAdminSession() {
-  if ((await storedUid()) !== "admin") return false;
-  try {
-    const a = await ensureFirebase();
-    // 저장된 로그인이 깨져 있으면 상태 알림이 안 올 수 있어 8초 제한
-    const u = await new Promise(ok => {
-      const t = setTimeout(() => ok(null), 8000);
-      const off = a.auth().onAuthStateChanged(x => { clearTimeout(t); off(); ok(x); }, () => { clearTimeout(t); ok(null); });
-    });
-    if (!u) return false;
-    const r = await u.getIdTokenResult();
-    if (r.claims.admin === 1 && window.bennyAdminEnroll) window.bennyAdminEnroll(a);   // 로그인돼 있던 이 기기를 믿을 기기로
-    return r.claims.admin === 1;
-  } catch (e) { return false; }
+async function checkAdmin() {   // 'yes' · 'no' · 'unknown' — 'no' 는 확실할 때만 (11-06: 지하철 · 비행기 모드에서 목록 · 열쇠가 지워지던 것)
+  if ((await storedUid()) !== "admin") return "no";
+  let u;
+  try { u = await me(); } catch (e) { return "unknown"; }   // 코드를 못 받음 · 8초 넘김
+  if (!u) return "no";   // SDK 가 저장된 로그인을 버림 (끝남 · 취소)
+  try { return (await u.getIdTokenResult()).claims.admin === 1 ? "yes" : "no"; }
+  catch (e) { return gone(e, u) ? "no" : "unknown"; }   // 인터넷 끊김은 '모름', 로그인이 끝난 것(만료 · 취소)은 '아님'
+}
+function syncAdminKey() {   // 미니 앱 관리자 열쇠 = SHA-256("benny-apps-admin:" + 레이더 열쇠 d) — 이미 있으면 그대로
+  if (!keyP) keyP = (async () => {
+    try {
+      if (/^[0-9a-f]{64}$/.test(localStorage.getItem(ADMIN_KEY_LS) || "")) return;
+      const d = await fsCall("radar/key");
+      const jwk = JSON.parse((d.fields && d.fields.jwk && d.fields.jwk.stringValue) || "null");
+      if (!jwk || !jwk.d || !admin) return;
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("benny-apps-admin:" + jwk.d));
+      localStorage.setItem(ADMIN_KEY_LS, Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join(""));
+    } catch (e) {}
+  })().finally(() => { keyP = null; });
+  return keyP;
+}
+function maybeEnroll() {   // 로그인돼 있던 이 기기를 '믿을 기기'로 — 열쇠가 있으면 서버는 마지막 시각만 고쳐서 하루 한 번 (11-06, 전엔 열 때마다 5초)
+  try { if (localStorage.getItem("bennyAdminDeviceKey") && Date.now() - Number(localStorage.getItem(ENROLL_AT) || 0) < 864e5) return; } catch (e) {}
+  loginKit().then(a => {
+    if (!window.bennyAdminEnroll) return;
+    window.bennyAdminEnroll(a);
+    try { if (localStorage.getItem("bennyAdminDeviceKey")) localStorage.setItem(ENROLL_AT, String(Date.now())); } catch (e) {}
+  }).catch(() => {});
 }
 
-function warmUp() {  // 서버 함수가 잠들어 있으면 깨우기: 빈 비번은 서버가 바로 거절(실패 횟수에 안 셈)
-  ensureFirebase().then(a => a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: "" })).catch(() => {});
-}
-
-const dlg = document.getElementById("login");
-function openLogin() { document.getElementById("loginMsg").textContent = ""; document.getElementById("pw").value = ""; dlg.showModal(); document.getElementById("pw").focus(); warmUp(); }
-document.getElementById("cancel").onclick = () => dlg.close();
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const pw = document.getElementById("pw").value;
-  const msg = document.getElementById("loginMsg");
-  if (!pw) { msg.textContent = "비밀번호를 입력해 주세요."; return; }
-  msg.textContent = "확인 중…";
-  try {
-    const a = await ensureFirebase();
-    const tok = await window.bennyAdminLogin(a, pw);   // 처음 보는 기기면 베니 폰·PC 허용 또는 문자 인증을 기다림
-    await a.auth().signInWithCustomToken(tok);
-    document.getElementById("pw").value = "";
-    dlg.close();
-    enterAdmin();
-  } catch (err) {
-    msg.textContent = (err && err.message) ? err.message : "들어가지 못했어요.";
-  }
-});
-
-/* 관리자 로그인 상태면 3번 클릭 없이 자동으로 상단 탭을 표시 (2026-10-24 Benny: "관리자 로그인 상태면 탭을 그냥 추가해주면 어때? 3번 클릭이 너무 귀찮아")
-   첫 탭(🏠 포털 홈)은 깔끔한 카드 화면을 그대로 유지하고, 카드 수정 도구는 '⚙️ 카드 편집' 탭으로 분리. */
-const ADMIN_AT = "bennyAdminAt";
-const ADMIN_SESSION_KEY = "bennyAdminSession";
-const ADMIN_OFF_KEY = "bennyAdminOff";
-const ADMIN_KEY_LS = "bennyAdminKey";
-async function syncAdminKey() {
-  try {
-    const cur = localStorage.getItem(ADMIN_KEY_LS) || "";
-    if (/^[0-9a-f]{64}$/.test(cur)) return cur;
-    const a = await ensureFirebase();
-    const s = await a.firestore().doc("radar/key").get();
-    if (!s.exists) return "";
-    const jwk = JSON.parse(s.data().jwk);
-    if (!jwk || !jwk.d) return "";
-    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("benny-apps-admin:" + jwk.d));
-    const k = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-    localStorage.setItem(ADMIN_KEY_LS, k);
-    return k;
-  } catch (e) { return ""; }
-}
+/* ── 관리자 켜고 끄기 */
 function enterAdmin() {
   admin = true;
-  document.body.classList.add("admin");
   try {
     localStorage.setItem(ADMIN_AT, String(Date.now()));
     localStorage.setItem(ADMIN_SESSION_KEY, "1");
     localStorage.removeItem(ADMIN_OFF_KEY);
   } catch (e) {}
-  syncAdminKey();
-  loadError = "";
-  render();
-  loadItems();
+  loadError = loadKind = ""; lastSync = Date.now();
+  setSt(dirty ? "저장 안 됨" : "", dirty);   // 다시 로그인해 들어와도 고치던 것은 그대로 — '저장'을 다시 누르면 됨
+  render(); loadItems(); syncAdminKey();
 }
 function exitAdmin(manualOff) {
   try {
@@ -704,77 +604,127 @@ function exitAdmin(manualOff) {
     localStorage.removeItem(CACHE_KEY);
     if (manualOff) localStorage.setItem(ADMIN_OFF_KEY, "1");
   } catch (e) {}
-  admin = false; items = []; itemsLoaded = false; loadError = "";
-  document.body.classList.remove("admin");
+  admin = editing = dirty = itemsLoaded = unsure = false; items = []; saved = []; baseTime = null; loadError = loadKind = ""; openIds.clear(); setSt("");
   render();
 }
-
-document.getElementById("add").onclick = () => {
-  items.push({ id: "item" + Date.now(), emoji: "✨", name: "새 항목", desc: "", url: "https://", hidden: true });
-  mark(); render();
-};
-document.getElementById("save").onclick = async () => {
-  const st = document.getElementById("dirty");
-  if (!itemsLoaded) { st.textContent = "· 서버 목록을 받기 전에는 저장할 수 없어요"; return; }   // 빈 목록으로 덮어쓰지 않게
-  try {
-    st.textContent = "· 저장 중…";
-    const a = await ensureFirebase();
-    await a.firestore().doc("portal/config").set({ json: JSON.stringify({ items }), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    dirty = false; st.textContent = "· 저장됨";
-    const eb = document.getElementById("tabEditBtn");
-    if (eb) eb.textContent = "⚙️ 편집";
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(items)); } catch (e) {}
-  } catch (err) { st.textContent = "· 저장 실패: " + (err && err.message ? err.message : err); }
-};
-document.getElementById("logout").onclick = async () => {
-  if (dirty) { document.getElementById("dirty").textContent = "· 저장 안 한 변경이 있어요 (저장 후 나가기)"; dirty = false; return; }
-  // 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 관리자 탭만 숨김
-  exitAdmin(true);
-};
-
-/* 이전에 관리자 로그인 상태였으면 첫 렌더부터 깜빡임 없이 바로 탭 표시 */
-try {
-  if (localStorage.getItem(ADMIN_OFF_KEY) !== "1" && (localStorage.getItem(ADMIN_SESSION_KEY) === "1" || localStorage.getItem(ADMIN_AT))) {
-    admin = true;
-    document.body.classList.add("admin");
+async function verify() {
+  const s = await checkAdmin();
+  if (s === "no") { if (admin) exitAdmin(false); return; }
+  unsure = s === "unknown"; syncNote();
+  if (s === "yes") {
+    try { localStorage.setItem(ADMIN_AT, String(Date.now())); localStorage.setItem(ADMIN_SESSION_KEY, "1"); } catch (e) {}
+    syncAdminKey(); maybeEnroll();
   }
-} catch (e) {}
+}
+function recheck(force) {   // 다시 연결 · 화면으로 돌아옴 · '다시' — 30초에 한 번까지
+  if (!admin || (!force && Date.now() - lastSync < 30000)) return;
+  lastSync = Date.now();
+  verify();
+  if (!dirty && !editing) loadItems();
+}
+async function triggerAdminEnter() {   // 하단 '🔒 관리자' 또는 Benny 3번 클릭
+  if (admin) { if (relog()) openLogin(); return; }   // 서버가 로그인을 안 받으면 다시 로그인
+  try { localStorage.removeItem(ADMIN_OFF_KEY); } catch (e) {}
+  const s = await checkAdmin();
+  if (s === "no") return openLogin();
+  enterAdmin(); unsure = s === "unknown"; syncNote();
+  if (s === "yes") maybeEnroll();
+}
 
-/* 첫 화면: 관리자 기기면 지난번에 받은 목록을 바로 그리고, 서버 목록은 로그인 확인 뒤 받는다.
+/* ── 단추 */
+function syncViewButtons() { document.querySelectorAll(".viewsw button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view))); }
+document.querySelectorAll(".viewsw button").forEach(b => b.onclick = () => {
+  view = b.dataset.view; try { localStorage.setItem(VIEW_KEY, view); } catch (e) {}
+  syncViewButtons(); render();
+});
+$("editBtn").onclick = async () => {   // 편집 → (고치면) 저장 = 저장하고 닫기 / (안 고쳤으면) 완료
+  if (!editing) {
+    if (!itemsLoaded) return flash(loadError || "서버 목록을 받은 뒤에 고칠 수 있어요", true);   // 빈 목록 · 지난 목록으로 덮어쓰지 않게
+    editing = true; setSt(""); render(); window.scrollTo(0, 0); return;
+  }
+  if (dirty && !(await save())) return;
+  editing = false; openIds.clear(); render();
+};
+$("add").onclick = () => {
+  const live = items.filter(p => !p.archived), p = { id: "item" + Date.now(), emoji: "✨", name: "", desc: "", url: "https://", group: live.length ? live[live.length - 1].group || "" : "" };
+  items.push(p); openIds.add(p.id); mark(); render();
+  const n = listEl.querySelector('[data-fid="' + CSS.escape(p.id + ":name") + '"]');
+  if (n) { n.focus(); n.scrollIntoView({ block: "center" }); }
+};
+function twoTap(b, ask, fn) {   // 막는 창(confirm) 대신 4초 안에 한 번 더 누르기
+  const label = b.textContent; let t = null;
+  b.onclick = () => {
+    if (b.dataset.armed) { clearTimeout(t); delete b.dataset.armed; b.textContent = label; fn(); return; }
+    b.dataset.armed = "1"; b.textContent = typeof ask === "function" ? ask() : ask;
+    t = setTimeout(() => { delete b.dataset.armed; b.textContent = label; }, 4000);
+  };
+}
+twoTap($("revert"), "한 번 더 누르면 되돌려요", () => { items = clone(saved); dirty = false; openIds.clear(); setSt("저장된 목록으로 되돌렸어요"); render(); });
+// 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 이 기기에서 관리자 화면만 끔
+twoTap($("offBtn"), () => dirty ? "저장 안 한 것까지 버려요 — 한 번 더" : "한 번 더 누르면 꺼져요", () => exitAdmin(true));
+$("noteRetry").onclick = () => relog() ? openLogin() : recheck(true);
+$("adminEnterBtn").addEventListener("click", triggerAdminEnter);
+let clicks = 0, clickTimer = null;
+$("brand").addEventListener("click", () => {
+  if (!admin) loginKit().catch(() => {});   // 첫 클릭에 미리 받기
+  clicks++; clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => { clicks = 0; }, 700);
+  if (clicks >= 3) { clicks = 0; triggerAdminEnter(); }
+});
+window.addEventListener("online", () => recheck(true));
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") recheck(false); });   // 폰 앱은 돌아올 때 online 이 안 뜰 수 있음
+window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+/* ── 비번 로그인 */
+const dlg = $("login");
+function warmUp() {  // 서버 함수가 잠들어 있으면 깨우기: 빈 비번은 서버가 바로 거절(실패 횟수에 안 셈)
+  loginKit().then(a => a.functions("asia-northeast3").httpsCallable("adminLogin")({ password: "" })).catch(() => {});
+}
+function openLogin() { $("loginMsg").textContent = ""; $("pw").value = ""; dlg.showModal(); $("pw").focus(); warmUp(); }
+$("cancel").onclick = () => dlg.close();
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pw = $("pw").value, msg = $("loginMsg");
+  if (!pw) { msg.textContent = "비밀번호를 입력해 주세요."; return; }
+  msg.textContent = "확인 중…";
+  let a;
+  try { a = await loginKit(); } catch (err) { msg.textContent = err.message; return; }
+  /* 처음 보는 기기면 admin-login.js 가 '새 기기 확인' 창(문자 받기 · 6자리 · 취소)을 body 에 띄우는데, showModal 로 연 이 창이 맨 위를
+     차지해 그 창을 못 누름 → 먼저 닫고 기다리고, 안 되면 다시 엶 (11-06 Argon) */
+  dlg.close(); clearTimeout(flashing); flashing = 0;
+  $("noteText").textContent = "관리자 확인 중…"; $("note").className = "note ok"; $("note").hidden = false; $("noteRetry").hidden = true;
+  try {
+    const tok = await window.bennyAdminLogin(a, pw);   // 처음 보는 기기면 베니 폰·PC 허용 또는 문자 인증을 기다림
+    await a.auth().signInWithCustomToken(tok);
+    $("pw").value = "";
+    unsure = false; enterAdmin();
+  } catch (err) {
+    syncNote(); dlg.showModal();
+    msg.textContent = (err && err.message) ? err.message : "들어가지 못했어요.";
+    $("pw").select();
+  }
+});
+
+/* ── 첫 화면: 관리자 기기면 지난번 목록을 바로 그리고, 서버 목록은 로그인 확인 뒤 받는다.
    관리자가 아니면 옛 포털이 이 기기에 남긴 목록까지 지운다. */
+try { if (localStorage.getItem(VIEW_KEY) === "full") view = "full"; } catch (e) {}
+syncViewButtons();
 try {
+  if (localStorage.getItem(ADMIN_OFF_KEY) !== "1" && (localStorage.getItem(ADMIN_SESSION_KEY) === "1" || localStorage.getItem(ADMIN_AT))) admin = true;
   if (!admin) localStorage.removeItem(CACHE_KEY);
-  else { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); if (Array.isArray(c)) items = c; }
+  else items = clean(JSON.parse(localStorage.getItem(CACHE_KEY) || "null"));
 } catch (e) {}
 render();
-
-/* 백그라운드에서 IndexedDB 관리자 세션(베니브릿지 공유 포함) 자동 감지 → 3번 클릭 없이 바로 관리자 탭 활성화 */
 try {
-  if (localStorage.getItem(ADMIN_OFF_KEY) !== "1") {
-    storedUid().then(uid => {
-      if (uid === "admin") {
-        enterAdmin();
-        isAdminSession().then(ok => {
-          if (ok) {
-            try {
-              localStorage.setItem(ADMIN_AT, String(Date.now()));
-              localStorage.setItem(ADMIN_SESSION_KEY, "1");
-            } catch (e) {}
-            syncAdminKey();
-          } else if (admin) {
-            exitAdmin(false);
-          }
-        });
-      } else if (admin) {
-        exitAdmin(false);
-      }
-    });
-  }
+  if (localStorage.getItem(ADMIN_OFF_KEY) !== "1") storedUid().then(uid => {
+    if (uid !== "admin") { if (admin) exitAdmin(false); return; }
+    enterAdmin(); verify();
+  });
 } catch (e) {}
 
 /* ── PWA 앱 설치 (홈 화면 / 바탕화면에 앱으로 다운로드) */
-const installBtn = document.getElementById("installBtn");
-const installDlg = document.getElementById("installDlg");
+const installBtn = $("installBtn");
+const installDlg = $("installDlg");
 let deferredInstallPrompt = null;
 function checkStandalone() {
   const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
@@ -804,7 +754,7 @@ if (installBtn) {
     }
   });
 }
-const installDlgClose = document.getElementById("installDlgClose");
+const installDlgClose = $("installDlgClose");
 if (installDlgClose) installDlgClose.onclick = () => installDlg.close();
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
