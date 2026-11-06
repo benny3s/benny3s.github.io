@@ -426,6 +426,13 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .ckey{display:inline-flex;align-items:center;gap:2px;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:1px 2px;font-size:12.5px}
 .ckey button{background:none;border:0;color:var(--text);min-width:28px;height:28px;font-size:15px} .ckey b{min-width:30px;text-align:center}
 .cinput{display:flex;gap:8px;align-items:flex-end;margin-top:8px} .cinput textarea{flex:1;min-height:58px;resize:vertical}
+/* 11-06 밤 Benny "버튼도 많고 글자도 많아" → 보조 것은 한 줄 단추 뒤로, 처음엔 대화만 */
+.cpanes{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px} .cpanes button{background:var(--chip);border:1px solid var(--line);border-radius:999px;color:var(--text);font-size:13px;padding:5px 12px;min-height:34px}
+.cpanes button.on{border-color:var(--accent);color:var(--accent)} .cpane{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:10px 12px;margin:6px 0 4px}
+.cpane textarea{width:100%;min-height:70px;margin-top:4px}
+.cst{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .cmsg .xtra{border-top:1px solid var(--line);margin-top:8px;padding-top:2px}
+.wset summary{cursor:pointer;font-size:12.5px;color:var(--mute);padding:4px 0} .wset[open]{border:1px solid var(--line);border-radius:12px;padding:6px 12px 10px;margin:6px 0}
+.cctl[hidden],.wr #wTabs[hidden]{display:none}
 .cform label{display:block;font-size:12.5px;color:var(--mute);margin-top:7px} .cform input,.cform textarea,.cform select{width:100%;margin-top:2px} .cform textarea{min-height:70px}
 .csel{margin-right:4px;width:20px;height:20px}
 .cbook-deg{display:grid;grid-template-columns:44px 1fr;gap:3px 8px;font-size:13px;margin:8px 0} .cbook-deg b{color:var(--accent)}
@@ -642,7 +649,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-06b";
+const BUILD = "2026-11-06c";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -2844,35 +2851,45 @@ const CP = { ac: null, src: null, gain: null, on: "", raf: 0, tok: 0 };
 function cpStop() { CP.tok++; clearInterval(CP.raf); try { CP.src?.stop(); } catch {} CP.src = null; const id = CP.on; CP.on = ""; if (id) cCardPaint(id, -1); }
 
 // ---- 같이 쓰기: 곡 노트 + 대화 + 조각 (coach.py). 답은 뒤에서 만들어져 저장됨 → 화면은 받아 오기만
-let WTAB = "gen", CCHAT = { msgs: [], busy: "", story: { text: "" } }, CARDS = {}, CEDIT = null, CPICK = false, CSEL = new Set(), CPOLL = null, CSIG = "", CNOTE_OPENED = "";
+let WTAB = "gen", CCHAT = { msgs: [], busy: "", story: { text: "" } }, CARDS = {}, CEDIT = null, CPICK = false, CSEL = new Set(), CPOLL = null, CSIG = "", CNOTE_OPENED = "", CPANE = "", CQMORE = false;
 const C_KIND = { verse: "벌스", prechorus: "프리코러스", chorus: "코러스", bridge: "브릿지", intro: "인트로", solo: "기타 솔로", interlude: "간주", outro: "아웃트로", chords: "코드 진행" };
 const C_QUICK = [["방향부터", "바로 쓰지 말고 방향부터 같이 얘기해요. 뭘 정해야 하는지 하나씩 물어봐 주세요."], ["코러스만", "코러스 하나만 먼저 만들어 봐요. 안을 두세 개 주세요."], ["1절만", "1절만 먼저 써 봐요."], ["코드+해설", "이 곡에 맞는 코드 진행을 두세 개 짜 주고, 각각 왜 그런 느낌이 나는지 해설해 주세요."], ["인트로", "인트로만 먼저 잡아 봐요. 들어 볼 수 있게 동기도 주세요."], ["기타 솔로", "기타 솔로 방향만 잡아 봐요. 쓸 음계와 구조, 들어 볼 동기를 주세요."], ["하이라이트", "곡에서 가장 터지는 자리만 먼저 생각해 봐요."], ["다른 안", "방금 것과 많이 다른 안을 하나 더 주세요."]];
-function cHtml(ed) {
-  return `<details class="cnote" id="cNote"><summary id="cNoteSum">곡 노트</summary>
-      <label class="fl">밴드 이야기 <span class="mute" id="cStoryBy">— 이 밴드 곡 모두가 같이 읽어요</span></label><textarea id="cStory" ${ed ? "" : "disabled"} maxlength="6000" placeholder="누구인지, 어떻게 살고 있는지, 멤버들 이야기…"></textarea><div id="cStoryAct"></div>
-      <label class="fl">이 곡 방향 <span class="mute">— 시점 · 톤 · 장르 · 템포 · 난이도</span></label><textarea id="wBrief" ${ed ? "" : "disabled"} maxlength="4000" placeholder="예: 보컬 시점, 웃기다 뭉클하게, 합주로 바로 칠 수 있는 록">${esc(WN.brief || "")}</textarea>
-      <label class="fl">정한 것</label><div id="cDecs"></div>${ed ? `<div class="cinput" style="margin-top:4px"><input class="ti" id="cDecIn" maxlength="300" placeholder="예: 코러스 훅은 '이름은 쓰레기'" style="flex:1"><button class="btn xs" id="cDecGo">적기</button></div>` : ""}</details>
+function cHtml(ed) { // 처음 보이는 것 = 단추 한 줄 + 대화 + 입력. 노트 · 조각 · 사전은 눌렀을 때만 (한 번에 하나)
+  return `<div class="cpanes" id="cPanes"><button data-pane="note" id="cNoteSum">📒 곡 노트</button><button data-pane="board" id="cPiecesH">📌 조각</button><button data-pane="book">📖 코드 사전</button></div>
+    <div class="cpane" id="cPaneNote" hidden>
+      <label class="fl" style="margin-top:0">이 곡 방향 <span class="mute">— 시점 · 톤 · 장르 · 템포</span></label><textarea id="wBrief" ${ed ? "" : "disabled"} maxlength="4000" placeholder="예: 보컬 시점, 웃기다 뭉클하게, 합주로 바로 칠 수 있는 록">${esc(WN.brief || "")}</textarea>
+      <label class="fl">정한 것</label><div id="cDecs"></div>${ed ? `<div class="cinput" style="margin-top:4px"><input class="ti" id="cDecIn" maxlength="300" placeholder="예: 코러스 훅은 '이름은 쓰레기'" style="flex:1"><button class="btn xs" id="cDecGo">적기</button></div>` : ""}
+      <details id="cStoryBox" style="margin-top:12px"><summary class="small mute">👥 밴드 이야기 <span id="cStoryBy"></span></summary><div class="small mute" style="margin-top:4px">이 밴드 곡 모두가 같이 읽어요.</div><textarea id="cStory" ${ed ? "" : "disabled"} maxlength="6000" placeholder="누구인지, 어떻게 살고 있는지, 멤버들 이야기…"></textarea><div id="cStoryAct"></div></details></div>
+    <div class="cpane" id="cPaneBoard" hidden><div class="acts" id="cPieceBar" style="margin-top:0"></div><div id="cPick"></div><div id="cPieces"></div></div>
+    <div class="cpane" id="cPaneBook" hidden><div id="cBookBox"></div></div>
     <div class="cchat" id="cChat"></div>
-    ${ed ? `<div class="chips" id="cQuick">${C_QUICK.map(([n], i) => `<button class="chip" data-q="${i}">${n}</button>`).join("")}</div>
-    <div class="cinput"><textarea id="cIn" maxlength="2000" placeholder="AI 에게 한마디 — 방향, 고칠 점, 궁금한 것"></textarea><button class="btn pri sm" id="cSend">보내기</button></div>
-    <div class="small mute" id="cMeta" style="margin-top:6px"></div>` : ""}
-    <h2 class="wh" id="cPiecesH">조각</h2><div class="acts" id="cPieceBar"></div><div id="cPick"></div><div id="cPieces"></div>
-    <details class="cnote" id="cBook"><summary>📖 코드 진행 사전 — 도수별 느낌과 대표 진행 (API 안 씀)</summary><div id="cBookBox"></div></details>`;
+    ${ed ? `<div class="chips" id="cQuick"></div>
+    <div class="cinput"><textarea id="cIn" maxlength="2000" placeholder="한마디 — 방향, 고칠 점, 궁금한 것"></textarea><button class="btn pri sm" id="cSend">보내기</button></div>` : ""}`;
+}
+function cPane(k) {
+  CPANE = CPANE === k ? "" : k;
+  [["note", "#cPaneNote"], ["board", "#cPaneBoard"], ["book", "#cPaneBook"]].forEach(([n, s]) => { if ($(s)) $(s).hidden = CPANE !== n; });
+  $$("#cPanes button").forEach(b => b.classList.toggle("on", b.dataset.pane === CPANE));
+  if (CPANE === "book" && !$("#cBookBox").innerHTML) cBookDraw();
+}
+function cQuickDraw() { // 대화 전엔 시작 단추들, 시작한 뒤엔 '다른 안' 하나 + 💡 더
+  const el = $("#cQuick"); if (!el) return;
+  const started = (CCHAT.msgs || []).length > 0, Q = C_QUICK.map((q, i) => [q[0], i]);
+  const show = !started ? Q.filter(([n]) => n !== "다른 안") : CQMORE ? Q : Q.filter(([n]) => n === "다른 안");
+  el.innerHTML = show.map(([n, i]) => `<button class="chip" data-q="${i}">${n}</button>`).join("") + (started ? `<button class="chip" data-qmore="1">${CQMORE ? "접기" : "💡 더"}</button>` : "");
 }
 function cBind(ed) {
   const w = WN, saved = LS.get("wtab:" + w.id, null);
-  WTAB = saved || ((w.versions || []).length && !(w.pieces || []).length ? "gen" : "coach"); CARDS = {}; CEDIT = null; CPICK = false; CSEL = new Set(); CSIG = "";
+  WTAB = saved || ((w.versions || []).length && !(w.pieces || []).length ? "gen" : "coach"); CARDS = {}; CEDIT = null; CPICK = false; CSEL = new Set(); CSIG = ""; CPANE = ""; CQMORE = false;
   if (CCHAT._id !== w.id) CCHAT = { msgs: [], busy: "", story: { text: "" }, _id: w.id, _new: true };
-  const tabUI = () => { $$("#wTabs button").forEach(b => b.classList.toggle("on", b.dataset.t === WTAB)); $("#wTabCoach").hidden = WTAB !== "coach"; $("#wTabGen").hidden = WTAB !== "gen"; if (WTAB !== "coach") cpStop(); };
+  const tabUI = () => { $$("#wTabs button").forEach(b => b.classList.toggle("on", b.dataset.t === WTAB)); $("#wTabCoach").hidden = WTAB !== "coach"; $("#wTabGen").hidden = WTAB !== "gen"; wTabsVis(); if (WTAB !== "coach") cpStop(); };
   $$("#wTabs button").forEach(b => b.onclick = () => { WTAB = b.dataset.t; LS.set("wtab:" + w.id, WTAB); tabUI(); if (WTAB === "coach") cLoad(); });
   tabUI(); cDecisionsDraw(); cPiecesDraw(); cChatDraw(); cLoad();
   $("#wTabCoach").onclick = cClick; $("#wTabCoach").onchange = cChange;
-  $("#cBook").ontoggle = () => { if ($("#cBook").open && !$("#cBookBox").innerHTML) cBookDraw(); };
   if (!ed) return;
   $("#cIn").value = LS.get("cDraft:" + w.id, "") || ""; $("#cIn").oninput = e => LS.set("cDraft:" + w.id, e.target.value);
   $("#cSend").onclick = () => cSend();
   $("#cIn").onkeydown = e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") cSend(); };
-  $$("#cQuick [data-q]").forEach(b => b.onclick = () => { const t = $("#cIn"); t.value = (t.value.trim() ? t.value.trim() + "\n" : "") + C_QUICK[+b.dataset.q][1]; LS.set("cDraft:" + w.id, t.value); t.focus(); });
   $("#wBrief").oninput = e => { w.brief = e.target.value; wSaveSoon({ brief: w.brief }); };
   $("#cStory").onchange = async e => { try { CCHAT.story = await api(`/api/write/${w.id}/story`, jsonOpt("PUT", { text: e.target.value })); cStoryDraw(); toast("밴드 이야기를 저장했어요"); } catch (err) { toast(err.message); } };
   $("#cDecGo").onclick = async () => { const i = $("#cDecIn"), text = i.value.trim(); if (!text) return; try { const r = await api(`/api/write/${w.id}/decisions`, jsonOpt("POST", { text })); w.decisions = r.decisions; i.value = ""; cDecisionsDraw(); } catch (e) { toast(e.message); } };
@@ -2880,15 +2897,17 @@ function cBind(ed) {
 function cStoryDraw() {
   const st = CCHAT.story || {}, el = $("#cStory"); if (!el) return;
   if (document.activeElement !== el) el.value = st.text || "";
-  $("#cStoryBy").textContent = st.at ? `— ${st.by} · ${wDate(st.at)} · 이 밴드 곡 모두가 같이 읽어요` : "— 이 밴드 곡 모두가 같이 읽어요";
+  $("#cStoryBy").textContent = !st.text ? "— 비어 있어요" : st.at ? `— ${st.by} · ${wDate(st.at)}` : "";
   const act = $("#cStoryAct"); if (act) { act.innerHTML = st.prev && can("compose") ? `<button class="linkbtn" id="cStoryUndo">↩ 전 글로 되돌리기</button>` : ""; if ($("#cStoryUndo")) $("#cStoryUndo").onclick = () => { $("#cStory").value = st.prev; $("#cStory").dispatchEvent(new Event("change")); }; }
   cNoteSum();
 }
 function cNoteSum() {
   const w = WN, st = CCHAT.story || {}, el = $("#cNoteSum"); if (!el || !w) return;
   const nd = (w.decisions || []).length;
-  el.textContent = `곡 노트 · 밴드 이야기 ${st.text ? "✓" : "없음"} · 방향 ${(w.brief || "").trim() ? "✓" : "없음"} · 정한 것 ${nd}`;
-  if (!CCHAT._new && CNOTE_OPENED !== w.id) { CNOTE_OPENED = w.id; $("#cNote").open = !st.text && !(w.brief || "").trim() && !(CCHAT.msgs || []).length; } // 아무것도 없을 때만 펼침 (폰에서 대화를 밀어내지 않게)
+  el.textContent = `📒 곡 노트${nd ? " · 정한 것 " + nd : ""}`;
+  if (!CCHAT._new && CNOTE_OPENED !== w.id) { CNOTE_OPENED = w.id; // 아무것도 없을 때만 펼침 (폰에서 대화를 밀어내지 않게)
+    if ($("#cStoryBox")) $("#cStoryBox").open = !st.text;
+    if (!st.text && !(w.brief || "").trim() && !(CCHAT.msgs || []).length && CPANE !== "note") cPane("note"); }
 }
 function cDecisionsDraw() {
   const el = $("#cDecs"), w = WN; if (!el || !w) return; const ed = can("compose");
@@ -2917,20 +2936,21 @@ function cMsgHtml(m, i, last) {
   if (m.role === "note") return `<div class="cmsg note">${esc(m.text)}</div>`;
   if (m.role === "error") return `<div class="cmsg error">${esc(m.text)}${i === last && can("compose") ? ` <button class="btn xs" data-retry="1">다시 받기</button>` : ""}</div>`;
   if (m.role === "user") return `<div class="cmsg user"><span class="by">${esc(m.by || "")} · ${wDate(m.at)}</span>${esc(m.text)}</div>`;
-  const ed = can("compose"), P = (m.pieces || []).map((p, k) => cCardHtml(`c:${m.id}:${k}`, p, ed ? (p.kept ? `<span class="small mute">📌 담음</span>` : `<button class="btn xs" data-keep="${m.id}" data-k="${k}">📌 조각에 담기</button>`) : ""));
-  const R = (m.remember || []).map((t, k) => `<div class="cctl small">📝 ${esc(t)} ${(m.noted || []).includes(k) ? `<span class="mute">적음</span>` : ed ? `<button class="btn xs" data-note="${m.id}" data-k="${k}">노트에 적기</button>` : ""}</div>`).join("");
-  const S = m.style ? `<div class="cctl small">🎛 스타일 제안: <span class="mute">${esc(m.style)}</span> ${m.style_used ? `<span class="mute">적용함</span>` : ed ? `<button class="btn xs" data-style="${m.id}">적용</button>` : ""}</div>` : "";
+  const ed = can("compose"), P = (m.pieces || []).map((p, k) => cCardHtml(`c:${m.id}:${k}`, p, ed ? (p.kept ? `<span class="small mute">📌 담음</span>` : `<button class="btn xs" data-keep="${m.id}" data-k="${k}">📌 담기</button>`) : ""));
+  const R = (m.remember || []).map((t, k) => `<div class="cctl small"><span style="flex:1;min-width:0">📝 ${esc(t)}</span>${(m.noted || []).includes(k) ? `<span class="mute">적음</span>` : ed ? `<button class="btn xs" data-note="${m.id}" data-k="${k}">노트에 적기</button>` : ""}</div>`).join("");
+  const S = m.style ? `<div class="cctl small"><span class="cst mute" title="${esc(m.style)}">🎸 소리 스타일 ${esc(m.style)}</span>${m.style_used ? `<span class="mute">적용함</span>` : ed ? `<button class="btn xs" data-style="${m.id}">적용</button>` : ""}</div>` : "";
   const other = isAdmin() && CCHAT.models && i === last && !CCHAT.busy ? Object.keys(CCHAT.models).find(k => k !== m.model) : "";
-  const foot = isAdmin() && m.model ? `<div class="foot">${esc(CCHAT.models?.[m.model] || m.model)}${m.served ? ` (실제 답: ${esc(m.served)})` : ""}${m.usd != null ? ` · $${m.usd.toFixed(3)}` : ""}${other ? ` · <button class="linkbtn" data-retry="${other}">🔁 ${esc(CCHAT.models[other])} 로도 받아 보기</button>` : ""}</div>` : "";
-  return `<div class="cmsg assistant">${esc(m.text)}${P.join("")}${R}${S}${foot}</div>`;
+  const foot = isAdmin() && m.model ? `<div class="foot">${esc(CCHAT.models?.[m.model] || m.model)}${m.served ? ` (실제 답: ${esc(m.served)})` : ""}${m.usd != null ? ` · $${m.usd.toFixed(3)}` : ""}${other ? ` · <button class="linkbtn" data-retry="${other}">🔁 ${esc(CCHAT.models[other])} 답도 보기</button>` : ""}</div>` : "";
+  return `<div class="cmsg assistant">${esc(m.text)}${P.join("")}${R || S ? `<div class="xtra">${R}${S}</div>` : ""}${foot}</div>`;
 }
 function cChatDraw() {
   const box = $("#cChat"); if (!box) return;
   const near = box.scrollHeight - box.scrollTop - box.clientHeight < 80, M = CCHAT.msgs || [], lastA = M.length - 1;
-  box.innerHTML = (M.length ? M.map((m, i) => cMsgHtml(m, i, lastA)).join("") : `<div class="cmsg note">아직 대화가 없어요. 아래 단추를 누르거나 한마디 적어 보세요.</div>`)
+  box.innerHTML = (M.length ? M.map((m, i) => cMsgHtml(m, i, lastA)).join("") : `<div class="cmsg note">무엇부터 할까요? 아래 단추를 고르거나 한마디 적어 보내 주세요.</div>`)
     + (CCHAT.busy ? `<div class="cmsg note">${CCHAT.busy === "score" ? "🎼 Claude 가 악보를 쓰는 중… (1~2분)" : "💬 AI 가 생각하는 중… (보통 30초~2분, 화면을 닫아도 저장돼요)"}</div>` : "");
   if (near || CCHAT.busy) box.scrollTop = box.scrollHeight;
   if ($("#cSend")) $("#cSend").disabled = !!CCHAT.busy;
+  cQuickDraw();
   if (CP.on) cCardPaint(CP.on, CP.idx ?? -1);
 }
 async function cSend(extra) {
@@ -2945,18 +2965,18 @@ async function cSend(extra) {
 }
 // 조각 카드 — 대화 · 보드 · 사전이 같이 씀
 function cCard(id, p) { return CARDS[id] ||= { p, shift: 0, pat: LS.get("cpPat", "rock"), bpm: p.bpm || (p.meter === "6/8" ? 150 : 96) }; }
-function cCardHtml(id, p, acts) {
+function cCardHtml(id, p, acts, tools) { // 단추는 한 줄: ▶ 듣기 · 조절 · (담기 등). 반주 · 빠르기 · 키는 조절 눌렀을 때만
   const c = cCard(id, p); c.p = p;
   const head = [p.label !== C_KIND[p.kind] ? p.label : "", p.title].filter(Boolean).map(esc).join(" · ");
   const canPlay = cpBars(p.chords).length || cpMelody(p.melody).length;
   return `<div class="ccard" data-card="${esc(id)}"><div class="h"><span class="pchip">${esc(C_KIND[p.kind] || "조각")}</span><b>${head}</b></div>
     ${p.lyrics ? `<pre>${esc(p.lyrics)}</pre>` : ""}<div class="cbars" data-bars="${esc(id)}">${cBarsHtml(id)}</div>
-    ${canPlay ? `<div class="cctl"><button class="btn xs" data-play="${esc(id)}">${CP.on === id ? "■ 멈춤" : "▶ 듣기"}</button>
+    ${p.explain ? `<div class="ex">${esc(p.explain)}</div>` : ""}
+    ${canPlay || acts ? `<div class="cctl">${canPlay ? `<button class="btn xs" data-play="${esc(id)}">${CP.on === id ? "■ 멈춤" : "▶ 듣기"}</button><button class="btn xs ${c.tune ? "on" : ""}" data-tune="${esc(id)}" title="반주 · 빠르기 · 키">조절</button>` : ""}${acts || ""}</div>` : ""}
+    ${canPlay ? `<div class="cctl" data-tunes="${esc(id)}" ${c.tune ? "" : "hidden"}>
       ${cpBars(p.chords).length ? `<select data-pat="${esc(id)}">${CP_PATS.map(([k, n]) => `<option value="${k}" ${k === c.pat ? "selected" : ""}>${n}</option>`).join("")}</select>` : ""}
       <label class="small mute">BPM <input type="number" min="40" max="240" data-bpm="${esc(id)}" value="${c.bpm}"></label>
-      ${p.key ? `<span class="ckey"><button data-shift="-1" data-id="${esc(id)}">−</button><b data-keyname="${esc(id)}">${esc(cpShiftKey(p.key, c.shift))}</b><button data-shift="1" data-id="${esc(id)}">+</button></span>` : ""}</div>` : ""}
-    ${p.melody ? `<div class="small mute" style="margin-top:4px">🎵 멜로디 스케치 같이 나와요</div>` : ""}
-    ${p.explain ? `<div class="ex">${esc(p.explain)}</div>` : ""}${acts ? `<div class="cctl">${acts}</div>` : ""}</div>`;
+      ${p.key ? `<span class="ckey"><button data-shift="-1" data-id="${esc(id)}">−</button><b data-keyname="${esc(id)}">${esc(cpShiftKey(p.key, c.shift))}</b><button data-shift="1" data-id="${esc(id)}">+</button></span>` : ""}${tools || ""}</div>` : ""}</div>`;
 }
 function cBarsHtml(id) {
   const c = CARDS[id]; if (!c) return ""; const p = c.p, key = cpShiftKey(p.key, c.shift); let n = 0;
@@ -2997,9 +3017,13 @@ async function cClick(e) {
   const put = r => { w.pieces = r.pieces; w.decisions = r.decisions; cPiecesDraw(); cDecisionsDraw(); };
   try {
     if (d.play) return cPlay(d.play);
+    if (d.pane) return cPane(d.pane);
+    if (d.qmore) { CQMORE = !CQMORE; return cQuickDraw(); }
+    if (d.q !== undefined) { const t = $("#cIn"); t.value = (t.value.trim() ? t.value.trim() + "\n" : "") + C_QUICK[+d.q][1]; LS.set("cDraft:" + w.id, t.value); return t.focus(); }
+    if (d.tune) { const c = CARDS[d.tune]; c.tune = !c.tune; b.classList.toggle("on", c.tune); const row = document.querySelector(`[data-tunes="${CSS.escape(d.tune)}"]`); if (row) row.hidden = !c.tune; return; }
     if (d.shift) { const c = CARDS[d.id]; c.shift = Math.max(-6, Math.min(6, c.shift + +d.shift)); const was = CP.on === d.id; if (was) cpStop(); document.querySelector(`[data-bars="${CSS.escape(d.id)}"]`).innerHTML = cBarsHtml(d.id); document.querySelector(`[data-keyname="${CSS.escape(d.id)}"]`).textContent = cpShiftKey(c.p.key, c.shift); const save = document.querySelector(`[data-keysave="${CSS.escape(d.id)}"]`); if (save) save.hidden = !c.shift; if (was) cPlay(d.id); return; }
     if (d.retry) return cSend(d.retry === "1" ? { retry: true } : { retry: true, model: d.retry });
-    if (d.keep) { const m = CCHAT.msgs.find(x => x.id === d.keep), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", Object.assign(cTransposed(`c:${m.id}:${k}`), { chat_id: m.id, chat_idx: k })))); toast("조각에 담았어요"); return cLoad(); }
+    if (d.keep) { const m = CCHAT.msgs.find(x => x.id === d.keep), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", Object.assign(cTransposed(`c:${m.id}:${k}`), { chat_id: m.id, chat_idx: k })))); toast("조각에 담았어요 · 위 📌 조각에서 모아 봐요"); return cLoad(); }
     if (d.note) { const m = CCHAT.msgs.find(x => x.id === d.note), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/decisions`, jsonOpt("POST", { text: m.remember[k], chat_id: m.id, chat_idx: k }))); toast("노트에 적었어요"); return cLoad(); }
     if (d.style) { b.disabled = true; const r = await api(`/api/write/${w.id}/coach-style`, jsonOpt("POST", { chat_id: d.style })); if (r.style !== undefined) { w.fv = r.fv; wSetField("style", r.style); } toast("스타일에 적용했어요"); return cLoad(); }
     if (d.decdel) return put(await api(`/api/write/${w.id}/decisions/${d.decdel}`, { method: "DELETE" }));
@@ -3016,15 +3040,16 @@ async function cClick(e) {
 function cPiecesDraw() {
   const box = $("#cPieces"), w = WN; if (!box || !w) return;
   const ed = can("compose"), P = w.pieces || [], me = wMe();
-  $("#cPiecesH").textContent = `조각 ${P.length}`;
-  $("#cPieceBar").innerHTML = ed ? `<button class="btn xs ${CPICK ? "on" : ""}" id="cPickGo">${CPICK ? "× 고르기 끝" : "🎵 골라서 소리로 만들기"}</button><button class="btn xs" id="cNew">+ 직접 쓰기</button>` : "";
+  $("#cPiecesH").textContent = `📌 조각${P.length ? " " + P.length : ""}`;
+  $("#cPieceBar").innerHTML = ed ? `${P.length ? `<button class="btn xs ${CPICK ? "on" : ""}" id="cPickGo">${CPICK ? "× 고르기 끝" : "🎵 골라서 소리로 만들기"}</button>` : ""}<button class="btn xs" id="cNew">+ 직접 쓰기</button>` : "";
   if ($("#cPickGo")) $("#cPickGo").onclick = () => { CPICK = !CPICK; if (!CPICK) CSEL.clear(); cPiecesDraw(); };
   if ($("#cNew")) $("#cNew").onclick = () => { CEDIT = "new"; cPiecesDraw(); };
   cPickDraw();
   box.innerHTML = (CEDIT === "new" ? cFormHtml({ kind: "verse", meter: "4/4" }) : "") + (P.length ? P.map((p, i) => CEDIT === p.id ? cFormHtml(p)
     : (CPICK ? `<label class="small" style="display:flex;align-items:center;gap:4px;margin-top:8px"><input type="checkbox" class="csel" data-sel="${p.id}" ${CSEL.has(p.id) ? "checked" : ""}>고르기</label>` : "")
-      + cCardHtml("b:" + p.id, p, ed ? `<button class="btn xs" data-ptalk="${p.id}">💬</button><button class="btn xs" data-pedit="${p.id}">✏️</button>${i ? `<button class="btn xs" data-pup="${p.id}">↑</button>` : ""}<button class="btn xs" data-keysave="b:${p.id}" ${CARDS["b:" + p.id]?.shift ? "" : "hidden"}>이 키로 저장</button>${isAdmin() || p.by === me || w.by === me ? `<button class="btn xs" data-pdel="${p.id}">🗑</button>` : ""}<span class="small mute">${esc(p.by || "")}</span>` : "")).join("")
-    : CEDIT === "new" ? "" : `<div class="empty" style="padding:18px">대화에서 마음에 드는 조각을 📌 로 담아요.</div>`);
+      + cCardHtml("b:" + p.id, p, ed ? `<button class="btn xs" data-ptalk="${p.id}" title="이 조각으로 얘기하기">💬</button><button class="btn xs" data-pedit="${p.id}" title="고치기">✏️</button>${CPICK && i ? `<button class="btn xs" data-pup="${p.id}" title="앞으로">↑</button>` : ""}${isAdmin() || p.by === me || w.by === me ? `<button class="btn xs" data-pdel="${p.id}" title="지우기">🗑</button>` : ""}<span class="small mute">${esc(p.by || "")}</span>` : "",
+        ed ? `<button class="btn xs" data-keysave="b:${p.id}" ${CARDS["b:" + p.id]?.shift ? "" : "hidden"}>이 키로 저장</button>` : "")).join("")
+    : CEDIT === "new" ? "" : `<div class="small mute" style="padding:10px 2px">대화에서 마음에 드는 안을 📌 담기로 모아요.</div>`);
   $$("#cPieces [data-sel]").forEach(x => x.onchange = () => { x.checked ? CSEL.add(x.dataset.sel) : CSEL.delete(x.dataset.sel); cPickDraw(); });
   if (CEDIT) cFormBind();
 }
@@ -3055,8 +3080,8 @@ function cPickDraw() {
   const el = $("#cPick"), w = WN; if (!el || !w) return;
   if (!CPICK) { el.innerHTML = ""; return; }
   const P = w.pieces || [], sel = P.filter(p => CSEL.has(p.id)), chordP = P.filter(p => p.chords), needChord = sel.some(p => (p.lyrics || "").trim() && !p.chords), old = $("#cpChord")?.value || "", oldStyle = $("#cpStyle")?.value;
-  el.innerHTML = `<div class="wcard" style="margin:8px 0"><b>🎵 고른 조각 ${sel.length}개로 만들기</b> <span class="small mute">— 위에서부터 차례대로</span>
-    <div class="small mute" style="margin-top:4px">YuE2 로 2곡, 2곡에 4분쯤. 악보가 있으면 그 길이로 불러요 (8마디 = 20초쯤, 두 번 부르는 곡도 있어요). 코드나 멜로디가 있으면 Claude 가 먼저 악보를 써요 (1~2분). 반복되는 구간은 조각을 또 넣어 주세요.${isAdmin() ? "" : " Benny 가 승인하면 만들어요."}</div>
+  el.innerHTML = `<div class="wcard" style="margin:8px 0"><b>🎵 고른 조각 ${sel.length}개로 만들기</b>
+    <div class="small mute" style="margin-top:4px">아래 조각에 체크하면 위에서부터 차례로 불러요. 2곡에 4분쯤 (8마디 = 20초쯤).${isAdmin() ? "" : " Benny 가 승인하면 만들어요."}</div>
     ${needChord && chordP.length ? `<label class="fl">코드 <span class="mute">— 코드 없는 가사 조각에 붙여요</span></label><select id="cpChord"><option value="">AI 에게 맡기기</option>${chordP.map(p => `<option value="${p.id}" ${p.id === old ? "selected" : ""}>${esc([p.label || C_KIND[p.kind], p.title].filter(Boolean).join(" · "))} — ${esc(p.chords.slice(0, 30))}</option>`).join("")}</select>` : ""}
     <label class="fl">스타일 <span class="mute">— 영어로</span></label><textarea class="gst" id="cpStyle" maxlength="500" style="margin-top:0" placeholder="indie rock, female vocal, overdriven electric guitars, punchy live drums">${esc(oldStyle ?? (w.style || ""))}</textarea>
     <div class="acts" style="margin-top:8px"><button class="btn sm pri" id="cpGo" ${sel.length ? "" : "disabled"}>${isAdmin() ? "🎤 만들기" : "🙋 만들기 요청"}</button><button class="btn xs" id="cpToNext" ${sel.some(p => (p.lyrics || "").trim()) ? "" : "disabled"}>📥 다음 판 가사 칸에 넣기</button></div></div>`;
@@ -3103,7 +3128,7 @@ function cBookDraw() {
   box.innerHTML = `<div class="small mute" style="margin-top:6px">느낌은 서양 대중음악 관습에서 온 경향이에요. 귀로 듣고 판단해 주세요. 소리는 스케치용 합성음이에요.</div>
     <div class="cbook-deg">${C_DEG_FEEL.map(([d, t]) => `<b>${d}</b><span>${t}</span>`).join("")}</div>
     <label class="small mute">키 <select data-bookkey="1">${["C", "D", "E", "F", "G", "A", "Bb"].map(k => `<option ${k === key ? "selected" : ""}>${k}</option>`).join("")}</select></label>
-    ${C_BOOK.map(([n, deg, tx], i) => cCardHtml("k:" + i, { kind: "chords", label: n, key, chords: "| " + deg.map(x => cpBookChord(x, key)).join(" | ") + " |", explain: tx, meter: "4/4", bpm: 96 }, ed ? `<button class="btn xs" data-bookkeep="${i}">📌 조각에 담기</button><button class="btn xs" data-booktalk="${i}">💬 이걸로 얘기하기</button>` : "")).join("")}`;
+    ${C_BOOK.map(([n, deg, tx], i) => cCardHtml("k:" + i, { kind: "chords", label: n, key, chords: "| " + deg.map(x => cpBookChord(x, key)).join(" | ") + " |", explain: tx, meter: "4/4", bpm: 96 }, ed ? `<button class="btn xs" data-bookkeep="${i}">📌 담기</button><button class="btn xs" data-booktalk="${i}">💬 얘기하기</button>` : "")).join("")}`;
 }
 
 // ---- 첫 화면: 만들기 + 프로젝트 목록
@@ -3112,7 +3137,7 @@ async function writeHome() {
   location.hash = "write"; await wSaveNow(); WN = null; WPATCH = {}; WCONF = null; clearTimeout(WGEN); clearTimeout(WPOLL); // 실패해 남은 변경분이 다른 프로젝트로 가지 않게
   await bandsReady();
   const box = $("#writeBox"), ok = can("compose"); box.className = "wr";
-  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">${isAdmin() ? "이 PC 그래픽카드로 노래를 만들어요 (무료, 3~11분). 만든 노래는 프로젝트로 남고, 다듬을 때마다 판이 쌓여요." : `${esc(wBandName(AUTH?.band)) || "우리 밴드"} 곡 작업실이에요. 가사 · 스타일 · 의견은 바로 같이 고치고, 노래는 Benny 가 승인하면 만들어요 (3~11분).`}</div>
+  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">${isAdmin() ? "AI 와 얘기하며 곡을 조금씩 만들어요." : `${esc(wBandName(AUTH?.band)) || "우리 밴드"} 곡 작업실이에요. 노래 소리는 Benny 가 승인하면 만들어요.`}</div>
     <div class="wcard" id="wMake">${ok ? "" : wLockHtml()}</div>
     <h2 class="wh">프로젝트</h2><div id="wList"></div>`;
   if (ok) wMakeDraw(); else wLockBind();
@@ -3128,8 +3153,7 @@ function wMakeDraw() {
   const setMode = m => { WMODE = m; LS.set("wMode2", m); wMakeDraw(); };
   const bandSel = isAdmin() && BANDS.length ? `<label class="fl">밴드 <span class="mute">— 고른 밴드 멤버에게 보여요</span></label><select id="wfBand">${[["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, n]) => `<option value="${esc(k)}" ${(d.band || "") === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>` : "";
   if (WMODE === "coach") { // 11-06: 바로 만들지 않고 논의 → 조각 → 고른 것만 소리로
-    box.innerHTML = seg + `<div class="small mute" style="margin-top:10px">바로 만들지 않고 AI 와 방향부터 얘기해요. 1절 · 코러스 · 코드 진행 · 솔로처럼 조각으로 다듬고, 고른 조각만 소리로 들어 봐요.</div>
-      <label class="fl">제목 <span class="mute">— 나중에 바꿔도 돼요</span></label><input class="ti" id="wfTitle" value="${esc(d.title)}" placeholder="예: 일요일 오전">
+    box.innerHTML = seg + `<label class="fl">제목 <span class="mute">— 나중에 바꿔도 돼요</span></label><input class="ti" id="wfTitle" value="${esc(d.title)}" placeholder="예: 일요일 오전">
       <label class="fl">첫마디 <span class="mute">— 없어도 돼요</span></label><textarea class="gst" id="wfIdea" style="margin-top:0" placeholder="예: 밴드 이름은 인간 쓰레기인데 제일 성실한 직장인들이라는 곡. 방향부터 얘기해요">${esc(d.idea || "")}</textarea>${bandSel}
       <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">💬 같이 쓰기 시작</button></div>`;
     $("#wfTitle").oninput = e => { d.title = e.target.value; save(); };
@@ -3316,6 +3340,7 @@ async function wPollTick() {
 function wBandDraw() {
   const el = $("#wBand"), w = WN; if (!el || !w) return;
   const n = wBandName(w.band), ed = can("compose");
+  if ($("#wSetSum")) $("#wSetSum").textContent = `⚙ ${n || (w.band ? w.band : "Benny 만")} · 설정`;
   el.innerHTML = (isAdmin() && BANDS.length ? `<label class="small mute">밴드 <select id="wBandSel">${[["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, x]) => `<option value="${esc(k)}" ${(w.band || "") === k ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : n ? `<span class="pchip">${esc(n)}</span>` : "")
     + (w.by ? `<span class="small mute">${esc(w.by)} 시작</span>` : "")
     + (w.band && ed ? `<button class="btn xs" id="wBmGo"${w.bm_song ? ' style="display:none"' : ""}>🗳 밴드매니저 투표곡에 올리기</button><span class="small mute" id="wBmSt"></span>` : "");
@@ -3394,11 +3419,11 @@ function writeRender() {
   w._d = { style: w.style || "", lyrics: w.lyrics || "", inst: w.inst === undefined ? !(w.lyrics || "").trim() : !!w.inst, key: w.key || "", tempo: w.tempo || 0, sec: w.sec || 120, engine: w.engine || "ace" }; // inst 없는 예전 프로젝트: 가사 없으면 연주곡
   $("#writeBox").innerHTML = `<button class="btn xs" id="wBack">← 작곡</button>
     <div class="hdr"><input class="ttl" id="wTitle" value="${esc(w.title)}" ${ed ? "" : "disabled"}></div>
-    <div class="small mute" id="wSum"></div>
-    <div class="wband" id="wBand"></div>
+    <details class="wset" id="wSet"><summary id="wSetSum">⚙ 설정</summary><div class="small mute" id="wSum"></div><div class="wband" id="wBand"></div><div class="small mute" id="cMeta" style="margin-top:6px"></div>
+      ${ed && (isAdmin() || w.by === wMe()) ? `<div class="acts" style="margin-top:10px"><button class="btn xs" id="wDel">프로젝트 지우기</button></div>` : ""}</details>
     <div id="wConf"></div><div id="wHolds"></div>
     <div id="wGenSt"></div>
-    <div class="seg" id="wTabs"><button data-t="coach">💬 같이 쓰기</button><button data-t="gen">🎤 노래 판</button></div>
+    <div class="seg" id="wTabs" hidden><button data-t="coach">💬 같이 쓰기</button><button data-t="gen">🎤 노래 판</button></div>
     <div id="wTabCoach">${cHtml(ed)}</div>
     <div id="wTabGen">
     <h2 class="wh">진행 과정</h2><div id="wVers"></div>
@@ -3410,8 +3435,7 @@ function writeRender() {
         곡 옆 <b>⋯</b> 에서 다듬기 · 구간 다시 만들기(시험 기능) · 연습으로 보내기를 할 수 있어요. 코드 진행을 정해서 만들려면 같이 쓰기의 조각에서 🎵 로 만들어요.${isAdmin() ? "" : " 요청은 Benny 가 승인하면 지금 또는 밤에 돌아가요."}</div></div>` : ""}
     <details class="wnotes" ${w.notes ? "open" : ""}><summary class="small mute">메모</summary><textarea id="wNotes" ${ed ? "" : "disabled"} placeholder="아이디어, 고칠 점…">${esc(w.notes || "")}</textarea></details>
     <details class="wnotes" id="wEdits" hidden></details>
-    </div>
-    ${ed && (isAdmin() || w.by === wMe()) ? `<div class="hdr"><button class="btn sm" id="wDel" style="margin-left:auto">프로젝트 지우기</button></div>` : ""}`;
+    </div>`;
   $("#writeBox").onclick = wBoxClick;
   wVersDraw(); wBaseDraw(); wBandDraw(); wHoldsDraw(); wEditsDraw(); wConfDraw(); cBind(ed);
   $("#wBack").onclick = () => writeHome();
@@ -3434,9 +3458,11 @@ function wDiff(a, b) { // 앞 판과 바뀐 것
   if (a.sec !== b.sec && a.engine !== "yue" && b.engine !== "yue") out.push(`길이 ${Math.round(a.sec / 60)}분 → ${Math.round(b.sec / 60)}분`);
   return out.length ? "바꾼 것: " + out.join(" · ") : b.repaint ? "같은 설정으로 구간만 다시" : b.base ? "같은 설정으로 다듬기" : "같은 설정으로 한 번 더";
 }
+function wTabsVis() { const t = $("#wTabs"), w = WN; if (t && w) t.hidden = !((w.versions || []).length || WTAB === "gen"); } // 판이 없으면 탭 없이 같이 쓰기만
 function wVersDraw() {
   const box = $("#wVers"); if (!box || !WN) return;
   const w = WN, ed = can("compose"), V = w.versions || [];
+  wTabsVis();
   $("#wSum").textContent = `${V.length}판 · ${V.reduce((a, v) => a + v.takes.length, 0)}곡 · ${new Date((w.created || w.updated || 0) * 1000).toLocaleDateString("ko-KR")} 시작`;
   if ($("#wGo") && !w._genOn) $("#wGo").textContent = wGoWord(V.length + 1);
   if (!V.length) { box.innerHTML = `<div class="empty">${(w.holds || []).length ? "승인되면 첫 판을 만들어요." : "아직 만든 판이 없어요."}</div>`; wCmDraw(); return; }
