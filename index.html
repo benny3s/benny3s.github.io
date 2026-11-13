@@ -240,6 +240,9 @@ const clone = v => JSON.parse(JSON.stringify(v));
 /* ── 그리기 */
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function host(u) { return String(u || "").replace(/^https?:\/\//, ""); }
+/* 링크는 http(s) 또는 이 사이트 안 경로만 (11-13 보안 점검: 목록 문서가 바뀌어 javascript: 가 들어와도 같은 출처에서 돌지 않게, 보관한 항목 포함) */
+const URL_OK = /^(https?:\/\/[^\s/?#]+|\/(?![\/\\]))/i;
+function safeHref(u) { u = String(u || "").trim(); return URL_OK.test(u) ? u : "#"; }
 /* 아이콘 타일 색 = 공통 토큰 /design/tokens.css 의 --bn-tint-* (2026-10-29) — 항목의 tint, 없으면 id 해시 */
 const TINT_NAMES = { green: "초록", orange: "주황", blue: "파랑", yellow: "노랑", pink: "분홍", purple: "보라", red: "빨강", teal: "청록", sand: "모래" };
 const HASH_TINTS = ["green", "orange", "blue", "yellow", "pink", "purple", "red", "teal"];
@@ -262,13 +265,13 @@ function renderHome() {
   groupsOf(items.filter(p => !p.archived)).forEach((list, g) => listEl.appendChild(section(g, list.map(p => simple ? appTile(p) : rowCard(p)), simple ? "apps" : "rows")));
 }
 function appTile(p) {
-  const a = el("a", "app"); a.href = p.url; a.title = p.desc ? p.name + " — " + p.desc : p.name;
+  const a = el("a", "app"); a.href = safeHref(p.url); a.title = p.desc ? p.name + " — " + p.desc : p.name;
   a.append(icon(p), el("span", "nm", p.name));
   return a;
 }
 function rowCard(p) {
   const [d, chip] = splitDesc(p.desc), a = el("a", "row"), t = el("div", "t"), nm = el("div", "nm", p.name);
-  a.href = p.url;
+  a.href = safeHref(p.url);
   if (chip) nm.appendChild(el("span", "chip", chip));
   t.append(nm, el("p", "clamp", d));
   if (p.id === "tower") t.appendChild(towerGlance());
@@ -387,8 +390,8 @@ function editCard(p, sib) {
   tl.appendChild(sel); two.appendChild(tl); ed.appendChild(two);
   field("name", "이름", ed, { live: v => { nm.textContent = v || "(이름 없음)"; } });
   field("desc", "설명 (끝의 괄호는 이름 옆 작은 표시)", ed, { area: true });
-  const go = el("a", "btn sm ghost", "열어 보기 ↗"); go.href = p.url || "#"; go.target = "_blank"; go.rel = "noopener";
-  field("url", "주소", ed, { mode: "url", live: v => { hs.textContent = host(v); go.href = v || "#"; } });   // '열어 보기'도 방금 고친 주소로
+  const go = el("a", "btn sm ghost", "열어 보기 ↗"); go.href = safeHref(p.url); go.target = "_blank"; go.rel = "noopener";
+  field("url", "주소", ed, { mode: "url", live: v => { hs.textContent = host(v); go.href = safeHref(v); } });   // '열어 보기'도 방금 고친 주소로
   /* 묶음을 고치면 카드를 닫거나 끝낼 때 그 묶음 자리로 옮김 (11-06 Argon: 칸을 벗어나는 순간 다시 그리면 누르던 단추가 사라져 눌림이 씹히고,
      폰에서는 추천을 고를 때 자판이 흔들림) */
   field("group", "묶음", ed, { list: "groups", ph: "그 밖에" });
@@ -439,7 +442,7 @@ async function loadItems(take) {   // take = 고치던 것을 버리고 서버 �
   }
 }
 async function save(force) {
-  const bad = items.find(p => !p.archived && (!String(p.name || "").trim() || !/^(https?:\/\/[^\s/]+|\/)/.test(String(p.url || "").trim())));
+  const bad = items.find(p => !p.archived && (!String(p.name || "").trim() || !URL_OK.test(String(p.url || "").trim())));
   if (bad) {
     openIds.add(bad.id); render(); setSt("이름 · 주소를 채워 주세요", true);
     const n = listEl.querySelector('[data-fid="' + CSS.escape(bad.id + (String(bad.name || "").trim() ? ":url" : ":name")) + '"]');
