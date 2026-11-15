@@ -346,8 +346,19 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .bkq{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0;background:var(--panel)} .bkq .q{font-weight:700;margin-bottom:8px;line-height:1.5} .bkq .q::before{content:"❓ "}
 .bkq .opts{display:flex;flex-wrap:wrap;gap:6px} .bkq .opts .btn{min-height:38px;padding:0 12px} .bkq .opts .ok{border-color:var(--accent);color:var(--accent)} .bkq .opts .no{border-color:var(--err);color:var(--err)}
 .bkq .why{margin-top:8px;font-size:14px;color:var(--mute);line-height:1.6} .bkq .why b{color:var(--text)}
-.bk .bktabs{display:flex;gap:6px;margin:8px 0 10px} .bk .bktabs button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--mute);font:inherit;font-weight:700;font-size:14px}
+.bk .bktabs{display:flex;gap:6px;margin:8px 0 10px} .bk .bktabs button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--mute);font:inherit;font-weight:700;font-size:13.5px;padding:4px 6px}
 .bk .bktabs button.on{border-color:var(--accent);color:var(--text)} .bk .bkgo{display:flex;flex-direction:column;gap:6px;margin:8px 0 4px} .bk .bkgo .btn{width:100%}
+.lab-sub{display:flex;gap:6px;margin:8px 0 12px;flex-wrap:wrap}
+.lab-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--panel)}
+.lab-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.lab-row input,.lab-row select{border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:7px 10px;font:inherit;font-size:14px;min-width:0}
+.lab-stat{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}
+.lab-stat .deg{min-width:46px;font-weight:800;cursor:pointer;color:var(--accent)}
+.lab-stat .barw{flex:1;height:10px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.lab-stat .barw i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.lab-item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.lab-item:last-child{border-bottom:none}
+.lab-item .t{flex:1;min-width:0;line-height:1.5} .lab-item .b{display:flex;flex-direction:column;gap:4px}
 .bk .pg .bkn{min-width:26px;height:26px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;border:1px solid var(--line);color:var(--mute);flex:none} .bk .pg .bkn.ok{border-color:var(--accent);color:var(--accent);font-weight:800}
 .bkp .bkpt{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;background:var(--panel)} .bkp .bkpt .h{font-size:15px;line-height:1.5} .bkp .bkpt p{margin:6px 0;font-size:14.5px;line-height:1.65}
 .bkp .bkpt .ear{color:var(--mute);font-size:13.5px} .bkp .bksum{font-size:15.5px;line-height:1.75}
@@ -545,9 +556,10 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
               <button class="btn xs" id="lNowB">지금 위치</button></div>
             <div class="r"><span class="lbl">섹션</span><select id="lSec" class="grow"></select></div>
             <div class="r"><span class="lbl grow">점점 빠르게</span><select id="lTrRule"><option value="1,5">매번 +5%</option><option value="2,5">2번마다 +5%</option><option value="3,5">3번마다 +5%</option><option value="2,10">2번마다 +10%</option></select><span class="sw2 sm" id="lTr"><span class="st">꺼짐</span><span class="tr"></span></span></div>
+            <div class="r"><span class="lbl grow">번갈아 혼자 치기</span><select id="lAltMode"><option value="drums">드럼+메트로놈</option><option value="metro">메트로놈만</option><option value="mute">완전 침묵</option></select><span class="sw2 sm" id="lAlt"><span class="st">꺼짐</span><span class="tr"></span></span></div>
             <div class="r"><span class="lbl">저장</span><button class="btn xs" id="lSave" data-perm="edit">이 구간 저장 (밴드 공유)</button></div>
             <div id="lSaved"></div>
-            <div class="hint">타임라인을 드래그하거나, 이 창을 연 채 코드표에서 시작 → 끝 마디를 누르세요. <b>점점 빠르게</b>를 켜면 지금 속도에서 시작해 반복할 때마다 올라가 100%에서 멈춰요.</div>
+            <div class="hint">타임라인을 드래그하거나, 이 창을 연 채 코드표에서 시작 → 끝 마디를 누르세요. <b>점점 빠르게</b>는 100%까지 속도를 올려 주고, <b>번갈아 혼자 치기</b>는 한 번 함께 친 뒤 다음 바퀴엔 반주만 남기거나 소리를 꺼요.</div>
           </div></span>
         <span class="tbtn"><button class="btn sm" data-pop="popMetro" id="metroBtn" style="display:none">메트로놈 <span class="v" id="metroV">꺼짐</span></button>
           <div class="pop" id="popMetro" hidden>
@@ -670,7 +682,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-06f";
+const BUILD = "2026-11-15a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -1319,10 +1331,18 @@ async function waParams() { // 속도·키 → SoundTouch 두 줄 + 지연 맞�
 }
 function waVol() {
   if (!P.ac || !WA.lines || !P.song) return;
+  const altMute = LTR.alt && P.loop && (LTR.n % 2 === 1), keepDrums = altMute && LTR.altMode === "drums";
   const anySolo = Object.values(P.mixer).some(m => m.solo) || P.metroSolo, now = P.ac.currentTime, set = (n, v) => WA.g[n]?.gain.setTargetAtTime(v, now, 0.012);
-  for (const n of P.song.stems) { const m = P.mixer[n]; set(n, WA.stems && m && (anySolo ? m.solo : !m.mute) ? m.vol * P.mv : 0); }
-  set("mix", WA.stems ? 0 : (P.metroSolo ? 0 : VOL0 * P.mv));
-  set("metro", MET.on && (!anySolo || P.metroSolo) ? MET.vol : 0);
+  for (const n of P.song.stems) {
+    const m = P.mixer[n], allow = !altMute || (keepDrums && n === "drums");
+    set(n, allow && WA.stems && m && (anySolo ? m.solo : !m.mute) ? m.vol * P.mv : 0);
+  }
+  for (const e of P.song.extra || []) {
+    const m = P.mixer[e.id], allow = !altMute || (keepDrums && e.part === "드럼");
+    if (m) set(e.id, allow && WA.stems && (anySolo ? m.solo : !m.mute) ? m.vol * P.mv : 0);
+  }
+  set("mix", (WA.stems || altMute || P.metroSolo) ? 0 : VOL0 * P.mv);
+  set("metro", (altMute && LTR.altMode === "mute") ? 0 : (MET.on && (!anySolo || P.metroSolo || altMute) ? MET.vol : 0));
 }
 function waPos() { // 들리는 소리 기준 위치(처리 지연 빼고), 구간 반복이면 되감긴 위치
   if (!WA.playing) return WA.off;
@@ -1413,9 +1433,11 @@ function setPlaying(on) {
 }
 function applyMix() {
   const anySolo = Object.values(P.mixer).some(m => m.solo);
+  const altMute = LTR.alt && P.loop && (LTR.n % 2 === 1), keepDrums = altMute && LTR.altMode === "drums";
   for (const [n, a] of Object.entries(P.audios)) {
     const m = P.mixer[n]; const audible = anySolo ? m.solo : !m.mute;
-    a.volume = audible ? m.vol * P.mv : 0;
+    const allow = !altMute || (keepDrums && n === "drums");
+    a.volume = (allow && audible) ? m.vol * P.mv : 0;
     const row = document.querySelector(`.row[data-stem="${n}"]`);
   }
   for (const [n, m] of Object.entries(P.mixer)) { // 트랙 받기 전에도 누른 상태는 보여주고, 다 받으면 바로 적용
@@ -1425,7 +1447,8 @@ function applyMix() {
   const mr = $("#mixer .row.met"); if (mr) { const anyS = Object.values(P.mixer).some(m => m.solo) || P.metroSolo;
     mr.classList.toggle("dim", !(MET.on && (!anyS || P.metroSolo))); mr.querySelector(".m").classList.toggle("on", !MET.on); mr.querySelector(".s").classList.toggle("on", !!P.metroSolo);
     mr.querySelector("input").value = MET.vol; mr.querySelectorAll("[data-sub]").forEach(b => b.classList.toggle("on", MET.sub === b.dataset.sub)); }
-  if (P.mixEl) P.mixEl.volume = VOL0 * P.mv; // 트랙 준비 전 섞인 파일 재생 중에도
+  if (P.mixEl) P.mixEl.volume = altMute ? 0 : VOL0 * P.mv; // 트랙 준비 전 섞인 파일 재생 중에도
+  if (P.metroEl && !WAE) P.metroEl.volume = (altMute && LTR.altMode === "mute") ? 0 : (MET.on ? MET.vol : 0);
   if (WAE) waVol();
   $("#mVolAll").value = $("#mVolAll2").value = P.mv; $("#mVolAllT").textContent = Math.round(P.mv * 100) + "%"; $(".volb").textContent = P.mv === 0 ? "🔇" : "🔊";
   $(".mixer").classList.toggle("wait", !P.stems);
@@ -1580,7 +1603,7 @@ async function openSong(id) {
     (s.source && s.source.startsWith("http") ? `<a class="chip" href="${esc(s.source)}" target="_blank" style="text-decoration:none">원본 ↗</a>` : "");
   buildMixer();
   P.files = Object.fromEntries(s.stems.map(n => [n, n + ".mp3"])); P.mixFile = "mix.mp3";
-  P.loop = null; loopUI(); closePops(); setRate(P.rate); pitchReady = {}; applyMix();
+  P.loop = null; LTR.n = 0; LTR.alt = false; LTR.on = false; loopUI(); closePops(); setRate(P.rate); pitchReady = {}; applyMix();
   $("#play").disabled = true;
   await buildKey(true);
   if (s.band_semi && P.song === s) { // 밴드 키가 있으면 처음부터 그 키 파일을 받음 (원키 받고 또 받지 않게)
@@ -1877,32 +1900,39 @@ function loopUI() { // 구간 버튼·팝업 스위치·숫자를 한곳에서 (
   setSw($("#lOn"), on); $("#loopBtn").classList.toggle("live", on);
   $("#loopV").textContent = on ? `${barLabel(L.a)}~${barLabel(L.b)}` : "꺼짐";
   $("#la").textContent = on ? barLabel(L.a) : "-"; $("#lb").textContent = on ? barLabel(L.b) : "-";
-  $("#loopNow").innerHTML = on ? `🔁 <b>${barLabel(L.a)}~${barLabel(L.b)}마디</b> 반복 중` + (LTR.n ? ` · ${LTR.n + 1}번째` : "") + (LTR.on ? ` · <b style="color:var(--warn)">${Math.round(P.rate * 100)}% → 100%</b>` : "") : "";
+  const altTxt = LTR.alt && on ? (LTR.n % 2 === 1 ? ` · <b style="color:var(--warn)">🤫 혼자 치기</b>` : ` · <b>🔊 함께</b>`) : "";
+  $("#loopNow").innerHTML = on ? `🔁 <b>${barLabel(L.a)}~${barLabel(L.b)}마디</b> 반복 중` + (LTR.n ? ` · ${LTR.n + 1}번째` : "") + (LTR.on ? ` · <b style="color:var(--warn)">${Math.round(P.rate * 100)}% → 100%</b>` : "") + altTxt : "";
   setSw($("#lTr"), LTR.on); $("#lTrRule").value = LTR.rule;
+  if ($("#lAlt")) { setSw($("#lAlt"), LTR.alt); $("#lAltMode").value = LTR.altMode; }
 }
-// 점점 빠르게 (2026-10-29, Moises 비교 · 점검 제안): 구간이 되감길 때 수를 세고, N번마다 속도 +x% (100% 까지). 되감기는 순간에만 바꿔서 튀지 않음
-const LTR = { on: false, n: 0, rule: LS.get("ltrRule", "2,5"), last: -1 };
-function loopTick() { // core() 에서 25ms 마다 (Web Audio 엔진)
-  const lr = WA.loopR; if (!lr || !WA.playing) { LTR.last = -1; return; }
-  const p = waPos(); const wrapped = LTR.last >= 0 && p < LTR.last - (lr.b - lr.a) * 0.5; LTR.last = p;
-  if (!wrapped) return;
+// 점점 빠르게 (2026-10-29) + 번갈아 혼자 치기 (Capo 식 재생↔침묵): 되감길 때 횟수를 세어 속도 올림 · 홀수 회차 음소거
+const LTR = { on: false, n: 0, rule: LS.get("ltrRule", "2,5"), alt: false, altMode: LS.get("lAltMode", "drums"), last: -1 };
+function onLoopWrap() {
   LTR.n++;
   const [every, step] = LTR.rule.split(",").map(Number);
   if (LTR.on && LTR.n % every === 0 && P.rate < 1) { const r = Math.min(1, Math.round(P.rate * 100 + step) / 100); setRate(r); toast(`속도 ${Math.round(r * 100)}%`, 1200); if (r >= 1) { LTR.on = false; toast("100% 도착 · 점점 빠르게를 껐어요", 2500); } }
+  if (LTR.alt) { applyMix(); toast(LTR.n % 2 === 1 ? "🤫 혼자 치기!" : "🔊 함께 연주!", 1000); }
   loopUI();
+}
+function loopTick() { // core() 에서 25ms 마다 (Web Audio 엔진)
+  const lr = WA.loopR; if (!lr || !WA.playing) { LTR.last = -1; return; }
+  const p = waPos(); const wrapped = LTR.last >= 0 && p < LTR.last - (lr.b - lr.a) * 0.5; LTR.last = p;
+  if (wrapped) onLoopWrap();
 }
 $("#lTr").onclick = () => { LTR.on = !LTR.on; LTR.n = 0; if (LTR.on && P.rate >= 1) { setRate(0.7); toast("70% 에서 시작해요 · 속도에서 시작 값을 바꿀 수 있어요", 3000); } if (LTR.on && !P.loop) $("#lOn").click(); loopUI(); };
 $("#lTrRule").onchange = e => { LTR.rule = e.target.value; LS.set("ltrRule", LTR.rule); };
+$("#lAlt").onclick = () => { LTR.alt = !LTR.alt; LTR.n = 0; if (LTR.alt && !P.loop) $("#lOn").click(); if (LTR.alt && LTR.altMode === "metro" && !MET.on) { MET.on = true; buildClicks(); syncMetroUI(); toast("메트로놈을 같이 켰어요", 1800); } applyMix(); loopUI(); };
+$("#lAltMode").onchange = e => { LTR.altMode = e.target.value; LS.set("lAltMode", LTR.altMode); if (LTR.alt && LTR.altMode === "metro" && !MET.on) { MET.on = true; buildClicks(); syncMetroUI(); } applyMix(); };
 function setLoop(a, b, announce) {
   if (!P.loop || P.loop.a !== a || P.loop.b !== b) LTR.n = 0; // 구간이 바뀌면 반복 수 처음부터
-  P.loop = { a, b }; LS.set("loopact:" + P.song.id, P.loop); loopUI();
+  P.loop = { a, b }; LS.set("loopact:" + P.song.id, P.loop); applyMix(); loopUI();
   const t = cur(); if (t < P.bars[a].start || t >= P.bars[b].end) seek(P.bars[a].start);
   if (announce) toast(`${barLabel(a)}~${barLabel(b)}마디 반복`);
   lastBar = -2; render(true);
 }
 function loopOff() {
-  P.loop = null; P.loopPick = null; LTR.on = false; LTR.n = 0; if (P.song) LS.set("loopact:" + P.song.id, null);
-  loopUI(); lastBar = -2; render(true);
+  P.loop = null; P.loopPick = null; LTR.on = false; LTR.alt = false; LTR.n = 0; if (P.song) LS.set("loopact:" + P.song.id, null);
+  applyMix(); loopUI(); lastBar = -2; render(true);
 }
 function loopRange() { return P.loop ? { a: P.bars[P.loop.a].start, b: P.bars[P.loop.b].end } : null; }
 function openLoopPop() { loopUI(); $("#lSec").value = ""; buildSaved(); }
@@ -2523,7 +2553,7 @@ function core() { // sync, loop — runs on a timer so it keeps working even whe
     if (!lr && waPos() >= P.song.duration - 0.02) { setPlaying(false); qEnded(); } return; }
   if (!P.song || !P.master || !P.playing) return;
   const t = cur();
-  const lr = loopRange(); if (lr && t >= lr.b - 0.03) { seek(lr.a); return; }
+  const lr = loopRange(); if (lr && t >= lr.b - 0.03) { onLoopWrap(); seek(lr.a); return; }
   // 트랙은 재생·이동 때 한꺼번에 맞춰 시작하면 그대로 붙어 감(실측 0~12ms). 재생 중 위치를 다시 잡으면 그 트랙이 끊김.
   // 폰은 currentTime 이 거칠게 갱신돼 80ms 기준으로도 자주 다시 잡아 "악기로 재생하면 끊김"(2026-10-18 Benny) →
   // 0.25초 넘게 벌어진 상태가 1초 내내 이어질 때(백그라운드 갔다 온 경우 등)만 다시 잡음. 속도 미세조정은 쓰지 말 것(클릭 밀림 실측)
@@ -2712,14 +2742,157 @@ async function bookSongsLoad() { const r = await api("/api/book/songs"); const c
 function bookSaved(pid, p) { if (!BOOK) return; BOOK.pages[pid] = Object.assign(BOOK.pages[pid] || {}, p, { has: !!p.body }); LS.set("bookCache", BOOK); }
 async function bookToc() {
   BK_AT = ""; location.hash = "book"; cpStop(); bkClipStop(); $("#bookPage").hidden = true; $("#bookToc").hidden = false;
-  if (BOOK) bookTocDraw(); else $("#bookToc").innerHTML = `<div class="mute" style="padding:20px">불러오는 중…</div>`;
-  bookSongsLoad().then(ch => { if (ch && BOOK && MAIN === "book" && !$("#bookToc").hidden) bookTocDraw(); }).catch(() => {});
-  let changed; try { changed = await bookLoad(); } catch (e) { if (!BOOK) $("#bookToc").innerHTML = `<div class="empty">책을 불러오지 못했어요: ${esc(e.message)}</div>`; return; }
-  if (changed && MAIN === "book" && !$("#bookToc").hidden) bookTocDraw();
+  if (BOOK || BK_TAB === "lab") bookTocDraw(); else $("#bookToc").innerHTML = `<div class="mute" style="padding:20px">불러오는 중…</div>`;
+  bookSongsLoad().then(ch => { if (ch && BOOK && MAIN === "book" && !$("#bookToc").hidden && BK_TAB !== "lab") bookTocDraw(); }).catch(() => {});
+  let changed; try { changed = await bookLoad(); } catch (e) { if (!BOOK && BK_TAB !== "lab") $("#bookToc").innerHTML = `<div class="empty">책을 불러오지 못했어요: ${esc(e.message)}</div>`; return; }
+  if (changed && MAIN === "book" && !$("#bookToc").hidden && BK_TAB !== "lab") bookTocDraw();
+}
+let LAB_TAB = LS.get("labTab", "trends"), LAB_Q = "", LAB_KEY = LS.get("labKey", "G"), LAB_TO = LS.get("labTo", "A"), LAB_EAR = { kind: "prog", ok: 0, tot: 0, q: null, done: false };
+const LAB_DEGS = ["1", "2m", "3m", "4", "5", "6m", "7°", "b7", "4m", "b6", "3"];
+const LAB_KEYS = ["C", "G", "D", "A", "E", "F", "Bb", "Eb", "Ab", "Am", "Em", "Dm", "Bm"];
+function labBindCards(root) {
+  if (root.dataset.labBound) return; root.dataset.labBound = "1";
+  root.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const d = b.dataset; if (d.play || d.tune || d.shift) { if (d.play) bkClipStop(); return cClick(e); } });
+  root.addEventListener("change", e => cChange(e));
+}
+function labCard(id, label, chords, key, explain, bpm = 96) {
+  CARDS[id] = { p: { kind: "chords", label, key, chords, melody: "", explain: explain || "", meter: "4/4" }, shift: 0, pat: LS.get("cpPat", "ballad"), bpm };
+  return cCardHtml(id, CARDS[id].p, "", "");
+}
+async function labRunSearch(q) {
+  LAB_Q = q; const box = $("#labRes"); if (!box) return;
+  box.innerHTML = `<div class="small mute">우리 합주곡에서 찾는 중…</div>`;
+  try {
+    const r = await api(`/api/harmony/search?q=${encodeURIComponent(q)}`);
+    Object.keys(CARDS).forEach(k => { if (k.startsWith("lab:")) delete CARDS[k]; });
+    let h = `<div class="small mute" style="margin-bottom:6px">분석된 곡 ${r.song_count}곡 기준 (영상 악보 · Songsterr · 자동 분석)</div>`;
+    if (!r.pattern.length) {
+      h += `<div class="lab-card"><b>자주 쓰이는 4마디 진행 TOP</b>`;
+      h += (r.top_patterns || []).length ? r.top_patterns.map((p, i) => {
+        const cid = `lab:t${i}`;
+        CARDS[cid] = { p: { kind: "chords", label: p.pattern, key: "C", chords: p.play_chords, melody: "", meter: "4/4" }, shift: 0, pat: "ballad", bpm: 96 };
+        return `<div class="lab-item"><div class="t"><b style="cursor:pointer;color:var(--accent)" data-labq="${esc(p.pattern)}">${esc(p.pattern)}</b> · ${p.songs}곡 (${p.hits}번)
+          ${p.example ? `<div class="small mute">예: ${esc(p.example.title)} ${bkBars(p.example.bars)}${p.example.section ? " · " + esc(p.example.section) : ""} (${esc((p.example.chords || []).join(" → "))})</div>` : ""}</div>
+          <div class="b"><button class="btn xs" data-play="${cid}">▶ 듣기</button>${p.example ? `<button class="btn xs" data-lclip="${esc(p.example.song)}" data-t0="${p.example.t}" data-t1="${p.example.t1}">▶ 원곡</button>` : ""}</div></div>`;
+      }).join("") : `<div class="small mute" style="margin-top:6px">아직 분석된 곡이 없어요.</div>`;
+      h += `</div>`;
+    } else {
+      h += `<div class="lab-card"><b>‘${esc(r.pattern.join(" - "))}’ 다음에 가장 많이 온 코드</b> <span class="small mute">(${r.total_next}번 중)</span>`;
+      h += (r.next_stats || []).length ? r.next_stats.map((x, i) => {
+        const cid = `lab:n${i}`;
+        CARDS[cid] = { p: { kind: "chords", label: x.deg, key: "C", chords: x.play_chords, melody: "", meter: "4/4" }, shift: 0, pat: "ballad", bpm: 96 };
+        return `<div class="lab-stat"><span class="deg" data-labadd="${esc(x.deg)}" title="클릭해 이어 찾기">+ ${esc(x.deg)}</span><span class="barw"><i style="width:${Math.max(4, x.pct)}%"></i></span><span class="small" style="min-width:86px;text-align:right">${x.pct}% (${x.songs}곡)</span><button class="btn xs" data-play="${cid}">▶</button></div>`;
+      }).join("") : `<div class="small mute" style="margin-top:6px">이어지는 자리가 아직 없어요.</div>`;
+      h += `</div><div class="lab-card"><b>이 진행이 나온 우리 곡 (${(r.matches || []).length}곳)</b>`;
+      h += (r.matches || []).length ? r.matches.map((m, i) => `<div class="lab-item"><div class="t"><b>${esc(m.title)}</b> · ${bkBars(m.bars)}${m.section ? " · " + esc(m.section) : ""}
+        <div class="small mute">${esc(m.key)} 키 · ${esc((m.chords || []).join(" → "))}${m.next_chord ? ` → <b>${esc(m.next_chord)}</b>(${esc(m.next_deg)})` : ""} · ${esc(m.source)}</div></div>
+        <div class="b"><button class="btn xs" data-lclip="${esc(m.song)}" data-t0="${m.t}" data-t1="${m.t1}">▶ 그 자리</button><button class="btn xs" data-lgo="${esc(m.song)}" data-t0="${m.t}" data-b0="${m.bars?.[0] ?? ""}" data-b1="${m.bars?.[1] ?? ""}">곡 열기</button></div></div>`).join("")
+        : `<div class="small mute" style="margin-top:6px">일치하는 구간을 못 찾았어요. 도수를 줄여 검색해 보세요.</div>`;
+      h += `</div>`;
+    }
+    box.innerHTML = h;
+    $$("#labRes [data-labq]").forEach(el => el.onclick = () => { $("#labQ").value = el.dataset.labq; labRunSearch(el.dataset.labq); });
+    $$("#labRes [data-labadd]").forEach(el => el.onclick = () => { const nx = (r.pattern.concat(el.dataset.labadd)).join(" "); $("#labQ").value = nx; labRunSearch(nx); });
+    $$("#labRes [data-lclip]").forEach(b => b.onclick = () => bkClip(b, b.dataset.lclip, b.dataset.t0, b.dataset.t1));
+    $$("#labRes [data-lgo]").forEach(b => b.onclick = () => playExample({ song: b.dataset.lgo, t: +b.dataset.t0, bars: [+b.dataset.b0, +b.dataset.b1] }, "lab"));
+  } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function labRunSub() {
+  const box = $("#labSubRes"), key = $("#labKey")?.value || LAB_KEY, tgt = ($("#labTgt")?.value || "5").trim(), nxt = ($("#labNxt")?.value || "").trim();
+  if (!box) return;
+  LAB_KEY = key; LS.set("labKey", key);
+  box.innerHTML = `<div class="small mute">계산 중…</div>`;
+  try {
+    const r = await api(`/api/harmony/substitutes?target=${encodeURIComponent(tgt)}&key=${encodeURIComponent(key)}&next=${encodeURIComponent(nxt)}`);
+    Object.keys(CARDS).forEach(k => { if (k.startsWith("lab:s")) delete CARDS[k]; });
+    box.innerHTML = `<div class="small mute" style="margin:4px 0">기준: <b>${esc(r.target)}</b> (${esc(r.key)} 키 · 도수 ${esc(r.deg)})</div>` +
+      r.items.map((x, i) => labCard(`lab:s${i}`, `${x.chord} (${x.deg}) · ${x.group}`, x.play_chords, r.rel_key, x.feel)).join("");
+  } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function labRunMod() {
+  const box = $("#labModRes"), fk = $("#labFromK")?.value || LAB_KEY, tk = $("#labToK")?.value || LAB_TO;
+  if (!box) return;
+  LAB_KEY = fk; LAB_TO = tk; LS.set("labKey", fk); LS.set("labTo", tk);
+  box.innerHTML = `<div class="small mute">계산 중…</div>`;
+  try {
+    const r = await api(`/api/harmony/modulate?from_key=${encodeURIComponent(fk)}&to_key=${encodeURIComponent(tk)}`);
+    Object.keys(CARDS).forEach(k => { if (k.startsWith("lab:m")) delete CARDS[k]; });
+    box.innerHTML = `<div class="small mute" style="margin:4px 0">${esc(r.from_key)} → ${esc(r.to_key)}${r.step_desc ? " (" + esc(r.step_desc) + ")" : ""}</div>` +
+      r.bridges.map((b, i) => labCard(`lab:m${i}`, b.name, b.chords, b.key, b.desc)).join("");
+  } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function labNewQuiz() {
+  const box = $("#labEarBox"); if (!box) return;
+  box.innerHTML = `<div class="small mute">합주곡에서 문제를 고르는 중…</div>`;
+  try {
+    const q = await api(`/api/harmony/quiz?kind=${LAB_EAR.kind}`);
+    LAB_EAR.q = q; LAB_EAR.done = false;
+    labDrawQuiz();
+  } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+function labDrawQuiz() {
+  const box = $("#labEarBox"), q = LAB_EAR.q; if (!box || !q) return;
+  Object.keys(CARDS).forEach(k => { if (k.startsWith("lab:e")) delete CARDS[k]; });
+  CARDS["lab:ear"] = { p: { kind: "chords", label: "귀 훈련", key: q.key, chords: q.play_chords, melody: "", meter: "4/4" }, shift: 0, pat: "ballad", bpm: Math.min(160, Math.max(60, q.bpm || 96)) };
+  box.innerHTML = `<div class="lab-card"><div class="small mute">점수: ${LAB_EAR.ok} / ${LAB_EAR.tot}</div>
+    <div style="font-weight:700;font-size:15px;margin:6px 0">❓ ${esc(q.prompt)}</div>
+    <div class="lab-row">${q.song ? `<button class="btn sm pri" id="earClip">▶ 원곡으로 듣기</button>` : ""}<button class="btn sm" data-play="lab:ear">▶ 코드음으로 듣기</button></div>
+    <div class="bkq" style="border:none;padding:6px 0;margin:4px 0;background:none"><div class="opts">${q.options.map((o, i) =>
+      `<button class="btn sm" data-eopt="${i}" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>
+    <div class="why" id="earWhy" hidden></div></div>
+    <div class="lab-row" style="margin-top:8px"><button class="btn sm" id="earNext">다음 문제 →</button></div></div>`;
+  if ($("#earClip")) $("#earClip").onclick = () => bkClip($("#earClip"), q.song, q.t, q.t1);
+  $("#earNext").onclick = () => labNewQuiz();
+  $$("#labEarBox [data-eopt]").forEach(b => b.onclick = () => {
+    if (LAB_EAR.done) return; LAB_EAR.done = true; LAB_EAR.tot++;
+    const ok = b.dataset.v === q.answer; if (ok) LAB_EAR.ok++;
+    b.classList.add(ok ? "ok" : "no");
+    $$("#labEarBox [data-eopt]").forEach(x => { if (x.dataset.v === q.answer) x.classList.add("ok"); });
+    const why = $("#earWhy"); why.innerHTML = `<b>${ok ? "맞아요!" : "아쉬워요."}</b> ${esc(q.explain)}`; why.hidden = false;
+  });
+}
+function bkLabRender(host) {
+  cpStop(); bkClipStop();
+  host.innerHTML = `<div class="lead" style="margin-top:6px">우리 합주곡 코드 진행을 찾고, 대리·전조 코드를 들어 보며 귀를 훈련해요.</div>
+    <div class="lab-sub">
+      <button class="chip ${LAB_TAB === "trends" ? "on" : ""}" data-lt="trends">🔍 진행 검색 · 통계</button>
+      <button class="chip ${LAB_TAB === "sub" ? "on" : ""}" data-lt="sub">🎨 대리코드 · 전조</button>
+      <button class="chip ${LAB_TAB === "ear" ? "on" : ""}" data-lt="ear">👂 합주곡 귀 훈련</button>
+    </div><div id="labBody"></div>`;
+  $$("[data-lt]", host).forEach(b => b.onclick = () => { LAB_TAB = b.dataset.lt; LS.set("labTab", LAB_TAB); bkLabRender(host); });
+  const body = $("#labBody");
+  if (LAB_TAB === "trends") {
+    body.innerHTML = `<div class="lab-row"><input id="labQ" style="flex:1" value="${esc(LAB_Q)}" placeholder="도수 입력 (예: 1 5 6m 또는 4-5-3m-6m)"><button class="btn sm pri" id="labGo">검색</button><button class="btn sm" id="labClr">초기화</button></div>
+      <div class="chips" style="margin-bottom:8px">${LAB_DEGS.map(d => `<button class="chip" data-dadd="${d}">${d}</button>`).join("")}</div>
+      <div id="labRes"></div>`;
+    $("#labGo").onclick = () => labRunSearch($("#labQ").value);
+    $("#labClr").onclick = () => { $("#labQ").value = ""; labRunSearch(""); };
+    $("#labQ").onkeydown = e => { if (e.key === "Enter") labRunSearch($("#labQ").value); };
+    $$("[data-dadd]", body).forEach(b => b.onclick = () => { const cur = $("#labQ").value.trim(); $("#labQ").value = cur ? cur + " " + b.dataset.dadd : b.dataset.dadd; labRunSearch($("#labQ").value); });
+    labRunSearch(LAB_Q);
+  } else if (LAB_TAB === "sub") {
+    const opts = k => LAB_KEYS.map(x => `<option ${x === k ? "selected" : ""}>${x}</option>`).join("");
+    body.innerHTML = `<div class="lab-card"><b>🎨 대리 · 차용 코드 후보</b>
+      <div class="lab-row"><label class="small mute">키 <select id="labKey">${opts(LAB_KEY)}</select></label>
+        <input id="labTgt" style="width:110px" value="5" placeholder="바꿀 코드/도수">
+        <input id="labNxt" style="width:110px" value="1" placeholder="다음 코드(선택)">
+        <button class="btn sm pri" id="labSubGo">추천 보기</button></div>
+      <div id="labSubRes"></div></div>
+      <div class="lab-card"><b>🌉 전조 도우미</b>
+      <div class="lab-row"><label class="small mute">원래 키 <select id="labFromK">${opts(LAB_KEY)}</select></label> → <label class="small mute">새 키 <select id="labToK">${opts(LAB_TO)}</select></label>
+        <button class="btn sm pri" id="labModGo">브릿지 보기</button></div>
+      <div id="labModRes"></div></div>`;
+    $("#labSubGo").onclick = labRunSub; $("#labModGo").onclick = labRunMod;
+    labRunSub(); labRunMod();
+  } else {
+    body.innerHTML = `<div class="lab-row"><button class="chip ${LAB_EAR.kind === "prog" ? "on" : ""}" data-ek="prog">진행 맞히기</button><button class="chip ${LAB_EAR.kind === "next" ? "on" : ""}" data-ek="next">다음 코드 맞히기</button></div><div id="labEarBox"></div>`;
+    $$("[data-ek]", body).forEach(b => b.onclick = () => { LAB_EAR.kind = b.dataset.ek; bkLabRender(host); });
+    if (LAB_EAR.q && LAB_EAR.q.kind === LAB_EAR.kind) labDrawQuiz(); else labNewQuiz();
+  }
 }
 function bookTocDraw() {
   const ed = can("study"), done = bkDone(), order = bkOrder(), nDone = order.filter(id => done[id]).length, next = order.find(id => !done[id]) || order[0];
-  const bands = BK_SONGS?.bands || [], tab = BK_TAB === "songs" ? "songs" : "learn";
+  const bands = BK_SONGS?.bands || [], tab = BK_TAB === "songs" ? "songs" : BK_TAB === "lab" ? "lab" : "learn";
   const learn = () => (order.length ? `<div class="bkgo"><button class="btn pri" data-p="${next}">▶ ${nDone ? "이어서" : "처음부터"}: ${esc(BOOK.pages[next].title)}</button><span class="small mute">${nDone} / ${order.length} 쪽 읽음</span></div>` : "") +
     BOOK.chapters.map(ch => { const ids = ch.pages.filter(id => BOOK.pages[id] && (BOOK.pages[id].has || ed)); if (!ids.length && !ed) return "";
       return `<div class="ch">${esc(ch.title)}</div>` + (ids.length ? ids.map(id => { const p = BOOK.pages[id];
@@ -2733,9 +2906,11 @@ function bookTocDraw() {
     (bands.length ? bands.map(b => (bands.length > 1 ? `<div class="ch">${esc(b.name)}</div>` : "") + b.songs.map(s =>
       `<div class="pg" data-s="${s.id}"><div class="t"><b>${esc(s.title)}</b><span>${s.v ? `${esc(s.key)} 키 · 이론이 들리는 자리 ${s.n}곳` : "풀이 아직 없음"}</span></div></div>`).join("")).join("")
       : `<div class="small mute" style="padding:10px 2px">${BK_SONGS ? "밴드매니저에 '연습중' 곡이 없어요." : "불러오는 중…"}</div>`);
-  $("#bookToc").innerHTML = `<h1>📖 음악 이론 책</h1><div class="bktabs"><button data-tab="learn" class="${tab === "learn" ? "on" : ""}">📖 차근차근 배우기</button><button data-tab="songs" class="${tab === "songs" ? "on" : ""}">🎸 합주곡 풀이</button></div>` +
-    (tab === "learn" ? `<div class="lead">소리를 들으며 처음부터 차근차근. 한 쪽에 3분이면 돼요.</div>` + learn() : songs());
+  $("#bookToc").innerHTML = `<h1>📖 음악 이론 책</h1><div class="bktabs"><button data-tab="learn" class="${tab === "learn" ? "on" : ""}">📖 차근차근</button><button data-tab="songs" class="${tab === "songs" ? "on" : ""}">🎸 합주곡 풀이</button><button data-tab="lab" class="${tab === "lab" ? "on" : ""}">🔍 코드 탐험</button></div>` +
+    (tab === "learn" ? (BOOK ? `<div class="lead">소리를 들으며 처음부터 차근차근. 한 쪽에 3분이면 돼요.</div>` + learn() : `<div class="mute" style="padding:20px">불러오는 중…</div>`) : tab === "songs" ? songs() : `<div id="bkLabHost"></div>`);
+  labBindCards($("#bookToc"));
   $$("#bookToc [data-tab]").forEach(b => b.onclick = () => { BK_TAB = b.dataset.tab; LS.set("bkTab", BK_TAB); bookTocDraw(); });
+  if (tab === "lab") return bkLabRender($("#bkLabHost"));
   $$("#bookToc [data-p]").forEach(el => el.onclick = () => bookOpen(el.dataset.p));
   $$("#bookToc [data-s]").forEach(el => el.onclick = () => bookSong(el.dataset.s));
   $$("#bookToc [data-newp]").forEach(b => b.onclick = async () => { const t = prompt("쪽 제목"); if (!t) return; try { const p = await api("/api/book/pages", jsonOpt("POST", { chapter: b.dataset.newp, title: t })); bookSaved(p.id, p); BOOK.chapters.find(c => c.id === b.dataset.newp)?.pages.push(p.id); bookOpen(p.id, true); } catch (e) { toast("실패: " + e.message); } });
@@ -2750,6 +2925,7 @@ function bkExHtml(list) { // 개념 쪽 '우리 합주곡에서' — 3개만 보
     (list.length > 3 ? `<button class="btn xs" id="bkMore" style="margin-top:8px">더 보기 (${list.length - 3})</button>` : "");
 }
 async function bookOpen(pid, edit) {
+  if (pid === "lab") { BK_TAB = "lab"; LS.set("bkTab", "lab"); return bookToc(); }
   if (pid.startsWith("s/")) return bookSong(pid.slice(2));
   BK_AT = pid; location.hash = "book/" + pid; cpStop(); bkClipStop(); $("#bookToc").hidden = true; const box = $("#bookPage"); box.hidden = false; window.scrollTo(0, 0);
   let p = BOOK?.pages?.[pid]?.body !== undefined ? Object.assign({}, BOOK.pages[pid]) : null; // 저장해 둔 책이 있으면 바로
@@ -3256,6 +3432,7 @@ async function cClick(e) {
     if (d.keysave) { const id = d.keysave, r = await api(`/api/write/${w.id}/pieces/${id.slice(2)}`, jsonOpt("PUT", cTransposed(id))); delete CARDS[id]; put(r); return toast("이 키 · 템포로 저장했어요"); }
     if (d.bookkeep) { const it = cBookItem(+d.bookkeep); put(await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", Object.assign(cTransposed(`k:${d.bookkeep}`), { title: it[0] })))); return toast("조각에 담았어요"); }
     if (d.booktalk) { const it = cBookItem(+d.booktalk), key = LS.get("cBookKey", "G"), t = $("#cIn"); if (t) { t.value = `${it[0]} (${key} 키: ${it[1].map(x => cpBookChord(x, key)).join(" - ")}) 로 짜 보면 어떨까요?`; t.focus(); t.scrollIntoView({ behavior: "smooth", block: "center" }); } return; }
+    if (d.golab) { cpStop(); BK_TAB = "lab"; LAB_TAB = d.golab; LS.set("bkTab", "lab"); LS.set("labTab", LAB_TAB); return showMain("book"); }
   } catch (err) { toast(err.message, 4000); b.disabled = false; }
 }
 // 조각 보드
@@ -3348,6 +3525,7 @@ function cBookDraw() {
   const box = $("#cBookBox"); if (!box) return; const key = LS.get("cBookKey", "G"), ed = can("compose");
   C_BOOK.forEach((_, i) => { delete CARDS["k:" + i]; });
   box.innerHTML = `<div class="small mute" style="margin-top:6px">느낌은 서양 대중음악 관습에서 온 경향이에요. 귀로 듣고 판단해 주세요. 소리는 스케치용 합성음이에요.</div>
+    <div class="acts" style="margin:6px 0"><button class="btn xs" data-golab="sub">🎨 대리코드 · 전조 도우미</button><button class="btn xs" data-golab="trends">🔍 우리 곡 진행 통계</button></div>
     <div class="cbook-deg">${C_DEG_FEEL.map(([d, t]) => `<b>${d}</b><span>${t}</span>`).join("")}</div>
     <label class="small mute">키 <select data-bookkey="1">${["C", "D", "E", "F", "G", "A", "Bb"].map(k => `<option ${k === key ? "selected" : ""}>${k}</option>`).join("")}</select></label>
     ${C_BOOK.map(([n, deg, tx], i) => cCardHtml("k:" + i, { kind: "chords", label: n, key, chords: "| " + deg.map(x => cpBookChord(x, key)).join(" | ") + " |", explain: tx, meter: "4/4", bpm: 96 }, ed ? `<button class="btn xs" data-bookkeep="${i}">📌 담기</button><button class="btn xs" data-booktalk="${i}">💬 얘기하기</button>` : "")).join("")}`;
