@@ -146,15 +146,35 @@ footer{margin-top:var(--bn-sp-8);display:flex;align-items:center;justify-content
 body:not(.admin) #installBtn,#offBtn{display:none}
 body.editing #offBtn{display:inline-flex}
 body.admin #adminEnterBtn{display:none}
-#pcPanel{display:none;margin-top:var(--bn-sp-6);padding:var(--bn-sp-3);border:1px solid var(--bn-line,#8884);border-radius:12px}
+/* 내 PC (관리자만) — 11-17 다시 짬 (Benny: "지저분하다, 필요한 것만"): 탭 둘(예약 · 사진·영상) · 주 동작 하나씩 · 나머지는 '더보기' */
+#pcPanel{display:none;margin-top:var(--bn-sp-6)}
 body.admin #pcPanel{display:block}
-#pcPanel h2{font-size:var(--bn-fs-md);margin:0 0 var(--bn-sp-2)}
-#pcPanel .row{display:flex;flex-wrap:wrap;gap:var(--bn-sp-2)}
-#fkRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#fkRow #fkUrl{flex:1 1 220px;min-width:0}#fkRow #fkSite{width:12em}
-#clickRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#clickRow #clkUrl{flex:1 1 220px;min-width:0}
-#mdRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#mdRow #mdPrompt{flex:1 1 260px;min-width:0}
-#pcLinks a{display:block;margin-top:4px;word-break:break-all}
-#pcOut{white-space:pre-wrap;font-size:var(--bn-fs-sm);max-height:260px;overflow:auto;margin:var(--bn-sp-2) 0 0;color:var(--bn-ink-2)}
+.pc{display:grid;gap:var(--bn-sp-4);background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-4);box-shadow:var(--bn-shadow-1)}
+.seg{display:inline-flex;justify-self:start;padding:var(--bn-sp-1);border-radius:var(--bn-r-md);background:var(--bn-track)}
+.seg button{position:relative;border:0;background:none;font:inherit;font-size:var(--bn-fs-sm);font-weight:600;color:var(--bn-ink-3);padding:var(--bn-sp-1) var(--bn-sp-4);border-radius:var(--bn-r-sm);cursor:pointer;
+  transition:background var(--bn-dur) var(--bn-ease),color var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease)}
+.seg button[aria-pressed="true"]{background:var(--bn-surface);color:var(--bn-ink);box-shadow:var(--bn-shadow-1)}
+.seg button:focus-visible{outline:2px solid var(--bn-accent);outline-offset:2px}
+.pane{display:grid;gap:var(--bn-sp-3)}
+.fl{display:flex;flex-wrap:wrap;align-items:center;gap:var(--bn-sp-2)}
+.fl .grow{flex:1 1 200px;min-width:0}
+.pc input:not([type=checkbox]),.pc select,.pc textarea{font:inherit;font-size:var(--bn-fs-sm);color:var(--bn-ink);min-height:36px;padding:var(--bn-sp-1) var(--bn-sp-3);border:1px solid var(--bn-line);border-radius:var(--bn-r-sm);background:var(--bn-surface)}
+.pc textarea{width:100%;min-height:68px;resize:vertical;line-height:1.45}
+.pc .btn.primary{min-height:36px;padding:var(--bn-sp-1) var(--bn-sp-4)}
+.chk{display:inline-flex;align-items:center;gap:var(--bn-sp-1);font-size:var(--bn-fs-sm);color:var(--bn-ink-2);cursor:pointer;user-select:none}
+.chk input{accent-color:var(--bn-accent);width:16px;height:16px;margin:0}
+.end{margin-left:auto}
+.sub{display:flex;flex-wrap:wrap;align-items:center;gap:var(--bn-sp-1);padding-top:var(--bn-sp-3);border-top:1px solid var(--bn-line)}
+.sub .lbl{font-size:var(--bn-fs-xs);color:var(--bn-ink-3);margin-right:var(--bn-sp-1)}
+.more summary{font-size:var(--bn-fs-xs);color:var(--bn-ink-3);cursor:pointer;width:max-content;list-style:none}
+.more summary::-webkit-details-marker{display:none}
+.more summary::before{content:"▸ "}.more[open] summary::before{content:"▾ "}
+.more[open] summary{margin-bottom:var(--bn-sp-2)}
+.pcres{display:grid;gap:var(--bn-sp-2)}
+#pcOut{margin:0;padding:var(--bn-sp-3);border-radius:var(--bn-r-md);background:var(--bn-fill);color:var(--bn-ink-2);font:var(--bn-fs-xs)/1.5 var(--bn-font-mono);white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto}
+#pcOut:empty,#pcLinks:empty{display:none}
+#pcLinks{display:flex;flex-wrap:wrap;gap:var(--bn-sp-1)}
+#pcLinks a{font-size:var(--bn-fs-xs);font-weight:600;padding:var(--bn-sp-1) var(--bn-sp-3);border-radius:var(--bn-r-pill);background:var(--bn-accent-faint);border:1px solid var(--bn-accent-line);color:var(--bn-accent);text-decoration:none}
 </style>
 </head>
 <body>
@@ -182,45 +202,66 @@ body.admin #pcPanel{display:block}
   <main id="list"></main>
   <datalist id="groups"></datalist>
 
-  <!-- 11-16 관리자 전용: 내 PC 에서 정해 둔 스크립트 실행 (pcJobs → pc-bridge/portal_jobs.py) -->
-  <section id="pcPanel" aria-label="내 PC 실행">
-    <h2>🖥️ 내 PC 실행</h2>
-    <div class="row">
-      <button class="btn sm" type="button" data-pcjob="ticket_status">예약 현황</button>
-      <button class="btn sm" type="button" data-pcjob="keyescape_slots">키이스케이프 슬롯</button>
-      <button class="btn sm" type="button" data-pcjob="keyescape_open">키이스케이프 오픈 대기</button>
-      <button class="btn sm" type="button" data-pcjob="baseball_probe">야구 상태</button>
-      <button class="btn sm" type="button" data-pcjob="baseball_clock">야구 시계</button>
+  <!-- 관리자 전용: 내 PC 에서 정해 둔 스크립트 실행 (pcJobs → pc-bridge/portal_jobs.py). 11-17 정리: 예약 · 사진·영상 두 탭 -->
+  <section id="pcPanel" class="sec" aria-label="내 PC">
+    <h2>내 PC</h2>
+    <div class="pc">
+      <div class="seg" role="group" aria-label="내 PC 기능">
+        <button type="button" data-pctab="book">예약</button><button type="button" data-pctab="media">사진·영상</button>
+      </div>
+
+      <div class="pane" data-pane="book">
+        <div class="fl" id="fireUrlRow" hidden>
+          <input id="clkUrl" class="grow" type="url" placeholder="https://예약 페이지 주소" maxlength="300" autocomplete="off">
+          <select id="clkKey" aria-label="누를 키"><option value="click">클릭</option><option value="f5">F5</option><option value="enter">Enter</option><option value="space">Space</option></select>
+        </div>
+        <div class="fl">
+          <select id="fireSite" aria-label="사이트"><option value="keyescape">keyescape</option><option value="__url">다른 주소…</option></select>
+          <input id="fireAt" type="time" step="1" aria-label="누를 서버 시각" title="비우면 사이트 기본 시각">
+          <label class="chk"><input id="fireDry" type="checkbox" checked>연습</label>
+          <button class="btn primary end" type="button" data-pcjob="fire" data-label="정각 누름">정각 누름 대기</button>
+        </div>
+        <div class="sub">
+          <span class="lbl">확인</span>
+          <button class="btn ghost sm" type="button" data-pcjob="ticket_status" data-label="예약 현황">예약 현황</button>
+          <button class="btn ghost sm" type="button" data-pcjob="keyescape_slots" data-label="키이스케이프 슬롯">키이스케이프 슬롯</button>
+          <button class="btn ghost sm" type="button" data-pcjob="baseball_probe" data-label="야구 상태">야구</button>
+        </div>
+        <details class="more">
+          <summary>더보기</summary>
+          <div class="pane">
+            <div class="fl">
+              <input id="fkUrl" class="grow" type="url" placeholder="새 사이트 예약폼 주소 → AI 초안" maxlength="300" autocomplete="off">
+              <button class="btn sm" type="button" data-pcjob="formkit_new" data-label="사이트 등록">등록</button>
+              <button class="btn ghost sm" type="button" data-pcjob="formkit_list" data-label="사이트 목록">목록 새로고침</button>
+            </div>
+            <div class="fl">
+              <button class="btn ghost sm" type="button" data-pcjob="keyescape_open" data-label="키이스케이프 오픈 대기">키이스케이프 오픈 대기</button>
+              <button class="btn ghost sm" type="button" data-pcjob="baseball_clock" data-label="야구 서버 시계">야구 서버 시계</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="pane" data-pane="media" hidden>
+        <textarea id="mdPrompt" placeholder="무엇을 만들까요? (영어 권장)" maxlength="600" aria-label="프롬프트"></textarea>
+        <div class="fl">
+          <select id="mdKind" aria-label="종류"><option value="image">사진</option><option value="video">영상</option></select>
+          <select id="mdModel" aria-label="품질"><option value="5b">빠름</option><option value="a14b">고화질</option></select>
+          <select id="mdLen" aria-label="길이" hidden><option value="2">2초</option><option value="4">4초</option></select>
+          <button class="btn primary end" type="button" data-pcjob="media_gen" data-label="생성">생성</button>
+        </div>
+        <div class="sub">
+          <button class="btn ghost sm" type="button" data-pcjob="media_list" data-label="최근 결과">최근 결과</button>
+          <button class="btn ghost sm" type="button" data-pcjob="media_status" data-label="AI 상태">PC 상태</button>
+        </div>
+      </div>
+
+      <div class="pcres" aria-live="polite">
+        <pre id="pcOut"></pre>
+        <div id="pcLinks"></div>
+      </div>
     </div>
-    <div class="row" id="clickRow">
-      <input id="clkUrl" type="url" placeholder="https://예약사이트 주소" maxlength="300" autocomplete="off">
-      <input id="clkAt" type="time" step="1" value="10:00:00" aria-label="누를 서버 시각">
-      <select id="clkKey" aria-label="누를 키"><option value="click">마우스 클릭</option><option value="f5">F5</option><option value="enter">Enter</option><option value="space">Space</option></select>
-      <label><input id="clkDry" type="checkbox"> 연습(안 누름)</label>
-      <button class="btn sm" type="button" data-pcjob="clicker">정각 클릭 대기</button>
-    </div>
-    <div class="row" id="fkRow">
-      <input id="fkUrl" type="url" placeholder="0) 새 사이트 예약폼 주소 → AI 초안" maxlength="300" autocomplete="off">
-      <button class="btn sm" type="button" data-pcjob="formkit_new">사이트 등록</button>
-      <button class="btn sm" type="button" data-pcjob="formkit_list">목록</button>
-      <input id="fkSite" placeholder="사이트 이름 (예: keyescape)" maxlength="30" autocomplete="off" list="fkSites">
-      <datalist id="fkSites"></datalist>
-      <input id="fkAt" type="time" step="1" aria-label="누를 서버 시각(비우면 사이트 기본)">
-      <label><input id="fkDry" type="checkbox" checked> 연습(안 누름)</label>
-      <button class="btn sm" type="button" data-pcjob="formkit_fire">정각 누름 대기</button>
-    </div>
-    <!-- 11-16 AI 사진/영상: PC ComfyUI(Wan 2.2) 생성 → 결과는 tailnet 주소(:8830)로만 보임 -->
-    <div class="row" id="mdRow">
-      <input id="mdPrompt" placeholder="🎬 프롬프트 (영어 권장, 3~600자)" maxlength="600" autocomplete="off">
-      <select id="mdKind" aria-label="종류"><option value="video">영상</option><option value="image">사진</option></select>
-      <select id="mdModel" aria-label="모델"><option value="5b">빠름 5B (~2분)</option><option value="a14b">고화질 A14B (~5분)</option></select>
-      <select id="mdLen" aria-label="길이"><option value="2">2초</option><option value="4">4초</option></select>
-      <button class="btn sm" type="button" data-pcjob="media_status">AI 상태</button>
-      <button class="btn sm" type="button" data-pcjob="media_gen">생성</button>
-      <button class="btn sm" type="button" data-pcjob="media_list">최근 결과</button>
-    </div>
-    <pre id="pcOut"></pre>
-    <div id="pcLinks"></div>
   </section>
 
   <footer>
@@ -719,13 +760,36 @@ twoTap($("revert"), "한 번 더 누르면 되돌려요", () => { items = clone(
 // 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 이 기기에서 관리자 화면만 끔
 /* 11-16 내 PC 실행: 관리자만 pcJobs 에 {cmd(+정각클릭은 url·at·key·dry)} 생성 → PC 가 5초 안에 받아 실행하고 status·out 을 같은 문서에 씀 */
 const PC_STATUS = { running: "⏳ 실행 중", done: "✅ 끝", fail: "❌ 실패", rejected: "⛔ 거절", expired: "⌛ PC 가 못 받음" };
+const PC_TAB = "benny.pcTab", PC_SITES = "benny.fkSites";
+function pcTab(t) {
+  document.querySelectorAll("[data-pctab]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.pctab === t)));
+  document.querySelectorAll("[data-pane]").forEach(x => { x.hidden = x.dataset.pane !== t; });
+  try { localStorage.setItem(PC_TAB, t); } catch (e) {}
+}
+document.querySelectorAll("[data-pctab]").forEach(x => x.addEventListener("click", () => pcTab(x.dataset.pctab)));
+pcTab((() => { try { return localStorage.getItem(PC_TAB); } catch (e) { return null; } })() === "media" ? "media" : "book");
+function fillSites(names) {   // 폼키트에 저장된 사이트 + '다른 주소…'(범용 정각 클릭)
+  const sel = $("fireSite"), cur = sel.value;
+  sel.textContent = "";
+  [...new Set(names)].filter(n => /^[a-z0-9-]{1,30}$/.test(n)).forEach(n => sel.appendChild(new Option(n, n)));
+  sel.appendChild(new Option("다른 주소…", "__url"));
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  $("fireUrlRow").hidden = sel.value !== "__url";
+}
+fillSites((() => { try { return JSON.parse(localStorage.getItem(PC_SITES)) || ["keyescape"]; } catch (e) { return ["keyescape"]; } })());
+$("fireSite").addEventListener("change", () => { $("fireUrlRow").hidden = $("fireSite").value !== "__url"; });
+$("mdKind").addEventListener("change", () => { $("mdLen").hidden = $("mdKind").value !== "video"; });
+const hms = v => v ? (v + ":00").slice(0, 8) : "";
 document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click", async () => {
-  const out = $("pcOut"), cmd = b.dataset.pcjob;
+  const out = $("pcOut"), label = b.dataset.label || b.textContent;
+  let cmd = b.dataset.pcjob;
+  if (cmd === "fire") cmd = $("fireSite").value === "__url" ? "clicker" : "formkit_fire";
   if (cmd === "keyescape_open" && !confirm("PC 에 오픈 대기 창을 띄웁니다. 캡차·확인은 PC 앞에서 해야 해요. 띄울까요?")) return;
   const fields = { cmd: { stringValue: cmd } };
   if (cmd === "clicker") {
-    const url = $("clkUrl").value.trim(), at = ($("clkAt").value + ":00").slice(0, 8), key = $("clkKey").value, dry = $("clkDry").checked;
+    const url = $("clkUrl").value.trim(), at = hms($("fireAt").value), key = $("clkKey").value, dry = $("fireDry").checked;
     if (!/^https?:\/\/\S+$/.test(url)) { out.textContent = "⛔ 주소는 https:// 로 시작해야 해요"; return; }
+    if (!at) { out.textContent = "⛔ 다른 주소는 누를 시각을 꼭 넣어 주세요"; return; }
     if (!confirm(`PC 에 정각 클릭 창을 띄웁니다.\n${url}\n서버 ${at} 에 ${key}${dry ? " (연습)" : ""}\n마우스는 PC 앞에서 버튼 위에 두세요. 띄울까요?`)) return;
     Object.assign(fields, { url: { stringValue: url }, at: { stringValue: at }, key: { stringValue: key }, dry: { booleanValue: dry } });
   }
@@ -735,34 +799,35 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
     fields.url = { stringValue: url };
   }
   if (cmd === "formkit_fire") {
-    const site = $("fkSite").value.trim(), at = $("fkAt").value ? ($("fkAt").value + ":00").slice(0, 8) : "", dry = $("fkDry").checked;
-    if (!/^[a-z0-9-]{1,30}$/.test(site)) { out.textContent = "⛔ 사이트 이름은 영소문자·숫자·- 만 (목록 버튼으로 확인)"; return; }
+    const site = $("fireSite").value, at = hms($("fireAt").value), dry = $("fireDry").checked;
     if (!confirm(`PC 에 ${site} 정각 누름 창을 띄웁니다.${at ? "\n서버 " + at : " (사이트 기본 시각)"}${dry ? " — 연습" : ""}\n크롬에서 폼키트 북마클릿 → 캡차 체크는 PC 앞에서. 띄울까요?`)) return;
     fields.site = { stringValue: site }; fields.dry = { booleanValue: dry };
     if (at) fields.at = { stringValue: at };
   }
   if (cmd === "media_gen") {
-    const prompt = $("mdPrompt").value.trim().replace(/\s+/g, " "), kind = $("mdKind").value, model = $("mdModel").value, len = $("mdLen").value;
+    const prompt = $("mdPrompt").value.trim().replace(/\s+/g, " "), kind = $("mdKind").value;
     if (prompt.length < 3) { out.textContent = "⛔ 프롬프트를 3자 이상 써 주세요"; return; }
-    Object.assign(fields, { prompt: { stringValue: prompt.slice(0, 600) }, kind: { stringValue: kind }, model: { stringValue: model }, len: { stringValue: len } });
+    Object.assign(fields, { prompt: { stringValue: prompt.slice(0, 600) }, kind: { stringValue: kind }, model: { stringValue: $("mdModel").value }, len: { stringValue: kind === "video" ? $("mdLen").value : "2" } });
   }
   const isMedia = cmd === "media_gen";
   $("pcLinks").textContent = "";
-  b.disabled = true; out.textContent = b.textContent + " — PC 에 보냄…";
+  b.disabled = true; out.textContent = label + " — PC 에 보냄…";
   try {
-    const doc = await fsCall("pcJobs", { method: "POST", qs: "",
-      body: { fields } });
+    const doc = await fsCall("pcJobs", { method: "POST", qs: "", body: { fields } });
     const id = doc.name.split("/documents/")[1];
     for (let i = 0; i < (isMedia ? 200 : 60); i++) {
       await new Promise(r => setTimeout(r, i < 10 ? 2000 : isMedia ? 5000 : 4000));
       const f = (await fsCall(id)).fields || {};
-      const st = f.status && f.status.stringValue;
-      if (!st) { out.textContent = b.textContent + " — PC 응답 기다리는 중… (" + (i + 1) + ")"; continue; }
-      out.textContent = (PC_STATUS[st] || st) + "  " + b.textContent + "\n\n" + ((f.out && f.out.stringValue) || "");
-      if (cmd === "formkit_list" && st === "done") $("fkSites").innerHTML = ((f.out && f.out.stringValue) || "").split("\n").map(l => l.split(/\s+/)[0]).filter(n => /^[a-z0-9-]+$/.test(n)).map(n => `<option value="${n}">`).join("");
+      const st = f.status && f.status.stringValue, txt = (f.out && f.out.stringValue) || "";
+      if (!st) { out.textContent = label + " — PC 응답 기다리는 중… (" + (i + 1) + ")"; continue; }
+      out.textContent = (PC_STATUS[st] || st) + "  " + label + (txt ? "\n\n" + txt : "");
+      if (cmd === "formkit_list" && st === "done") {
+        const names = txt.split("\n").map(l => l.trim().split(/\s+/)[0]).filter(n => /^[a-z0-9-]+$/.test(n));
+        if (names.length) { fillSites(names); try { localStorage.setItem(PC_SITES, JSON.stringify(names)); } catch (e) {} }
+      }
       if (st !== "running") {
-        if (cmd.startsWith("media_")) $("pcLinks").innerHTML = [...new Set(((f.out && f.out.stringValue) || "").match(/https:\/\/[a-z0-9.-]+\.ts\.net:8830\/[\w.\-]*/g) || [])]
-          .map(u => `<a href="${u}" target="_blank" rel="noopener">▶ ${u.split("/").pop() || "전체 결과"}</a>`).join("");
+        if (cmd.startsWith("media_")) $("pcLinks").innerHTML = [...new Set(txt.match(/https:\/\/[a-z0-9.-]+\.ts\.net:8830\/[\w.\-]*/g) || [])]
+          .map(u => `<a href="${u}" target="_blank" rel="noopener">${u.split("/").pop() || "전체 결과"} ↗</a>`).join("");
         break;
       }
     }
