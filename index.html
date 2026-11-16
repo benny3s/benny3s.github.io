@@ -171,8 +171,16 @@ body.admin #pcPanel{display:block}
 .more summary::before{content:"▸ "}.more[open] summary::before{content:"▾ "}
 .more[open] summary{margin-bottom:var(--bn-sp-2)}
 .pcres{display:grid;gap:var(--bn-sp-2)}
-#pcOut{margin:0;padding:var(--bn-sp-3);border-radius:var(--bn-r-md);background:var(--bn-fill);color:var(--bn-ink-2);font:var(--bn-fs-xs)/1.5 var(--bn-font-mono);white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:var(--bn-sp-2)}
+.step{display:grid;grid-template-columns:24px minmax(0,1fr);gap:var(--bn-sp-3);padding:var(--bn-sp-3);border:1px solid var(--bn-line);border-radius:var(--bn-r-md)}
+.step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:var(--bn-fs-xs);font-weight:700;background:var(--bn-accent-faint);color:var(--bn-accent);border:1px solid var(--bn-accent-line)}
+.step .body{display:grid;gap:var(--bn-sp-2);min-width:0}
+.step h3{margin:0;font-size:var(--bn-fs-sm);font-weight:600;color:var(--bn-ink);line-height:24px}
+.step .hint{margin:0;font-size:var(--bn-fs-xs);color:var(--bn-ink-3)}
+.step .so:empty,.pane[data-mode="url"] [data-mode="site"],.pane[data-mode="site"] [data-mode="url"]{display:none}
+#pcOut,.so{margin:0;padding:var(--bn-sp-3);border-radius:var(--bn-r-md);background:var(--bn-fill);color:var(--bn-ink-2);font:var(--bn-fs-xs)/1.5 var(--bn-font-mono);white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto}
 #pcOut:empty,#pcLinks:empty{display:none}
+.so{max-height:180px}
 #pcLinks{display:flex;flex-wrap:wrap;gap:var(--bn-sp-1)}
 #pcLinks a{font-size:var(--bn-fs-xs);font-weight:600;padding:var(--bn-sp-1) var(--bn-sp-3);border-radius:var(--bn-r-pill);background:var(--bn-accent-faint);border:1px solid var(--bn-accent-line);color:var(--bn-accent);text-decoration:none}
 </style>
@@ -211,34 +219,77 @@ body.admin #pcPanel{display:block}
       </div>
 
       <div class="pane" data-pane="book">
-        <div class="fl" id="fireUrlRow" hidden>
-          <input id="clkUrl" class="grow" type="url" placeholder="https://예약 페이지 주소" maxlength="300" autocomplete="off">
-          <select id="clkKey" aria-label="누를 키"><option value="click">클릭</option><option value="f5">F5</option><option value="enter">Enter</option><option value="space">Space</option></select>
-        </div>
-        <div class="fl">
-          <select id="fireSite" aria-label="사이트"><option value="keyescape">keyescape</option><option value="__url">다른 주소…</option></select>
-          <input id="fireAt" type="time" step="1" aria-label="누를 서버 시각" title="비우면 사이트 기본 시각">
-          <label class="chk"><input id="fireDry" type="checkbox" checked>연습</label>
-          <button class="btn primary end" type="button" data-pcjob="fire" data-label="정각 누름">정각 누름 대기</button>
-        </div>
-        <div class="sub">
-          <span class="lbl">확인</span>
-          <button class="btn ghost sm" type="button" data-pcjob="ticket_status" data-label="예약 현황">예약 현황</button>
-          <button class="btn ghost sm" type="button" data-pcjob="keyescape_slots" data-label="키이스케이프 슬롯">키이스케이프 슬롯</button>
-          <button class="btn ghost sm" type="button" data-pcjob="baseball_probe" data-label="야구 상태">야구</button>
-        </div>
+        <ol class="steps">
+          <li class="step">
+            <span class="n">0</span>
+            <div class="body">
+              <h3>사이트</h3>
+              <div class="fl">
+                <select id="fireSite" class="grow" aria-label="사이트"><option value="keyescape">keyescape</option><option value="__url">다른 주소…</option></select>
+                <button class="btn ghost sm" type="button" data-pcjob="formkit_list" data-label="사이트 목록">목록 새로고침</button>
+              </div>
+              <div class="fl" id="fireUrlRow" hidden>
+                <input id="clkUrl" class="grow" type="url" placeholder="https://예약 페이지 주소" maxlength="300" autocomplete="off">
+              </div>
+            </div>
+          </li>
+          <li class="step">
+            <span class="n">1</span>
+            <div class="body">
+              <h3>서버 시계 · 누를 시각</h3>
+              <div class="fl">
+                <input id="fireAt" type="time" step="1" aria-label="누를 서버 시각" title="비우면 사이트 기본 시각">
+                <select id="clkKey" aria-label="누를 키" data-mode="url"><option value="click">클릭</option><option value="enter">Enter</option><option value="f5">F5</option><option value="space">Space</option></select>
+                <button class="btn sm end" type="button" data-pcjob="formkit_clock" data-label="서버 시계">서버 시계 확인</button>
+              </div>
+              <pre class="so"></pre>
+            </div>
+          </li>
+          <li class="step" data-site-only>
+            <span class="n">2</span>
+            <div class="body">
+              <h3>폼 분석</h3>
+              <p class="hint" data-mode="url">주소의 예약 폼을 읽어 AI 가 칸마다 넣을 값을 정합니다.</p>
+              <p class="hint" data-mode="site">이미 분석된 사이트 — 초안을 봅니다.</p>
+              <div class="fl"><button class="btn sm" type="button" id="step2Btn" data-pcjob="formkit_step2" data-label="폼 분석">폼 분석</button></div>
+              <pre class="so"></pre>
+            </div>
+          </li>
+          <li class="step">
+            <span class="n">3</span>
+            <div class="body">
+              <h3>넣을 값</h3>
+              <div class="fl">
+                <select id="fkKey" aria-label="값 이름"><option value="name">이름</option><option value="phone">전화</option><option value="phone1">전화 앞</option><option value="phone2">전화 가운데</option><option value="phone3">전화 끝</option><option value="email">이메일</option><option value="people">인원</option><option value="birth">생년월일</option></select>
+                <input id="fkVal" class="grow" type="text" maxlength="60" autocomplete="off" placeholder="값 (비우면 지움)">
+                <button class="btn sm" type="button" data-pcjob="formkit_set" data-label="값 저장">저장</button>
+              </div>
+              <div class="fl"><button class="btn ghost sm" type="button" data-pcjob="formkit_ready" data-label="초안 확정">빈 값 없음 → 확정</button></div>
+              <pre class="so"></pre>
+            </div>
+          </li>
+          <li class="step">
+            <span class="n">4</span>
+            <div class="body">
+              <h3>최종 버튼 · 정각 누름</h3>
+              <p class="hint">크롬에서 예약 화면을 띄우고 북마클릿으로 채운 뒤 → 커서를 최종 버튼 위로 → 대기.</p>
+              <div class="fl">
+                <button class="btn sm" type="button" data-pcjob="formkit_aim" data-label="커서 이동">커서 → 최종 버튼</button>
+                <label class="chk end"><input id="fireDry" type="checkbox" checked>연습</label>
+                <button class="btn primary" type="button" data-pcjob="fire" data-label="정각 누름">정각 누름 대기</button>
+              </div>
+              <pre class="so"></pre>
+            </div>
+          </li>
+        </ol>
         <details class="more">
           <summary>더보기</summary>
-          <div class="pane">
-            <div class="fl">
-              <input id="fkUrl" class="grow" type="url" placeholder="새 사이트 예약폼 주소 → AI 초안" maxlength="300" autocomplete="off">
-              <button class="btn sm" type="button" data-pcjob="formkit_new" data-label="사이트 등록">등록</button>
-              <button class="btn ghost sm" type="button" data-pcjob="formkit_list" data-label="사이트 목록">목록 새로고침</button>
-            </div>
-            <div class="fl">
-              <button class="btn ghost sm" type="button" data-pcjob="keyescape_open" data-label="키이스케이프 오픈 대기">키이스케이프 오픈 대기</button>
-              <button class="btn ghost sm" type="button" data-pcjob="baseball_clock" data-label="야구 서버 시계">야구 서버 시계</button>
-            </div>
+          <div class="fl">
+            <button class="btn ghost sm" type="button" data-pcjob="ticket_status" data-label="예약 현황">예약 현황</button>
+            <button class="btn ghost sm" type="button" data-pcjob="keyescape_slots" data-label="키이스케이프 슬롯">키이스케이프 슬롯</button>
+            <button class="btn ghost sm" type="button" data-pcjob="keyescape_open" data-label="키이스케이프 오픈 대기">키이스케이프 오픈 대기</button>
+            <button class="btn ghost sm" type="button" data-pcjob="baseball_probe" data-label="야구 상태">야구</button>
+            <button class="btn ghost sm" type="button" data-pcjob="baseball_clock" data-label="야구 서버 시계">야구 서버 시계</button>
           </div>
         </details>
       </div>
@@ -774,32 +825,52 @@ function fillSites(names) {   // 폼키트에 저장된 사이트 + '다른 주�
   [...new Set(names)].filter(n => /^[a-z0-9-]{1,30}$/.test(n)).forEach(n => sel.appendChild(new Option(n, n)));
   sel.appendChild(new Option("다른 주소…", "__url"));
   if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
-  $("fireUrlRow").hidden = sel.value !== "__url";
+  if (typeof bookMode === "function") bookMode(); else $("fireUrlRow").hidden = sel.value !== "__url";
 }
 fillSites((() => { try { return JSON.parse(localStorage.getItem(PC_SITES)) || ["keyescape"]; } catch (e) { return ["keyescape"]; } })());
-$("fireSite").addEventListener("change", () => { $("fireUrlRow").hidden = $("fireSite").value !== "__url"; });
+function bookMode() {   // 0단계 선택에 따라 2단계 문구 바꿈 (주소 → 분석 / 등록된 사이트 → 초안 보기)
+  const url = $("fireSite").value === "__url";
+  $("fireUrlRow").hidden = !url;
+  document.querySelector('[data-pane="book"]').dataset.mode = url ? "url" : "site";
+  const b2 = $("step2Btn"); b2.textContent = b2.dataset.label = url ? "폼 분석" : "초안 보기";
+}
+$("fireSite").addEventListener("change", bookMode); bookMode();
 $("mdKind").addEventListener("change", () => { $("mdLen").hidden = $("mdKind").value !== "video"; });
 const hms = v => v ? (v + ":00").slice(0, 8) : "";
 document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click", async () => {
-  const out = $("pcOut"), label = b.dataset.label || b.textContent;
+  const step = b.closest(".step"), out = (step && step.querySelector(".so")) || $("pcOut"), label = b.dataset.label || b.textContent;
   let cmd = b.dataset.pcjob;
-  if (cmd === "fire") cmd = $("fireSite").value === "__url" ? "clicker" : "formkit_fire";
-  if (cmd === "keyescape_open" && !confirm("PC 에 오픈 대기 창을 띄웁니다. 캡차·확인은 PC 앞에서 해야 해요. 띄울까요?")) return;
+  const site = $("fireSite").value, isUrl = site === "__url", pageUrl = $("clkUrl").value.trim();
+  if (cmd === "fire") cmd = isUrl ? "clicker" : "formkit_fire";
+  if (cmd === "formkit_step2") cmd = isUrl ? "formkit_new" : "formkit_show";
   const fields = { cmd: { stringValue: cmd } };
+  if (["formkit_clock", "formkit_show", "formkit_ready", "formkit_aim"].includes(cmd)) {
+    if (isUrl && cmd === "formkit_clock") {
+      if (!/^https?:\/\/\S+$/.test(pageUrl)) { out.textContent = "⛔ 0단계에 https:// 주소를 넣어 주세요"; return; }
+      fields.url = { stringValue: pageUrl };
+    } else if (!isUrl) fields.site = { stringValue: site };
+    else if (cmd !== "formkit_aim") { out.textContent = "⛔ 2단계 분석으로 사이트를 먼저 등록하세요 (0단계 목록에 생깁니다)"; return; }
+    if (cmd === "formkit_ready" && hms($("fireAt").value)) fields.at = { stringValue: hms($("fireAt").value) };
+  }
+  if (cmd === "formkit_set") {
+    const v = $("fkVal").value.trim();
+    if (/[<>"'`\\]/.test(v)) { out.textContent = "⛔ 따옴표·꺾쇠는 넣을 수 없어요"; return; }
+    Object.assign(fields, { key: { stringValue: $("fkKey").value }, value: { stringValue: v } });
+  }
+  if (cmd === "keyescape_open" && !confirm("PC 에 오픈 대기 창을 띄웁니다. 캡차·확인은 PC 앞에서 해야 해요. 띄울까요?")) return;
   if (cmd === "clicker") {
-    const url = $("clkUrl").value.trim(), at = hms($("fireAt").value), key = $("clkKey").value, dry = $("fireDry").checked;
-    if (!/^https?:\/\/\S+$/.test(url)) { out.textContent = "⛔ 주소는 https:// 로 시작해야 해요"; return; }
+    const url = pageUrl, at = hms($("fireAt").value), key = $("clkKey").value, dry = $("fireDry").checked;
+    if (!/^https?:\/\/\S+$/.test(url)) { out.textContent = "⛔ 0단계 주소는 https:// 로 시작해야 해요"; return; }
     if (!at) { out.textContent = "⛔ 다른 주소는 누를 시각을 꼭 넣어 주세요"; return; }
     if (!confirm(`PC 에 정각 클릭 창을 띄웁니다.\n${url}\n서버 ${at} 에 ${key}${dry ? " (연습)" : ""}\n마우스는 PC 앞에서 버튼 위에 두세요. 띄울까요?`)) return;
     Object.assign(fields, { url: { stringValue: url }, at: { stringValue: at }, key: { stringValue: key }, dry: { booleanValue: dry } });
   }
   if (cmd === "formkit_new") {
-    const url = $("fkUrl").value.trim();
-    if (!/^https?:\/\/\S+$/.test(url)) { out.textContent = "⛔ 주소는 https:// 로 시작해야 해요"; return; }
-    fields.url = { stringValue: url };
+    if (!/^https?:\/\/\S+$/.test(pageUrl)) { out.textContent = "⛔ 0단계에 https:// 주소를 넣어 주세요"; return; }
+    fields.url = { stringValue: pageUrl };
   }
   if (cmd === "formkit_fire") {
-    const site = $("fireSite").value, at = hms($("fireAt").value), dry = $("fireDry").checked;
+    const at = hms($("fireAt").value), dry = $("fireDry").checked;
     if (!confirm(`PC 에 ${site} 정각 누름 창을 띄웁니다.${at ? "\n서버 " + at : " (사이트 기본 시각)"}${dry ? " — 연습" : ""}\n크롬에서 폼키트 북마클릿 → 캡차 체크는 PC 앞에서. 띄울까요?`)) return;
     fields.site = { stringValue: site }; fields.dry = { booleanValue: dry };
     if (at) fields.at = { stringValue: at };
@@ -821,6 +892,15 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
       const st = f.status && f.status.stringValue, txt = (f.out && f.out.stringValue) || "";
       if (!st) { out.textContent = label + " — PC 응답 기다리는 중… (" + (i + 1) + ")"; continue; }
       out.textContent = (PC_STATUS[st] || st) + "  " + label + (txt ? "\n\n" + txt : "");
+      if (cmd === "formkit_new" && st === "done") {   // 등록되면 0단계 목록에 넣고 바로 선택
+        const m = txt.match(/\[([a-z0-9-]{1,30})\]/);
+        if (m) {
+          let names = [...$("fireSite").options].map(o => o.value).filter(v => v !== "__url");
+          names = [...new Set([...names, m[1]])]; fillSites(names); $("fireSite").value = m[1]; bookMode();
+          try { localStorage.setItem(PC_SITES, JSON.stringify(names)); } catch (e) {}
+        }
+      }
+      if (cmd === "formkit_set" && st === "done") $("fkVal").value = "";
       if (cmd === "formkit_list" && st === "done") {
         const names = txt.split("\n").map(l => l.trim().split(/\s+/)[0]).filter(n => /^[a-z0-9-]+$/.test(n));
         if (names.length) { fillSites(names); try { localStorage.setItem(PC_SITES, JSON.stringify(names)); } catch (e) {} }
