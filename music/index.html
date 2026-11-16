@@ -468,6 +468,13 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 .cform label{display:block;font-size:12.5px;color:var(--mute);margin-top:7px} .cform input,.cform textarea,.cform select{width:100%;margin-top:2px} .cform textarea{min-height:70px}
 .csel{margin-right:4px;width:20px;height:20px}
 .cbook-deg{display:grid;grid-template-columns:44px 1fr;gap:3px 8px;font-size:13px;margin:8px 0} .cbook-deg b{color:var(--accent)}
+.wr-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.wr-step{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:9px 11px;font-size:12.5px;line-height:1.45;color:var(--mute)}
+.wr-step b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+.wr-mode-desc{margin:8px 0 2px;padding:8px 10px;border-radius:9px;background:var(--panel2);font-size:13px;color:var(--text);line-height:1.45}
+.wr-guide{border:1px solid rgba(25,211,181,.28);background:rgba(25,211,181,.06);border-radius:10px;padding:8px 11px;margin:8px 0;font-size:13px;line-height:1.45}
+.lab-row label{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:600px){.wr-steps{grid-template-columns:1fr;gap:6px}}
 </style>
 </head>
 <body>
@@ -556,7 +563,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
               <button class="btn xs" id="lNowB">지금 위치</button></div>
             <div class="r"><span class="lbl">섹션</span><select id="lSec" class="grow"></select></div>
             <div class="r"><span class="lbl grow">점점 빠르게</span><select id="lTrRule"><option value="1,5">매번 +5%</option><option value="2,5">2번마다 +5%</option><option value="3,5">3번마다 +5%</option><option value="2,10">2번마다 +10%</option></select><span class="sw2 sm" id="lTr"><span class="st">꺼짐</span><span class="tr"></span></span></div>
-            <div class="r"><span class="lbl grow">번갈아 혼자 치기</span><select id="lAltMode"><option value="drums">드럼+메트로놈</option><option value="metro">메트로놈만</option><option value="mute">완전 침묵</option></select><span class="sw2 sm" id="lAlt"><span class="st">꺼짐</span><span class="tr"></span></span></div>
+            <div class="r"><span class="lbl grow">번갈아 혼자 치기</span><select id="lAltMode"><option value="drums">드럼+메트로놈만</option><option value="metro">메트로놈만 남김</option><option value="mute">완전 침묵(무음)</option></select><span class="sw2 sm" id="lAlt"><span class="st">꺼짐</span><span class="tr"></span></span></div>
             <div class="r"><span class="lbl">저장</span><button class="btn xs" id="lSave" data-perm="edit">이 구간 저장 (밴드 공유)</button></div>
             <div id="lSaved"></div>
             <div class="hint">타임라인을 드래그하거나, 이 창을 연 채 코드표에서 시작 → 끝 마디를 누르세요. <b>점점 빠르게</b>는 100%까지 속도를 올려 주고, <b>번갈아 혼자 치기</b>는 한 번 함께 친 뒤 다음 바퀴엔 반주만 남기거나 소리를 꺼요.</div>
@@ -682,7 +689,7 @@ footer{padding:24px 0 60px;color:#4b535b;font-size:12px;text-align:center}
 
 <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5.0/dist/alphaTab.min.js" defer></script>
 <script>
-const BUILD = "2026-11-15a";
+const BUILD = "2026-11-16a";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
@@ -1900,7 +1907,7 @@ function loopUI() { // 구간 버튼·팝업 스위치·숫자를 한곳에서 (
   setSw($("#lOn"), on); $("#loopBtn").classList.toggle("live", on);
   $("#loopV").textContent = on ? `${barLabel(L.a)}~${barLabel(L.b)}` : "꺼짐";
   $("#la").textContent = on ? barLabel(L.a) : "-"; $("#lb").textContent = on ? barLabel(L.b) : "-";
-  const altTxt = LTR.alt && on ? (LTR.n % 2 === 1 ? ` · <b style="color:var(--warn)">🤫 혼자 치기</b>` : ` · <b>🔊 함께</b>`) : "";
+  const altTxt = LTR.alt && on ? (LTR.n % 2 === 1 ? ` · <b style="color:var(--warn)">🤫 혼자 치기 중</b>` : ` · <b>🔊 함께 (다음 바퀴 혼자)</b>`) : "";
   $("#loopNow").innerHTML = on ? `🔁 <b>${barLabel(L.a)}~${barLabel(L.b)}마디</b> 반복 중` + (LTR.n ? ` · ${LTR.n + 1}번째` : "") + (LTR.on ? ` · <b style="color:var(--warn)">${Math.round(P.rate * 100)}% → 100%</b>` : "") + altTxt : "";
   setSw($("#lTr"), LTR.on); $("#lTrRule").value = LTR.rule;
   if ($("#lAlt")) { setSw($("#lAlt"), LTR.alt); $("#lAltMode").value = LTR.altMode; }
@@ -2862,7 +2869,8 @@ function bkLabRender(host) {
   $$("[data-lt]", host).forEach(b => b.onclick = () => { LAB_TAB = b.dataset.lt; LS.set("labTab", LAB_TAB); bkLabRender(host); });
   const body = $("#labBody");
   if (LAB_TAB === "trends") {
-    body.innerHTML = `<div class="lab-row"><input id="labQ" style="flex:1" value="${esc(LAB_Q)}" placeholder="도수 입력 (예: 1 5 6m 또는 4-5-3m-6m)"><button class="btn sm pri" id="labGo">검색</button><button class="btn sm" id="labClr">초기화</button></div>
+    body.innerHTML = `<div class="small mute" style="margin-bottom:6px">도수로 검색해요 <span style="opacity:.85">(C키 기준 1=C · 4=F · 5=G · 6m=Am)</span> — 아래 도수 단추나 TOP 진행을 눌러 보세요.</div>
+      <div class="lab-row"><input id="labQ" style="flex:1" value="${esc(LAB_Q)}" placeholder="도수 입력 (예: 1 5 6m 또는 4-5-3m-6m)"><button class="btn sm pri" id="labGo">검색</button><button class="btn sm" id="labClr">초기화</button></div>
       <div class="chips" style="margin-bottom:8px">${LAB_DEGS.map(d => `<button class="chip" data-dadd="${d}">${d}</button>`).join("")}</div>
       <div id="labRes"></div>`;
     $("#labGo").onclick = () => labRunSearch($("#labQ").value);
@@ -2873,19 +2881,24 @@ function bkLabRender(host) {
   } else if (LAB_TAB === "sub") {
     const opts = k => LAB_KEYS.map(x => `<option ${x === k ? "selected" : ""}>${x}</option>`).join("");
     body.innerHTML = `<div class="lab-card"><b>🎨 대리 · 차용 코드 후보</b>
+      <div class="small mute" style="margin:3px 0 6px">바꾸고 싶은 코드(도수/이름)와 바로 다음 코드를 넣으면, 어울리는 대리·빌린 코드를 만들어 바로 들어 볼 수 있어요.</div>
       <div class="lab-row"><label class="small mute">키 <select id="labKey">${opts(LAB_KEY)}</select></label>
-        <input id="labTgt" style="width:110px" value="5" placeholder="바꿀 코드/도수">
-        <input id="labNxt" style="width:110px" value="1" placeholder="다음 코드(선택)">
+        <label class="small mute">바꿀 도수/코드 <input id="labTgt" style="width:88px" value="5" placeholder="예: 5, G7"></label>
+        <label class="small mute">다음 코드 <input id="labNxt" style="width:82px" value="1" placeholder="선택"></label>
         <button class="btn sm pri" id="labSubGo">추천 보기</button></div>
+      <div class="chips" style="margin:6px 0"><button class="chip" data-subpre="5,1">5 → 1 (해결)</button><button class="chip" data-subpre="4,1">4 → 1 (여운)</button><button class="chip" data-subpre="6m,4">6m → 4 (단조 색)</button></div>
       <div id="labSubRes"></div></div>
       <div class="lab-card"><b>🌉 전조 도우미</b>
+      <div class="small mute" style="margin:3px 0 6px">원래 키에서 새 키로 자연스럽게 넘어가는 중간 다리 진행을 추천해요.</div>
       <div class="lab-row"><label class="small mute">원래 키 <select id="labFromK">${opts(LAB_KEY)}</select></label> → <label class="small mute">새 키 <select id="labToK">${opts(LAB_TO)}</select></label>
         <button class="btn sm pri" id="labModGo">브릿지 보기</button></div>
       <div id="labModRes"></div></div>`;
     $("#labSubGo").onclick = labRunSub; $("#labModGo").onclick = labRunMod;
+    $$("[data-subpre]", body).forEach(b => b.onclick = () => { const [t, n] = b.dataset.subpre.split(","); $("#labTgt").value = t; $("#labNxt").value = n; labRunSub(); });
     labRunSub(); labRunMod();
   } else {
-    body.innerHTML = `<div class="lab-row"><button class="chip ${LAB_EAR.kind === "prog" ? "on" : ""}" data-ek="prog">진행 맞히기</button><button class="chip ${LAB_EAR.kind === "next" ? "on" : ""}" data-ek="next">다음 코드 맞히기</button></div><div id="labEarBox"></div>`;
+    body.innerHTML = `<div class="small mute" style="margin-bottom:6px">먼저 <b>▶ 원곡으로 듣기</b>로 합주곡 소리를 듣고 진행을 골라 보세요. 헷갈리면 <b>▶ 코드음으로 듣기</b>로 화음만 확인할 수 있어요.</div>
+      <div class="lab-row"><button class="chip ${LAB_EAR.kind === "prog" ? "on" : ""}" data-ek="prog">진행 맞히기</button><button class="chip ${LAB_EAR.kind === "next" ? "on" : ""}" data-ek="next">다음 코드 맞히기</button></div><div id="labEarBox"></div>`;
     $$("[data-ek]", body).forEach(b => b.onclick = () => { LAB_EAR.kind = b.dataset.ek; bkLabRender(host); });
     if (LAB_EAR.q && LAB_EAR.q.kind === LAB_EAR.kind) labDrawQuiz(); else labNewQuiz();
   }
@@ -3253,12 +3266,12 @@ let WTAB = "gen", CCHAT = { msgs: [], busy: "", story: { text: "" } }, CARDS = {
 const C_KIND = { verse: "벌스", prechorus: "프리코러스", chorus: "코러스", bridge: "브릿지", intro: "인트로", solo: "기타 솔로", interlude: "간주", outro: "아웃트로", chords: "코드 진행" };
 const C_QUICK = [["방향부터", "바로 쓰지 말고 방향부터 같이 얘기해요. 뭘 정해야 하는지 하나씩 물어봐 주세요."], ["코러스만", "코러스 하나만 먼저 만들어 봐요. 안을 두세 개 주세요."], ["1절만", "1절만 먼저 써 봐요."], ["코드+해설", "이 곡에 맞는 코드 진행을 두세 개 짜 주고, 각각 왜 그런 느낌이 나는지 해설해 주세요."], ["인트로", "인트로만 먼저 잡아 봐요. 들어 볼 수 있게 동기도 주세요."], ["기타 솔로", "기타 솔로 방향만 잡아 봐요. 쓸 음계와 구조, 들어 볼 동기를 주세요."], ["하이라이트", "곡에서 가장 터지는 자리만 먼저 생각해 봐요."], ["다른 안", "방금 것과 많이 다른 안을 하나 더 주세요."]];
 function cHtml(ed) { // 처음 보이는 것 = 단추 한 줄 + 대화 + 입력. 노트 · 조각 · 사전은 눌렀을 때만 (한 번에 하나)
-  return `<div class="cpanes" id="cPanes"><button data-pane="note" id="cNoteSum">📒 곡 노트</button><button data-pane="board" id="cPiecesH">📌 조각</button><button data-pane="book">📖 코드 사전</button></div>
+  return `<div class="cpanes" id="cPanes"><button data-pane="note" id="cNoteSum">📒 곡 노트</button><button data-pane="board" id="cPiecesH">📌 담은 조각</button><button data-pane="book">📖 코드 사전</button></div>
     <div class="cpane" id="cPaneNote" hidden>
       <label class="fl" style="margin-top:0">이 곡 방향 <span class="mute">— 시점 · 톤 · 장르 · 템포</span></label><textarea id="wBrief" ${ed ? "" : "disabled"} maxlength="4000" placeholder="예: 보컬 시점, 웃기다 뭉클하게, 합주로 바로 칠 수 있는 록">${esc(WN.brief || "")}</textarea>
       <label class="fl">정한 것</label><div id="cDecs"></div>${ed ? `<div class="cinput" style="margin-top:4px"><input class="ti" id="cDecIn" maxlength="300" placeholder="예: 코러스 훅은 '이름은 쓰레기'" style="flex:1"><button class="btn xs" id="cDecGo">적기</button></div>` : ""}
       <details id="cStoryBox" style="margin-top:12px"><summary class="small mute">👥 밴드 이야기 <span id="cStoryBy"></span></summary><div class="small mute" style="margin-top:4px">이 밴드 곡 모두가 같이 읽어요.</div><textarea id="cStory" ${ed ? "" : "disabled"} maxlength="6000" placeholder="누구인지, 어떻게 살고 있는지, 멤버들 이야기…"></textarea><div id="cStoryAct"></div></details></div>
-    <div class="cpane" id="cPaneBoard" hidden><div class="acts" id="cPieceBar" style="margin-top:0"></div><div id="cPick"></div><div id="cPieces"></div></div>
+    <div class="cpane" id="cPaneBoard" hidden><div class="small mute" style="margin-bottom:6px">대화·코드 사전에서 📌 담기한 코드·가사 조각을 모아 두고, 골라서 바로 노래(판)로 만들 수 있어요.</div><div class="acts" id="cPieceBar" style="margin-top:0"></div><div id="cPick"></div><div id="cPieces"></div></div>
     <div class="cpane" id="cPaneBook" hidden><div id="cBookBox"></div></div>
     <div class="cchat" id="cChat"></div>
     ${ed ? `<div class="chips" id="cQuick"></div>
@@ -3421,7 +3434,7 @@ async function cClick(e) {
     if (d.tune) { const c = CARDS[d.tune]; c.tune = !c.tune; b.classList.toggle("on", c.tune); const row = document.querySelector(`[data-tunes="${CSS.escape(d.tune)}"]`); if (row) row.hidden = !c.tune; return; }
     if (d.shift) { const c = CARDS[d.id]; c.shift = Math.max(-6, Math.min(6, c.shift + +d.shift)); const was = CP.on === d.id; if (was) cpStop(); document.querySelector(`[data-bars="${CSS.escape(d.id)}"]`).innerHTML = cBarsHtml(d.id); document.querySelector(`[data-keyname="${CSS.escape(d.id)}"]`).textContent = cpShiftKey(c.p.key, c.shift); const save = document.querySelector(`[data-keysave="${CSS.escape(d.id)}"]`); if (save) save.hidden = !c.shift; if (was) cPlay(d.id); return; }
     if (d.retry) return cSend(d.retry === "1" ? { retry: true } : { retry: true, model: d.retry });
-    if (d.keep) { const m = CCHAT.msgs.find(x => x.id === d.keep), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", Object.assign(cTransposed(`c:${m.id}:${k}`), { chat_id: m.id, chat_idx: k })))); toast("조각에 담았어요 · 위 📌 조각에서 모아 봐요"); return cLoad(); }
+    if (d.keep) { const m = CCHAT.msgs.find(x => x.id === d.keep), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/pieces`, jsonOpt("POST", Object.assign(cTransposed(`c:${m.id}:${k}`), { chat_id: m.id, chat_idx: k })))); toast("조각에 담았어요 · 위 '📌 담은 조각'에서 골라 소리로 만들 수 있어요"); return cLoad(); }
     if (d.note) { const m = CCHAT.msgs.find(x => x.id === d.note), k = +d.k; b.disabled = true; put(await api(`/api/write/${w.id}/decisions`, jsonOpt("POST", { text: m.remember[k], chat_id: m.id, chat_idx: k }))); toast("노트에 적었어요"); return cLoad(); }
     if (d.style) { b.disabled = true; const r = await api(`/api/write/${w.id}/coach-style`, jsonOpt("POST", { chat_id: d.style })); if (r.style !== undefined) { w.fv = r.fv; wSetField("style", r.style); } toast("스타일에 적용했어요"); return cLoad(); }
     if (d.decdel) return put(await api(`/api/write/${w.id}/decisions/${d.decdel}`, { method: "DELETE" }));
@@ -3439,7 +3452,8 @@ async function cClick(e) {
 function cPiecesDraw() {
   const box = $("#cPieces"), w = WN; if (!box || !w) return;
   const ed = can("compose"), P = w.pieces || [], me = wMe();
-  $("#cPiecesH").textContent = `📌 조각${P.length ? " " + P.length : ""}`;
+  $("#cPiecesH").textContent = `📌 담은 조각${P.length ? " " + P.length : ""}`;
+  wTabsVis();
   $("#cPieceBar").innerHTML = ed ? `${P.length ? `<button class="btn xs ${CPICK ? "on" : ""}" id="cPickGo">${CPICK ? "× 고르기 끝" : "🎵 골라서 소리로 만들기"}</button>` : ""}<button class="btn xs" id="cNew">+ 직접 쓰기</button>` : "";
   if ($("#cPickGo")) $("#cPickGo").onclick = () => { CPICK = !CPICK; if (!CPICK) CSEL.clear(); cPiecesDraw(); };
   if ($("#cNew")) $("#cNew").onclick = () => { CEDIT = "new"; cPiecesDraw(); };
@@ -3537,9 +3551,14 @@ async function writeHome() {
   location.hash = "write"; await wSaveNow(); WN = null; WPATCH = {}; WCONF = null; clearTimeout(WGEN); clearTimeout(WPOLL); // 실패해 남은 변경분이 다른 프로젝트로 가지 않게
   await bandsReady();
   const box = $("#writeBox"), ok = can("compose"); box.className = "wr";
-  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">${isAdmin() ? "AI 와 얘기하며 곡을 조금씩 만들어요." : `${esc(wBandName(AUTH?.band)) || "우리 밴드"} 곡 작업실이에요. 노래 소리는 Benny 가 승인하면 만들어요.`}</div>
+  box.innerHTML = `<h1>✍️ 작곡</h1><div class="mute">${isAdmin() ? "아이디어 스케치부터 AI 데모 음원 만들기, 합주 연습용 곡 변환까지 한곳에서 진행해요." : `${esc(wBandName(AUTH?.band)) || "우리 밴드"} 곡 작업실이에요. 가사·코드 스케치는 바로 되고, AI 음원 만들기는 Benny 승인 뒤 진행돼요.`}</div>
+    <div class="wr-steps">
+      <div class="wr-step"><b>① 스케치 · 대화</b>AI와 방향·가사·코드를 짜고<br>합성음으로 바로 들어 봐요</div>
+      <div class="wr-step"><b>② AI 음원 만들기</b>고른 조각이나 전체 가사로<br>실제 노래 데모(판)를 뽑아요</div>
+      <div class="wr-step"><b>③ 합주 연습 보내기</b>완성된 판을 🎸 곡 탭으로 보내<br>트랙 분리·코드·타브로 합주해요</div>
+    </div>
     <div class="wcard" id="wMake">${ok ? "" : wLockHtml()}</div>
-    <h2 class="wh">프로젝트</h2><div id="wList"></div>`;
+    <h2 class="wh">만든 프로젝트 <span class="small mute" style="font-weight:400">— 눌러서 이어 쓰기</span></h2><div id="wList"></div>`;
   if (ok) wMakeDraw(); else wLockBind();
   if (!isAdmin()) loadPerms().then(() => { if (MAIN === "write" && !WN && can("compose") !== ok) writeHome(); }); // 그사이 허용됐으면 바로 열림
   wListDraw(LS.get("writeCache", null));
@@ -3549,7 +3568,12 @@ async function writeHome() {
 // 간단히 = 한 줄 → AI 가 제목 · 스타일 · 가사 · 템포를 씀 (Suno Simple) / 직접 쓰기 = 칸마다 (Suno Custom)
 function wMakeDraw() {
   const box = $("#wMake"), d = WDRAFT, save = () => LS.set("wDraft", d);
-  const seg = `<div class="seg" id="wMode"><button data-m="coach" class="${WMODE === "coach" ? "on" : ""}">💬 같이 쓰기</button><button data-m="simple" class="${WMODE === "simple" ? "on" : ""}">간단히</button><button data-m="full" class="${WMODE === "full" ? "on" : ""}">직접 쓰기</button></div>`;
+  const modeDesc = {
+    coach: "<b>💬 같이 쓰기 (추천):</b> AI 코치와 대화하며 후렴·코드·가사 조각을 합성음으로 먼저 들어 보고, 마음에 드는 조각만 골라 노래로 만들어요.",
+    simple: "<b>⚡ 간단히:</b> 한 줄 아이디어만 적으면 AI가 제목·스타일·가사·템포를 자동으로 채워서 바로 AI 데모 음원(1판)을 만들어요.",
+    full: "<b>🎛 직접 쓰기:</b> 장르·분위기·보컬·가사·키·BPM·엔진을 직접 고른 뒤 AI 데모 음원(1판)을 만들어요.",
+  }[WMODE] || "";
+  const seg = `<div class="seg" id="wMode"><button data-m="coach" class="${WMODE === "coach" ? "on" : ""}">💬 같이 쓰기</button><button data-m="simple" class="${WMODE === "simple" ? "on" : ""}">⚡ 간단히</button><button data-m="full" class="${WMODE === "full" ? "on" : ""}">🎛 직접 쓰기</button></div><div class="wr-mode-desc">${modeDesc}</div>`;
   const setMode = m => { WMODE = m; LS.set("wMode2", m); wMakeDraw(); };
   const bandSel = isAdmin() && BANDS.length ? `<label class="fl">밴드 <span class="mute">— 고른 밴드 멤버에게 보여요</span></label><select id="wfBand">${[["", "Benny 만"], ...BANDS.map(b => [b.key, b.name])].map(([k, n]) => `<option value="${esc(k)}" ${(d.band || "") === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>` : "";
   if (WMODE === "coach") { // 11-06: 바로 만들지 않고 논의 → 조각 → 고른 것만 소리로
@@ -3823,16 +3847,17 @@ function writeRender() {
       ${ed && (isAdmin() || w.by === wMe()) ? `<div class="acts" style="margin-top:10px"><button class="btn xs" id="wDel">프로젝트 지우기</button></div>` : ""}</details>
     <div id="wConf"></div><div id="wHolds"></div>
     <div id="wGenSt"></div>
-    <div class="seg" id="wTabs" hidden><button data-t="coach">💬 같이 쓰기</button><button data-t="gen">🎤 노래 판</button></div>
+    <div class="seg" id="wTabs"><button data-t="coach">💬 1. 같이 쓰기</button><button data-t="gen">🎤 2. 노래 음원</button></div>
+    <div class="wr-guide" id="wFlowHint"></div>
     <div id="wTabCoach">${cHtml(ed)}</div>
     <div id="wTabGen">
-    <h2 class="wh">진행 과정</h2><div id="wVers"></div>
+    <h2 class="wh">만든 노래 (판 목록) <span class="small mute" style="font-weight:400">— 오른쪽 '⋯ 활용'에서 다듬기·🎸 연습 보내기</span></h2><div id="wVers"></div>
     <h2 class="wh">의견</h2><div id="wCmAll"></div>
-    ${ed ? `<h2 class="wh" id="wNextH">다음 판 만들기</h2><div class="wcard"><div id="wBase"></div>${wFormHtml(w._d, false)}
+    ${ed ? `<h2 class="wh" id="wNextH">${(w.versions || []).length ? "다음 판 만들기" : "첫 노래(1판) 만들기"}</h2><div class="wcard"><div id="wBase"></div>${wFormHtml(w._d, false)}
       <label class="fl">이 판에 남길 말 <span class="mute">— 선택</span></label><input class="ti" id="wNote" maxlength="200" placeholder="예: 후렴을 더 세게">
       <div class="acts" style="margin-top:12px"><button class="btn pri" id="wGo">${wGoWord((w.versions || []).length + 1)}</button></div>
       <div class="small mute" style="margin-top:8px">바꾼 스타일 · 가사 · 키 · 템포로 새 판을 만들어요. 판마다 설정이 남아서 무엇을 바꿨는지 위에 보여요.
-        곡 옆 <b>⋯</b> 에서 다듬기 · 구간 다시 만들기(시험 기능) · 연습으로 보내기를 할 수 있어요. 코드 진행을 정해서 만들려면 같이 쓰기의 조각에서 🎵 로 만들어요.${isAdmin() ? "" : " 요청은 Benny 가 승인하면 지금 또는 밤에 돌아가요."}</div></div>` : ""}
+        만든 곡 오른쪽 <b>⋯ 활용</b>에서 다듬기 · 구간 다시 만들기 · 연습으로 보내기(트랙 분리·타브)를 할 수 있어요.${isAdmin() ? "" : " 요청은 Benny 가 승인하면 지금 또는 밤에 돌아가요."}</div></div>` : ""}
     <details class="wnotes" ${w.notes ? "open" : ""}><summary class="small mute">메모</summary><textarea id="wNotes" ${ed ? "" : "disabled"} placeholder="아이디어, 고칠 점…">${esc(w.notes || "")}</textarea></details>
     <details class="wnotes" id="wEdits" hidden></details>
     </div>`;
@@ -3858,21 +3883,38 @@ function wDiff(a, b) { // 앞 판과 바뀐 것
   if (a.sec !== b.sec && a.engine !== "yue" && b.engine !== "yue") out.push(`길이 ${Math.round(a.sec / 60)}분 → ${Math.round(b.sec / 60)}분`);
   return out.length ? "바꾼 것: " + out.join(" · ") : b.repaint ? "같은 설정으로 구간만 다시" : b.base ? "같은 설정으로 다듬기" : "같은 설정으로 한 번 더";
 }
-function wTabsVis() { const t = $("#wTabs"), w = WN; if (t && w) t.hidden = !((w.versions || []).length || WTAB === "gen"); } // 판이 없으면 탭 없이 같이 쓰기만
+function wTabsVis() {
+  const t = $("#wTabs"), w = WN; if (!t || !w) return;
+  t.hidden = false;
+  const np = (w.pieces || []).length, nv = (w.versions || []).length;
+  const bC = t.querySelector('[data-t="coach"]'), bG = t.querySelector('[data-t="gen"]');
+  if (bC) bC.textContent = `💬 1. 같이 쓰기${np ? ` (${np})` : ""}`;
+  if (bG) bG.textContent = `🎤 2. 노래 음원${nv ? ` (${nv}판)` : ""}`;
+  const fh = $("#wFlowHint");
+  if (fh) {
+    fh.innerHTML = WTAB === "coach"
+      ? (nv ? `<b>현재 ${nv}판</b> 완성 · <b>🎤 2. 노래 음원</b> 탭에서 들어 보고, <b>⋯ 활용</b>으로 다듬거나 <b>🎸 연습 보내기</b>를 할 수 있어요.`
+        : np ? `<b>조각 ${np}개</b>를 담았어요! 위 <b>📌 담은 조각</b> → <b>🎵 골라서 소리로 만들기</b>를 누르거나, <b>🎤 2. 노래 음원</b> 탭에서 전체 곡을 만드세요.`
+        : `<b>흐름 안내</b> ① 아래 단추로 코러스·코드 제안 받기 → ② 카드 <b>▶ 듣기</b> 후 <b>📌 담기</b> → ③ 위 <b>📌 담은 조각</b>에서 실제 노래로 만들기`)
+      : (nv ? `각 판의 곡 오른쪽 <b>⋯ 활용</b>을 누르면 <b>이 곡으로 다듬기 · 구간 다시 만들기 · 🎸 연습으로 보내기(트랙 분리·타브)</b>를 할 수 있어요.`
+        : `아래에서 스타일·가사를 정해 첫 AI 노래(<b>1판</b>)를 만들어요. AI와 코드·가사부터 함께 짜려면 <b>💬 1. 같이 쓰기</b> 탭을 열어 보세요.`);
+  }
+}
 function wVersDraw() {
   const box = $("#wVers"); if (!box || !WN) return;
   const w = WN, ed = can("compose"), V = w.versions || [];
   wTabsVis();
   $("#wSum").textContent = `${V.length}판 · ${V.reduce((a, v) => a + v.takes.length, 0)}곡 · ${new Date((w.created || w.updated || 0) * 1000).toLocaleDateString("ko-KR")} 시작`;
   if ($("#wGo") && !w._genOn) $("#wGo").textContent = wGoWord(V.length + 1);
-  if (!V.length) { box.innerHTML = `<div class="empty">${(w.holds || []).length ? "승인되면 첫 판을 만들어요." : "아직 만든 판이 없어요."}</div>`; wCmDraw(); return; }
+  if ($("#wNextH")) $("#wNextH").textContent = V.length ? "다음 판 만들기" : "첫 노래(1판) 만들기";
+  if (!V.length) { box.innerHTML = `<div class="empty">${(w.holds || []).length ? "승인되면 첫 AI 노래(1판)를 만들어요." : "아직 만든 AI 노래가 없어요. 아래에서 첫 판을 만들거나 '💬 1. 같이 쓰기'에서 조각을 먼저 모아 보세요."}</div>`; wCmDraw(); return; }
   const label = {}; V.forEach(v => v.takes.forEach((t, i) => label[t.file] = `${v.n}판 ${TAKE_ABC[i]}`));
   box.innerHTML = V.map((v, k) => `<div class="ver">
       <div class="vh"><b>${v.n}판</b><span class="small mute">${wDate(v.at)} · ${v.engine === "yue" ? "YuE2" : Math.round(v.sec / 60) + "분"}</span>${v.base ? `<span class="tagb">${esc(label[v.base] || "지운 곡")} ${v.repaint ? `${wClock(v.repaint[0])}~${wClock(v.repaint[1])} 다시` : `다듬기 · ${strengthName(v.strength)}`}</span>` : ""}</div>
       <div class="chg small">${v.sketch ? `🧩 조각: ${esc(v.sketch.join(", "))}${v.chords ? ` · 코드 ${esc(v.chords.slice(0, 60))}` : ""}` : esc(wDiff(V[k - 1], v))}${v.by ? ` · ${esc(v.by)}` : ""}</div>${v.note ? `<div class="vnote small">${esc(v.note)}</div>` : ""}
       ${v.takes.length ? v.takes.map((t, i) => `<div class="take${t.star ? " star" : ""}"><span class="ab">${TAKE_ABC[i]}</span><audio controls preload="none" data-f="${t.file}" src="${wFileOf(w.id, t.file)}"></audio>
         <span class="tb"><button class="btn xs" data-like="${t.file}">♡</button><button class="btn xs" data-cm="${t.file}">💬</button></span><div class="tcm" data-for="${t.file}" hidden></div>
-        ${ed ? `<span class="tb"><button class="btn xs ${t.star ? "on" : ""}" data-star="${t.file}" title="마음에 듦">${t.star ? "★" : "☆"}</button><button class="btn xs" data-more="${t.file}" title="더 보기">⋯</button></span>
+        ${ed ? `<span class="tb"><button class="btn xs ${t.star ? "on" : ""}" data-star="${t.file}" title="마음에 듦">${t.star ? "★" : "☆"}</button><button class="btn xs" data-more="${t.file}" title="다듬기 · 구간 다시 · 연습 보내기 · 받기">⋯ 활용</button></span>
           <div class="tmore" data-for="${t.file}" hidden><button class="btn xs" data-base="${t.file}">이 곡으로 다듬기</button><button class="btn xs" data-rp="${t.file}">구간 다시 만들기</button><button class="btn xs" data-prac="${t.file}">🎸 ${t.song ? "연습 화면 열기" : "연습으로 보내기"}</button><a class="btn xs" href="${wFileOf(w.id, t.file)}&dl=${encodeURIComponent(`${w.title || "노래"} ${v.n}판 ${TAKE_ABC[i]}`)}" target="_blank" rel="noopener">⬇ 받기</a>${isAdmin() || w.by === wMe() || v.by === wMe() ? `<button class="btn xs" data-tdel="${t.file}">🗑 지우기</button>` : ""}</div>` : t.star ? "★" : ""}</div>`).join("")
         : `<div class="small mute">이 판 곡은 지웠어요.</div>`}
       <details class="vset"><summary class="small mute">이 판 설정</summary><div class="small"><b>스타일</b> ${esc(v.style)}<br>${v.engine ? `<b>엔진</b> ${wEngName(v.engine)} · ` : ""}<b>키</b> ${esc(v.key || "AI")} · <b>템포</b> ${v.tempo || "AI"} · <b>길이</b> ${v.engine === "yue" ? "AI" : Math.round(v.sec / 60) + "분"}</div>
