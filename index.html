@@ -150,6 +150,7 @@ body.admin #adminEnterBtn{display:none}
 body.admin #pcPanel{display:block}
 #pcPanel h2{font-size:var(--bn-fs-md);margin:0 0 var(--bn-sp-2)}
 #pcPanel .row{display:flex;flex-wrap:wrap;gap:var(--bn-sp-2)}
+#clickRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#clickRow #clkUrl{flex:1 1 220px;min-width:0}
 #pcOut{white-space:pre-wrap;font-size:var(--bn-fs-sm);max-height:260px;overflow:auto;margin:var(--bn-sp-2) 0 0;color:var(--bn-ink-2)}
 </style>
 </head>
@@ -187,6 +188,13 @@ body.admin #pcPanel{display:block}
       <button class="btn sm" type="button" data-pcjob="keyescape_open">키이스케이프 오픈 대기</button>
       <button class="btn sm" type="button" data-pcjob="baseball_probe">야구 상태</button>
       <button class="btn sm" type="button" data-pcjob="baseball_clock">야구 시계</button>
+    </div>
+    <div class="row" id="clickRow">
+      <input id="clkUrl" type="url" placeholder="https://예약사이트 주소" maxlength="300" autocomplete="off">
+      <input id="clkAt" type="time" step="1" value="10:00:00" aria-label="누를 서버 시각">
+      <select id="clkKey" aria-label="누를 키"><option value="click">마우스 클릭</option><option value="f5">F5</option><option value="enter">Enter</option><option value="space">Space</option></select>
+      <label><input id="clkDry" type="checkbox"> 연습(안 누름)</label>
+      <button class="btn sm" type="button" data-pcjob="clicker">정각 클릭 대기</button>
     </div>
     <pre id="pcOut"></pre>
   </section>
@@ -685,15 +693,22 @@ function twoTap(b, ask, fn) {   // 막는 창(confirm) 대신 4초 안에 한 �
 }
 twoTap($("revert"), "한 번 더 누르면 되돌려요", () => { items = clone(saved); dirty = false; openIds.clear(); setSt("저장된 목록으로 되돌렸어요"); render(); });
 // 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 이 기기에서 관리자 화면만 끔
-/* 11-16 내 PC 실행: 관리자만 pcJobs 에 {cmd, t:서버시각} 생성 → PC 가 5초 안에 받아 실행하고 status·out 을 같은 문서에 씀 */
+/* 11-16 내 PC 실행: 관리자만 pcJobs 에 {cmd(+정각클릭은 url·at·key·dry)} 생성 → PC 가 5초 안에 받아 실행하고 status·out 을 같은 문서에 씀 */
 const PC_STATUS = { running: "⏳ 실행 중", done: "✅ 끝", fail: "❌ 실패", rejected: "⛔ 거절", expired: "⌛ PC 가 못 받음" };
 document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click", async () => {
   const out = $("pcOut"), cmd = b.dataset.pcjob;
   if (cmd === "keyescape_open" && !confirm("PC 에 오픈 대기 창을 띄웁니다. 캡차·확인은 PC 앞에서 해야 해요. 띄울까요?")) return;
+  const fields = { cmd: { stringValue: cmd } };
+  if (cmd === "clicker") {
+    const url = $("clkUrl").value.trim(), at = ($("clkAt").value + ":00").slice(0, 8), key = $("clkKey").value, dry = $("clkDry").checked;
+    if (!/^https?:\/\/\S+$/.test(url)) { out.textContent = "⛔ 주소는 https:// 로 시작해야 해요"; return; }
+    if (!confirm(`PC 에 정각 클릭 창을 띄웁니다.\n${url}\n서버 ${at} 에 ${key}${dry ? " (연습)" : ""}\n마우스는 PC 앞에서 버튼 위에 두세요. 띄울까요?`)) return;
+    Object.assign(fields, { url: { stringValue: url }, at: { stringValue: at }, key: { stringValue: key }, dry: { booleanValue: dry } });
+  }
   b.disabled = true; out.textContent = b.textContent + " — PC 에 보냄…";
   try {
     const doc = await fsCall("pcJobs", { method: "POST", qs: "",
-      body: { fields: { cmd: { stringValue: cmd } } } });
+      body: { fields } });
     const id = doc.name.split("/documents/")[1];
     for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, i < 10 ? 2000 : 4000));
