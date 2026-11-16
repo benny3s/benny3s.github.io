@@ -152,6 +152,8 @@ body.admin #pcPanel{display:block}
 #pcPanel .row{display:flex;flex-wrap:wrap;gap:var(--bn-sp-2)}
 #fkRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#fkRow #fkUrl{flex:1 1 220px;min-width:0}#fkRow #fkSite{width:12em}
 #clickRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#clickRow #clkUrl{flex:1 1 220px;min-width:0}
+#mdRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#mdRow #mdPrompt{flex:1 1 260px;min-width:0}
+#pcLinks a{display:block;margin-top:4px;word-break:break-all}
 #pcOut{white-space:pre-wrap;font-size:var(--bn-fs-sm);max-height:260px;overflow:auto;margin:var(--bn-sp-2) 0 0;color:var(--bn-ink-2)}
 </style>
 </head>
@@ -207,7 +209,18 @@ body.admin #pcPanel{display:block}
       <label><input id="fkDry" type="checkbox" checked> 연습(안 누름)</label>
       <button class="btn sm" type="button" data-pcjob="formkit_fire">정각 누름 대기</button>
     </div>
+    <!-- 11-16 AI 사진/영상: PC ComfyUI(Wan 2.2) 생성 → 결과는 tailnet 주소(:8830)로만 보임 -->
+    <div class="row" id="mdRow">
+      <input id="mdPrompt" placeholder="🎬 프롬프트 (영어 권장, 3~600자)" maxlength="600" autocomplete="off">
+      <select id="mdKind" aria-label="종류"><option value="video">영상</option><option value="image">사진</option></select>
+      <select id="mdModel" aria-label="모델"><option value="5b">빠름 5B (~2분)</option><option value="a14b">고화질 A14B (~5분)</option></select>
+      <select id="mdLen" aria-label="길이"><option value="2">2초</option><option value="4">4초</option></select>
+      <button class="btn sm" type="button" data-pcjob="media_status">AI 상태</button>
+      <button class="btn sm" type="button" data-pcjob="media_gen">생성</button>
+      <button class="btn sm" type="button" data-pcjob="media_list">최근 결과</button>
+    </div>
     <pre id="pcOut"></pre>
+    <div id="pcLinks"></div>
   </section>
 
   <footer>
@@ -728,19 +741,30 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
     fields.site = { stringValue: site }; fields.dry = { booleanValue: dry };
     if (at) fields.at = { stringValue: at };
   }
+  if (cmd === "media_gen") {
+    const prompt = $("mdPrompt").value.trim().replace(/\s+/g, " "), kind = $("mdKind").value, model = $("mdModel").value, len = $("mdLen").value;
+    if (prompt.length < 3) { out.textContent = "⛔ 프롬프트를 3자 이상 써 주세요"; return; }
+    Object.assign(fields, { prompt: { stringValue: prompt.slice(0, 600) }, kind: { stringValue: kind }, model: { stringValue: model }, len: { stringValue: len } });
+  }
+  const isMedia = cmd === "media_gen";
+  $("pcLinks").textContent = "";
   b.disabled = true; out.textContent = b.textContent + " — PC 에 보냄…";
   try {
     const doc = await fsCall("pcJobs", { method: "POST", qs: "",
       body: { fields } });
     const id = doc.name.split("/documents/")[1];
-    for (let i = 0; i < 60; i++) {
-      await new Promise(r => setTimeout(r, i < 10 ? 2000 : 4000));
+    for (let i = 0; i < (isMedia ? 200 : 60); i++) {
+      await new Promise(r => setTimeout(r, i < 10 ? 2000 : isMedia ? 5000 : 4000));
       const f = (await fsCall(id)).fields || {};
       const st = f.status && f.status.stringValue;
       if (!st) { out.textContent = b.textContent + " — PC 응답 기다리는 중… (" + (i + 1) + ")"; continue; }
       out.textContent = (PC_STATUS[st] || st) + "  " + b.textContent + "\n\n" + ((f.out && f.out.stringValue) || "");
       if (cmd === "formkit_list" && st === "done") $("fkSites").innerHTML = ((f.out && f.out.stringValue) || "").split("\n").map(l => l.split(/\s+/)[0]).filter(n => /^[a-z0-9-]+$/.test(n)).map(n => `<option value="${n}">`).join("");
-      if (st !== "running") break;
+      if (st !== "running") {
+        if (cmd.startsWith("media_")) $("pcLinks").innerHTML = [...new Set(((f.out && f.out.stringValue) || "").match(/https:\/\/[a-z0-9.-]+\.ts\.net:8830\/[\w.\-]*/g) || [])]
+          .map(u => `<a href="${u}" target="_blank" rel="noopener">▶ ${u.split("/").pop() || "전체 결과"}</a>`).join("");
+        break;
+      }
     }
   } catch (e) { out.textContent = "보내기 실패: " + (e.message || e); }
   finally { b.disabled = false; }
