@@ -71,13 +71,33 @@ h1{margin:0;font-size:24px;line-height:1.2;letter-spacing:-.03em}
 .ins .meta a{text-decoration:none;border-bottom:1px solid #d6d5cf;cursor:pointer}
 .ins .meta a:hover{border-color:var(--ink)}
 
-.filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
 .filters button{font:inherit;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
-.filters button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink)}
+.filters button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:#f3f2ed}
+.filters .sep{width:1px;height:16px;background:var(--line);margin:0 2px}
+
+.tools{display:flex;gap:8px;align-items:center;margin:0 0 14px}
+.tools[hidden]{display:none}
+.tools input{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 13px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.tools input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.tools button{font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 details.arch{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 15px}
-details.arch summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
+details.arch + details.arch{margin-top:8px}
+details.arch summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);list-style:none}
+details.arch summary::-webkit-details-marker{display:none}
+details.arch summary::before{content:"▸ ";display:inline-block;margin-right:4px;transition:transform .15s}
+details.arch[open] summary::before{content:"▾ "}
 details.arch .list{margin-top:10px}
+.mdnote{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:13.5px;line-height:1.65}
+.mdnote h3{margin:12px 0 4px;font-size:13.5px;font-weight:700;color:var(--ink)}
+.mdnote p{margin:4px 0}
+.mdnote ul{margin:4px 0 6px;padding-left:18px}
+.mdnote li{margin:2px 0}
+.pred-summary{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;margin-bottom:8px}
+.pred-row{padding:8px 0;border-top:1px dashed var(--line);font-size:13px}
+.pred-row:first-child{border-top:0;padding-top:0}
 .empty{color:var(--muted);font-size:13.5px;padding:6px 2px}
 .note{color:var(--muted);font-size:13px;line-height:1.7}
 footer{margin-top:28px;color:var(--muted);font-size:12px;line-height:1.75}
@@ -94,10 +114,15 @@ footer{margin-top:28px;color:var(--muted);font-size:12px;line-height:1.75}
     </div>
   </header>
   <nav class="tabs" id="tabs" role="tablist" aria-label="주제" hidden></nav>
+  <search class="tools" id="tools" hidden>
+    <label class="sr-only" for="q">레이더 항목 검색</label>
+    <input id="q" type="search" placeholder="제목 · 설명 · 태그 검색…" autocomplete="off">
+    <button type="button" id="q-clear" hidden>지우기</button>
+  </search>
   <main id="main"><p class="empty">불러오는 중…</p></main>
   <footer>
     한 항목은 카드 하나 — 조사할 때마다 숫자·설명만 새로 바뀝니다.
-    🆕 새로 · 🔥 상승 중(연속 등장) · 📌 자리 잡음(약 4주 이상) · 💤 식는 중(최근 안 보임) · 약 3주 안 보이면 보관함.<br>
+    🆕 새로 · 🔥 상승 중(연속 등장) · 📌 자리 잡음(약 4주 이상) · 💤 식는 중(최근 안 보임) · 2회차 안 보이면 보관함.<br>
     쇼츠·수익 주장은 원 자료로 확인해 <b>맞음 / 부풀림 / 확인 안 됨</b> 으로 표시합니다.
     “내 PC” = RTX 5060 Ti 16GB 기준. 투자 권유가 아니라 동향 정리입니다.
   </footer>
@@ -105,8 +130,8 @@ footer{margin-top:28px;color:var(--muted);font-size:12px;line-height:1.75}
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
-const main = $("#main"), tabsEl = $("#tabs");
-let CONF = null, cur = null, filter = "all";
+const main = $("#main"), tabsEl = $("#tabs"), toolsEl = $("#tools"), qEl = $("#q"), qClearEl = $("#q-clear");
+let CONF = null, cur = null, filter = "all", hideCooling = false, onlyStudy = false, query = "", composing = false;
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = String(text); return e; }
 function safeUrl(u) { try { const x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : ""; } catch (e) { return ""; } }
@@ -186,9 +211,100 @@ function insightCard(x, d) {
 function jump(id) {
   const t = document.getElementById(cardId(id));
   if (!t) return;
-  if (filter !== "all") { filter = "all"; draw(); return jump(id); }
+  if (filter !== "all" || hideCooling || onlyStudy || query) {
+    filter = "all"; hideCooling = false; onlyStudy = false; query = "";
+    if (qEl) qEl.value = "";
+    if (qClearEl) qClearEl.hidden = true;
+    draw();
+    return jump(id);
+  }
   t.scrollIntoView({ behavior: "smooth", block: "center" });
   t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1600);
+}
+
+function renderMdNote(body) {
+  const box = el("div", "mdnote");
+  let ul = null;
+  const flushUl = () => { if (ul) { box.appendChild(ul); ul = null; } };
+  String(body || "").split(/\r?\n/).forEach(raw => {
+    const line = raw.trim();
+    if (!line) { flushUl(); return; }
+    if (line.startsWith("#")) {
+      flushUl();
+      box.appendChild(el("h3", "", line.replace(/^#+\s*/, "")));
+    } else if (line.startsWith("- ") || line.startsWith("* ")) {
+      if (!ul) ul = el("ul", "");
+      ul.appendChild(el("li", "", line.slice(2)));
+    } else {
+      flushUl();
+      box.appendChild(el("p", "", line));
+    }
+  });
+  flushUl();
+  return box;
+}
+
+function drawActNotes(notes) {
+  const s = el("section", "sec");
+  const h = el("h2", "", "📝 미리 정리한 학습 노트");
+  h.appendChild(el("small", "", notes.length + "편"));
+  s.appendChild(h);
+  notes.forEach((n, idx) => {
+    const det = el("details", "arch");
+    if (idx === 0) det.open = false;
+    const sum = el("summary", "", (n.date ? "[" + md(n.date) + "] " : "") + (n.title || n.filename));
+    det.appendChild(sum);
+    det.appendChild(renderMdNote(n.body));
+    s.appendChild(det);
+  });
+  return s;
+}
+
+function drawPredictions(pred) {
+  const sum = pred && pred.summary ? pred.summary : {};
+  const items = (pred && pred.items) || [];
+  if (!items.length && !sum.total) return null;
+  const s = el("section", "sec");
+  const h = el("h2", "", "🎯 예측 채점 · 적중률");
+  if (sum.decided) h.appendChild(el("small", "", "누적 " + sum.hit + "/" + sum.decided + " 맞음"));
+  s.appendChild(h);
+
+  const cardBox = el("div", "card");
+  const ps = el("div", "pred-summary");
+  const pct = sum.decided ? Math.round((sum.hit / sum.decided) * 100) + "%" : "—";
+  ps.appendChild(el("span", "tag good", "전체 적중 " + (sum.hit || 0) + "/" + (sum.decided || 0) + " (" + pct + ")"));
+  ps.appendChild(el("span", "tag", "대기 " + (sum.pending || 0)));
+  if (sum.undecided) ps.appendChild(el("span", "tag watch", "못 정함 " + sum.undecided));
+  (sum.buckets || []).forEach(b => {
+    ps.appendChild(el("span", "", b.label + " " + b.hit + "/" + b.total));
+  });
+  cardBox.appendChild(ps);
+
+  if (items.length) {
+    const det = el("details", "arch");
+    det.style.marginTop = "8px";
+    det.appendChild(el("summary", "", "이 주제 예측 " + items.length + "개 보기"));
+    const list = el("div", "list");
+    items.forEach(p => {
+      const row = el("div", "pred-row");
+      const top = el("div", "top");
+      const rCls = p.result === "맞음" ? "good" : (p.result === "틀림" ? "bad" : (p.result === "못 정함" ? "watch" : ""));
+      top.appendChild(el("span", "tag " + rCls, p.result || "대기"));
+      top.appendChild(el("span", "nm", p.claim));
+      row.appendChild(top);
+      const m = el("div", "meta");
+      if (p.due) m.appendChild(el("span", "", "기한 " + md(p.due)));
+      if (p.p != null) m.appendChild(el("span", "", "확신 " + Math.round(Number(p.p) * 100) + "%"));
+      if (p.note) m.appendChild(el("span", "", p.note));
+      if (p.src) m.appendChild(link("출처 ↗", p.src, ""));
+      if (m.childNodes.length) row.appendChild(m);
+      list.appendChild(row);
+    });
+    det.appendChild(list);
+    cardBox.appendChild(det);
+  }
+  s.appendChild(cardBox);
+  return s;
 }
 
 function drawChanges(d) {
@@ -245,15 +361,36 @@ function draw() {
     s.appendChild(c); main.appendChild(s);
   }
 
+  if (d.act_notes && d.act_notes.length) main.appendChild(drawActNotes(d.act_notes));
+  const predSec = d.predictions ? drawPredictions(d.predictions) : null;
+  if (predSec) main.appendChild(predSec);
+
   const fl = el("div", "filters");
   [["all", "전체"], ["new", "🆕 새로"], ["rising", "🔥 상승"], ["settled", "📌 자리 잡음"], ["cooling", "💤 식는 중"]].forEach(([k, label]) => {
     const n = k === "all" ? d.items.length : d.items.filter(i => i.status === k || (k === "new" && i.status === "back")).length;
-    const b = el("button", "", label + " " + n); b.setAttribute("aria-pressed", String(filter === k));
+    const b = el("button", "", label + " " + n); b.type = "button"; b.setAttribute("aria-pressed", String(filter === k));
     b.onclick = () => { filter = k; draw(); }; fl.appendChild(b);
   });
+  const sep = el("span", "sep"); sep.setAttribute("aria-hidden", "true"); fl.appendChild(sep);
+  const bStudy = el("button", "", "📚 내 공부만"); bStudy.type = "button";
+  bStudy.setAttribute("aria-pressed", String(onlyStudy));
+  bStudy.onclick = () => { onlyStudy = !onlyStudy; draw(); };
+  fl.appendChild(bStudy);
+  const bCool = el("button", "", "💤 식는 중 숨기기"); bCool.type = "button";
+  bCool.setAttribute("aria-pressed", String(hideCooling));
+  bCool.onclick = () => { hideCooling = !hideCooling; draw(); };
+  fl.appendChild(bCool);
   main.appendChild(fl);
 
-  const pass = i => filter === "all" || i.status === filter || (filter === "new" && i.status === "back");
+  const ql = query.trim().toLowerCase();
+  const pass = i => {
+    if (hideCooling && i.status === "cooling") return false;
+    if (onlyStudy && !(i.tags || []).includes("내 공부")) return false;
+    if (!(filter === "all" || i.status === filter || (filter === "new" && i.status === "back"))) return false;
+    if (!ql) return true;
+    const hay = [i.title, i.desc, i.why, i.metric, i.claim].concat(i.tags || []).join(" ").toLowerCase();
+    return hay.includes(ql);
+  };
   const cats = (d.categories || []).concat(["기타"]);
   let shown = 0;
   cats.forEach(cat => {
@@ -329,7 +466,7 @@ async function decrypt(box) {
 }
 
 function lockScreen(msg) {
-  tabsEl.hidden = true; main.textContent = "";
+  tabsEl.hidden = true; if (toolsEl) toolsEl.hidden = true; main.textContent = "";
   $("#sub").textContent = "관리자 전용";
   const c = el("form", "card"); c.style.maxWidth = "420px";
   c.appendChild(el("p", "why", "🔒 관리자 로그인 후에 보여요."));
@@ -375,9 +512,10 @@ async function start() {
   catch (e) { main.textContent = ""; main.appendChild(el("div", "err", "설정을 못 불러왔어요: " + e.message)); return; }
   if (made) { main.textContent = ""; main.appendChild(el("div", "err", "처음이라 열쇠를 만들었어요 — 다음 조사(금요일 아침)부터 여기에 보입니다.")); return; }
   tabsEl.hidden = false; tabsEl.textContent = "";
+  if (toolsEl) toolsEl.hidden = false;
   CONF.order.forEach(t => {
     const c = CONF.topics[t], b = el("button", "", c.emoji + " " + c.name);
-    b.dataset.t = t; b.setAttribute("role", "tab"); b.onclick = () => show(t); tabsEl.appendChild(b);
+    b.type = "button"; b.dataset.t = t; b.setAttribute("role", "tab"); b.onclick = () => show(t); tabsEl.appendChild(b);
   });
   const want = location.hash.slice(1);
   show(CONF.order.includes(want) ? want : CONF.order[0]);
@@ -385,6 +523,30 @@ async function start() {
   CONF.order.forEach(async t => {
     try { BOX[t] = await getJSON("data/" + t + ".enc.json"); } catch (e) { return; }
     if (ageDays(BOX[t].updated) > STALE_DAYS) { const b = tabsEl.querySelector('[data-t="' + t + '"]'); if (b) b.textContent += " ⚠"; }
+  });
+}
+if (qEl) {
+  qEl.addEventListener("compositionstart", () => { composing = true; });
+  qEl.addEventListener("compositionend", () => {
+    composing = false; query = qEl.value; qClearEl.hidden = !query;
+    if (cur && DATA[cur]) draw();
+  });
+  qEl.addEventListener("input", () => {
+    if (composing) return;
+    query = qEl.value; qClearEl.hidden = !query;
+    if (cur && DATA[cur]) draw();
+  });
+  qEl.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      if (e.isComposing || e.keyCode === 229) return;
+      e.preventDefault(); query = qEl.value; qClearEl.hidden = !query;
+      if (cur && DATA[cur]) draw();
+    }
+  });
+  qClearEl.addEventListener("click", () => {
+    query = ""; qEl.value = ""; qClearEl.hidden = true;
+    if (cur && DATA[cur]) draw();
+    qEl.focus();
   });
 }
 addEventListener("hashchange", () => { const h = location.hash.slice(1); if (CONF && PRIV && CONF.order.includes(h) && h !== cur) show(h); });
