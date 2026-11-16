@@ -150,6 +150,7 @@ body.admin #adminEnterBtn{display:none}
 body.admin #pcPanel{display:block}
 #pcPanel h2{font-size:var(--bn-fs-md);margin:0 0 var(--bn-sp-2)}
 #pcPanel .row{display:flex;flex-wrap:wrap;gap:var(--bn-sp-2)}
+#fkRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#fkRow #fkUrl{flex:1 1 220px;min-width:0}#fkRow #fkSite{width:12em}
 #clickRow{margin-top:var(--bn-sp-2);flex-wrap:wrap;gap:var(--bn-sp-2);align-items:center}#clickRow #clkUrl{flex:1 1 220px;min-width:0}
 #pcOut{white-space:pre-wrap;font-size:var(--bn-fs-sm);max-height:260px;overflow:auto;margin:var(--bn-sp-2) 0 0;color:var(--bn-ink-2)}
 </style>
@@ -195,6 +196,16 @@ body.admin #pcPanel{display:block}
       <select id="clkKey" aria-label="누를 키"><option value="click">마우스 클릭</option><option value="f5">F5</option><option value="enter">Enter</option><option value="space">Space</option></select>
       <label><input id="clkDry" type="checkbox"> 연습(안 누름)</label>
       <button class="btn sm" type="button" data-pcjob="clicker">정각 클릭 대기</button>
+    </div>
+    <div class="row" id="fkRow">
+      <input id="fkUrl" type="url" placeholder="0) 새 사이트 예약폼 주소 → AI 초안" maxlength="300" autocomplete="off">
+      <button class="btn sm" type="button" data-pcjob="formkit_new">사이트 등록</button>
+      <button class="btn sm" type="button" data-pcjob="formkit_list">목록</button>
+      <input id="fkSite" placeholder="사이트 이름 (예: keyescape)" maxlength="30" autocomplete="off" list="fkSites">
+      <datalist id="fkSites"></datalist>
+      <input id="fkAt" type="time" step="1" aria-label="누를 서버 시각(비우면 사이트 기본)">
+      <label><input id="fkDry" type="checkbox" checked> 연습(안 누름)</label>
+      <button class="btn sm" type="button" data-pcjob="formkit_fire">정각 누름 대기</button>
     </div>
     <pre id="pcOut"></pre>
   </section>
@@ -705,6 +716,18 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
     if (!confirm(`PC 에 정각 클릭 창을 띄웁니다.\n${url}\n서버 ${at} 에 ${key}${dry ? " (연습)" : ""}\n마우스는 PC 앞에서 버튼 위에 두세요. 띄울까요?`)) return;
     Object.assign(fields, { url: { stringValue: url }, at: { stringValue: at }, key: { stringValue: key }, dry: { booleanValue: dry } });
   }
+  if (cmd === "formkit_new") {
+    const url = $("fkUrl").value.trim();
+    if (!/^https?:\/\/\S+$/.test(url)) { out.textContent = "⛔ 주소는 https:// 로 시작해야 해요"; return; }
+    fields.url = { stringValue: url };
+  }
+  if (cmd === "formkit_fire") {
+    const site = $("fkSite").value.trim(), at = $("fkAt").value ? ($("fkAt").value + ":00").slice(0, 8) : "", dry = $("fkDry").checked;
+    if (!/^[a-z0-9-]{1,30}$/.test(site)) { out.textContent = "⛔ 사이트 이름은 영소문자·숫자·- 만 (목록 버튼으로 확인)"; return; }
+    if (!confirm(`PC 에 ${site} 정각 누름 창을 띄웁니다.${at ? "\n서버 " + at : " (사이트 기본 시각)"}${dry ? " — 연습" : ""}\n크롬에서 폼키트 북마클릿 → 캡차 체크는 PC 앞에서. 띄울까요?`)) return;
+    fields.site = { stringValue: site }; fields.dry = { booleanValue: dry };
+    if (at) fields.at = { stringValue: at };
+  }
   b.disabled = true; out.textContent = b.textContent + " — PC 에 보냄…";
   try {
     const doc = await fsCall("pcJobs", { method: "POST", qs: "",
@@ -716,6 +739,7 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
       const st = f.status && f.status.stringValue;
       if (!st) { out.textContent = b.textContent + " — PC 응답 기다리는 중… (" + (i + 1) + ")"; continue; }
       out.textContent = (PC_STATUS[st] || st) + "  " + b.textContent + "\n\n" + ((f.out && f.out.stringValue) || "");
+      if (cmd === "formkit_list" && st === "done") $("fkSites").innerHTML = ((f.out && f.out.stringValue) || "").split("\n").map(l => l.split(/\s+/)[0]).filter(n => /^[a-z0-9-]+$/.test(n)).map(n => `<option value="${n}">`).join("");
       if (st !== "running") break;
     }
   } catch (e) { out.textContent = "보내기 실패: " + (e.message || e); }
