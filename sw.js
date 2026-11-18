@@ -1,4 +1,4 @@
-const CACHE_NAME = "benny-portal-v6";   // v6: /admin-login.js 오프라인 캐시 추가 · /?source=pwa 정규화 (2026-11-18)
+const CACHE_NAME = "benny-portal-v7";   // v7: 앱별 할 일 배지·인라인 미디어 미리보기·묶음 이름 변경·백업/복원 (2026-11-19)
 const PORTAL_PATHS = new Set([
   "/",
   "/index.html",

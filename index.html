@@ -99,8 +99,10 @@ body.editing .qbar,body:not(.admin) .qbar{display:none!important}
 .sec h2{margin:0 var(--bn-sp-1) var(--bn-sp-2);font-size:var(--bn-fs-md);font-weight:700;color:var(--bn-ink-2);letter-spacing:-.01em}
 .sec-head{display:flex;align-items:center;gap:var(--bn-sp-2);margin:0 var(--bn-sp-1) var(--bn-sp-2)}
 .sec-head h2{margin:0;flex:1;min-width:0}
-.ico{--s:46px;width:var(--s);height:var(--s);border-radius:calc(var(--s) * .3);display:flex;align-items:center;justify-content:center;font-size:calc(var(--s) * .5);line-height:1;flex-shrink:0;
+.ico{position:relative;--s:46px;width:var(--s);height:var(--s);border-radius:calc(var(--s) * .3);display:flex;align-items:center;justify-content:center;font-size:calc(var(--s) * .5);line-height:1;flex-shrink:0;
   background:var(--t,var(--bn-fill));border:1px solid color-mix(in srgb,var(--bn-ink) 4%,transparent)}
+.app-badge{position:absolute;top:-5px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:var(--bn-r-pill);background:var(--bn-bad);color:var(--bn-on-accent);font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.22)}
+.app-badge.accent{background:var(--bn-accent)}
 
 /* 아이콘 보기 — 폰 4칸 · PC 는 폭만큼 */
 .apps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--bn-sp-4) var(--bn-sp-2);background:var(--bn-surface);border:1px solid var(--bn-line);
@@ -210,6 +212,10 @@ body.admin:not(.editing) #pcPanel{display:block}
 .so{max-height:180px}
 #pcLinks{display:flex;flex-wrap:wrap;gap:var(--bn-sp-1)}
 #pcLinks a{font-size:var(--bn-fs-xs);font-weight:600;padding:var(--bn-sp-1) var(--bn-sp-3);border-radius:var(--bn-r-pill);background:var(--bn-accent-faint);border:1px solid var(--bn-accent-line);color:var(--bn-accent);text-decoration:none}
+.pc-prev{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--bn-sp-2)}
+.pc-prev:empty{display:none}
+.prev-card{border:1px solid var(--bn-line);border-radius:var(--bn-r-md);overflow:hidden;background:var(--bn-fill)}
+.prev-card img,.prev-card video{display:block;width:100%;max-height:240px;object-fit:contain;background:#111}
 
 /* 터치 기기(폰·태블릿): 입력칸 16px 이상으로 iOS 자동 화면 확대 방지 + 44px 터치 크기 보장 */
 @media (pointer: coarse) {
@@ -237,6 +243,9 @@ body.admin:not(.editing) #pcPanel{display:block}
 
   <div class="editbar">
     <button class="btn sm" id="add" type="button">+ 새 항목</button>
+    <button class="btn sm ghost" id="exportBtn" type="button" title="현재 목록을 JSON 파일로 저장">백업 ↓</button>
+    <button class="btn sm ghost" id="importBtn" type="button" title="저장해 둔 JSON 백업 파일 불러오기">복원 ↑</button>
+    <input id="importFile" type="file" accept=".json,application/json" hidden>
     <span class="st" id="st" role="status" aria-live="polite"></span>
     <button class="btn sm ghost" id="revert" type="button" hidden>되돌리기</button>
   </div>
@@ -351,6 +360,7 @@ body.admin:not(.editing) #pcPanel{display:block}
 
       <div class="pcres" aria-live="polite">
         <pre id="pcOut"></pre>
+        <div id="pcPreview" class="pc-prev"></div>
         <div id="pcLinks"></div>
       </div>
     </div>
@@ -395,6 +405,17 @@ body.admin:not(.editing) #pcPanel{display:block}
     <button class="btn" type="button" id="confirmNo" autofocus>취소</button>
     <button class="btn primary" type="button" id="confirmYes">띄우기</button>
   </div>
+</dialog>
+
+<dialog id="renameDlg" closedby="any" aria-labelledby="renameTitle">
+  <form method="dialog" id="renameForm">
+    <h2 id="renameTitle">묶음 이름 변경</h2>
+    <input type="text" id="renameIn" maxlength="30" autocomplete="off" placeholder="새 묶음 이름" aria-label="새 묶음 이름">
+    <div class="dlg-acts">
+      <button class="btn" type="button" id="renameNo">취소</button>
+      <button class="btn primary" type="submit">바꾸기</button>
+    </div>
+  </form>
 </dialog>
 
 <script>
@@ -460,7 +481,23 @@ function tint(p) {
 }
 // 설명 끝의 "(PC 필요)" 같은 괄호는 이름 옆 작은 표시로
 function splitDesc(d) { d = String(d || ""); const m = /\s*\(([^()]+)\)\s*$/.exec(d); return m ? [d.slice(0, m.index), m[1]] : [d, ""]; }
-function icon(p) { const s = el("span", "ico", p.emoji || "•"); s.style.setProperty("--t", tint(p)); return s; }
+function badgeKind(p) {
+  const id = String(p.id || "").toLowerCase(), u = String(p.url || "");
+  if (id === "bridge" || /(^|\/)bridge(\/|$)/i.test(u)) return "bridge";
+  if (id === "game" || /(^|\/)game(\/|$)/i.test(u)) return "game";
+  if (id === "music" || /(^|\/)music(\/|$)/i.test(u)) return "music";
+  if (id === "tower") return "tower";
+  return "";
+}
+function icon(p, withBadge) {
+  const s = el("span", "ico", p.emoji || "•");
+  s.style.setProperty("--t", tint(p));
+  if (withBadge) {
+    const k = badgeKind(p);
+    if (k) { const b = el("span", "app-badge"); b.dataset.badge = k; b.hidden = true; s.appendChild(b); }
+  }
+  return s;
+}
 const gname = p => String(p.group || "").trim() || "그 밖에";
 function groupsOf(list) { const m = new Map(); list.forEach(p => { const g = gname(p); if (!m.has(g)) m.set(g, []); m.get(g).push(p); }); return m; }   // 묶음 순서 = 처음 나온 순서
 function section(title, nodes, cls, headExtra) {
@@ -475,16 +512,18 @@ function section(title, nodes, cls, headExtra) {
 function renderHome() {
   const simple = view === "simple", live = items.filter(p => !p.archived);
   const filtered = query ? live.filter(p => matchItem(p, query)) : live;
-  refreshGlance(false);
+  refreshGlance(false).catch(() => {});
+  refreshBadges(false);
   if (!filtered.length) {
     listEl.appendChild(el("div", "empty", "‘" + query + "’에 맞는 항목이 없어요."));
     return;
   }
   groupsOf(filtered).forEach((list, g) => listEl.appendChild(section(g, list.map(p => simple ? appTile(p) : rowCard(p)), simple ? "apps" : "rows")));
+  paintBadges();
 }
 function appTile(p) {
   const a = el("a", "app"); a.href = safeHref(p.url); a.title = p.desc ? p.name + " — " + p.desc : p.name;
-  a.append(icon(p), el("span", "nm", p.name));
+  a.append(icon(p, true), el("span", "nm", p.name));
   return a;
 }
 function rowCard(p) {
@@ -493,7 +532,7 @@ function rowCard(p) {
   if (chip) nm.appendChild(el("span", "chip", chip));
   t.append(nm, el("p", "clamp", d));
   if (p.id === "tower") t.appendChild(towerGlance());
-  a.append(icon(p), t, el("span", "go", "›"));
+  a.append(icon(p, true), t, el("span", "go", "›"));
   return a;
 }
 
@@ -546,13 +585,97 @@ function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
 function setSt(msg, warn) { const s = $("st"); s.textContent = msg; s.classList.toggle("warn", !!warn); }
 function mark() { dirty = true; saveDraft(); setSt("저장 안 됨", true); syncChrome(); }
 
-/* 관제판 칸 + 머리 배지: PC 관제판의 요약 숫자 (아이콘 보기에서도 머리 배지로 연결·일꾼 상태 즉시 확인) */
+/* 관제판 칸 + 머리 배지 + 앱별 미처리 숫자 배지 */
+const RTDB = "https://benny-meeting-default-rtdb.asia-southeast1.firebasedatabase.app";
+const badgeState = { bridge: null, game: null, music: null, tower: null };
+let badgeAt = 0, lastTowerOrig = "", glanceSeq = 0;
+function unfs(v) {
+  if (!v || typeof v !== "object") return null;
+  if ("stringValue" in v) return v.stringValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return Number(v.doubleValue);
+  if ("booleanValue" in v) return !!v.booleanValue;
+  if ("timestampValue" in v) return v.timestampValue;
+  if ("nullValue" in v) return null;
+  if ("arrayValue" in v) return ((v.arrayValue && v.arrayValue.values) || []).map(unfs);
+  if ("mapValue" in v) {
+    const o = {}, f = (v.mapValue && v.mapValue.fields) || {};
+    for (const k in f) o[k] = unfs(f[k]);
+    return o;
+  }
+  return null;
+}
+function paintBadges() {
+  listEl.querySelectorAll("[data-badge]").forEach(b => {
+    const st = badgeState[b.dataset.badge];
+    if (!st || !(st.n > 0)) { b.hidden = true; return; }
+    b.hidden = false;
+    b.textContent = st.n > 99 ? "99+" : String(st.n);
+    b.title = st.tip || "";
+    b.classList.toggle("accent", !!st.accent);
+  });
+}
+function refreshBadges(force) {
+  if (!admin) return;
+  if (!force && Date.now() - badgeAt < 60000) return;
+  badgeAt = Date.now();
+  // 1) 베니브릿지: 필요한 상위 필드만 부분 조회(~2KB) + 회원 문의 + 미해결 보안 경고(where resolved == false)
+  Promise.all([
+    fsCall("app/state", { qs: "?mask.fieldPaths=pendingEntries&mask.fieldPaths=pinResetReqs&mask.fieldPaths=coupleReports&mask.fieldPaths=messages" }),
+    fsCall("memberMsgs", { qs: "?pageSize=200" }).catch(() => ({})),
+    fsCall(":runQuery", { method: "POST", body: { structuredQuery: { from: [{ collectionId: "securityAlerts" }], where: { fieldFilter: { field: { fieldPath: "resolved" }, op: "EQUAL", value: { booleanValue: false } } }, limit: 50 } } }).catch(() => [])
+  ]).then(([stDoc, msgCol, secRows]) => {
+    const st = unfs({ mapValue: { fields: stDoc.fields || {} } }) || {};
+    const pend = (st.pendingEntries || []).filter(e => e && !e.heldReason).length;
+    const pin = (st.pinResetReqs || []).filter(q => q && q.status === "pending").length;
+    const couple = (st.coupleReports || []).filter(r => r && !r.confirmed).length;
+    const seenIds = new Set();
+    let qna = 0;
+    const countMsg = m => {
+      if (!m || m.from !== "user" || m.hiddenByAdmin || m.readByAdmin) return;
+      if (m.id) { if (seenIds.has(m.id)) return; seenIds.add(m.id); }
+      qna++;
+    };
+    (st.messages || []).forEach(countMsg);
+    ((msgCol && msgCol.documents) || []).forEach(d => {
+      const mdoc = unfs({ mapValue: { fields: d.fields || {} } });
+      ((mdoc && mdoc.msgs) || []).forEach(countMsg);
+    });
+    const sec = (Array.isArray(secRows) ? secRows : []).filter(row => {
+      if (!row || !row.document) return false;
+      const a = unfs({ mapValue: { fields: row.document.fields || {} } });
+      return a && !a.resolved && !(a.triage && a.triage.state === "benign");
+    }).length;
+    const n = pend + pin + couple + qna + sec;
+    const tips = [];
+    if (pend) tips.push("신규 가입 " + pend);
+    if (qna) tips.push("미읽음 문의 " + qna);
+    if (pin) tips.push("PIN 재설정 " + pin);
+    if (couple) tips.push("커플 확인 " + couple);
+    if (sec) tips.push("보안 경고 " + sec);
+    badgeState.bridge = { n, tip: tips.join(" · ") || "미처리 할 일 " + n + "건" };
+    paintBadges();
+  }).catch(() => { badgeAt = 0; });
+
+  // 2) 아케이드: RTDB game_requests 직접 조회 (PC 가 꺼져 있어도 24시간 동작)
+  me().then(u => u && u.getIdToken()).then(tok => {
+    if (!tok) return;
+    return fetch(RTDB + "/game_requests.json?auth=" + encodeURIComponent(tok), { cache: "no-store" }).then(r => r.ok ? r.json() : null);
+  }).then(raw => {
+    if (!raw || typeof raw !== "object") { badgeState.game = { n: 0, tip: "" }; paintBadges(); return; }
+    const now = Date.now(), n = Object.values(raw).filter(r => r && r.status === "pending" && now - Number(r.t || 0) <= 7 * 864e5).length;
+    badgeState.game = { n, tip: "아케이드 기기 승인 대기 " + n + "건" };
+    paintBadges();
+  }).catch(() => {});
+}
+
 function towerOrigin() { const t = items.find(x => x.id === "tower"); try { return new URL(t.url).origin; } catch (e) { return ""; } }
 function formatGlance(g) {
   const parts = [];
   if (g.claude_working != null) parts.push("Claude 작업 중 " + g.claude_working + " · 내 차례 " + g.claude_waiting);
   if (g.max_pct != null) parts.push("Max " + g.max_pct + "%");
   parts.push(g.running ? "● 일꾼 호출 중 " + g.running : "일꾼 쉬는 중", "오늘 " + g.today + "회");
+  if (g.access_pending) parts.push("🔑 승인 대기 " + g.access_pending);
   if (g.fails) parts.push("⚠ 실패 " + g.fails);
   if (g.resting) parts.push("쉬는 일꾼 " + g.resting);
   return parts.join(" · ");
@@ -561,15 +684,26 @@ function refreshGlance(force) {
   if (!admin) return Promise.reject();
   if (force || !glanceP || Date.now() - glanceAt > 30000) {
     glanceAt = Date.now();
+    const mySeq = ++glanceSeq;
     glanceP = towerApi("/api/glance");
     glanceP.then(g => {
+      if (mySeq !== glanceSeq || !admin) return;
       glanceOk = true;
       const badge = $("pcBadge"), txt = $("pcBadgeTxt");
       badge.classList.add("on");
-      txt.textContent = g.running ? "PC · 일꾼 " + g.running : (g.claude_working ? "PC · Claude " + g.claude_working : "PC 켜짐");
+      const base = g.running ? "PC · 일꾼 " + g.running : (g.claude_working ? "PC · Claude " + g.claude_working : "PC 켜짐");
+      txt.textContent = g.access_pending ? base + " · 승인 " + g.access_pending : base;
       badge.title = formatGlance(g) + " (누르면 관제판 열기)";
+      if (g.access_music != null) badgeState.music = { n: g.access_music, tip: "음악실 승인·노래 생성 대기 " + g.access_music + "건" };
+      if (g.access_game != null && !badgeState.game) badgeState.game = { n: g.access_game, tip: "아케이드 기기 승인 대기 " + g.access_game + "건" };
+      badgeState.tower = (g.fails || 0) > 0
+        ? { n: g.fails, tip: "확인 안 한 실패 알림 " + g.fails + "건" }
+        : (g.claude_waiting > 0 ? { n: g.claude_waiting, tip: "Claude 내 차례 " + g.claude_waiting + "건", accent: true } : { n: 0, tip: "" });
+      paintBadges();
     }).catch(() => {
+      if (mySeq !== glanceSeq || !admin) return;
       glanceOk = false;
+      badgeState.music = null; badgeState.tower = null; paintBadges();
       const badge = $("pcBadge"), txt = $("pcBadgeTxt");
       badge.classList.remove("on");
       txt.textContent = "PC 오프라인";
@@ -586,8 +720,13 @@ function towerGlance() {
 async function towerApi(path) {
   const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 12000);
   try {
-    const opt = { cache: "no-store", signal: ctl.signal };
-    let r; try { r = await fetch(towerOrigin() + path, opt); } catch (_) { r = await fetch("http://127.0.0.1:8999" + path, opt); }
+    const opt = { cache: "no-store", signal: ctl.signal }, orig = towerOrigin();
+    let r;
+    if (orig) {
+      try { r = await fetch(orig + path, opt); } catch (_) { r = await fetch("http://127.0.0.1:8999" + path, opt); }
+    } else {
+      r = await fetch("http://127.0.0.1:8999" + path, opt);
+    }
     const j = await r.json().catch(() => ({}));
     if (!r.ok || j.ok === false) throw new Error(j.error || ("HTTP " + r.status));
     return j;
@@ -596,20 +735,24 @@ async function towerApi(path) {
   } finally { clearTimeout(tm); }
 }
 
-/* ── 편집: ⚙️ 한 곳 (11-06 + 11-18 묶음 순서 이동 · 보관함 내 완전 삭제 추가) */
+/* ── 편집: ⚙️ 한 곳 (11-06 + 11-18 묶음 순서 이동 · 묶음 이름 일괄 변경 · 백업/복원 · 보관함 완전 삭제) */
 function renderEdit() {
   const live = items.filter(p => !p.archived), arch = items.filter(p => p.archived), dl = $("groups");
   dl.textContent = "";
   new Set(items.map(gname)).forEach(g => dl.appendChild(new Option(g)));
   const gmap = groupsOf(live), gkeys = [...gmap.keys()];
   gkeys.forEach((g, gi) => {
-    let extra = null;
+    const extra = [];
+    const ren = el("button", "btn sm ghost", "이름 변경");
+    ren.type = "button"; ren.setAttribute("aria-label", g + " 묶음 이름 변경");
+    ren.onclick = () => openRenameGroup(g);
+    extra.push(ren);
     if (gkeys.length > 1) {
       const up = el("button", "btn sm ghost", "묶음 ↑"), dn = el("button", "btn sm ghost", "묶음 ↓");
       up.type = dn.type = "button"; up.disabled = gi === 0; dn.disabled = gi === gkeys.length - 1;
       up.setAttribute("aria-label", g + " 묶음 위로 이동"); dn.setAttribute("aria-label", g + " 묶음 아래로 이동");
       up.onclick = () => moveGroup(g, -1); dn.onclick = () => moveGroup(g, 1);
-      extra = [up, dn];
+      extra.push(up, dn);
     }
     listEl.appendChild(section(g, gmap.get(g).map(p => editCard(p, gmap.get(g))), "elist", extra));
   });
@@ -685,8 +828,21 @@ function moveGroup(g, d) {   // 묶음 통째로 순서 바꾸기
 }
 
 /* ── 서버 목록 */
-function clean(list) {   // 옛 '숨김(hidden)'은 방문자 화면이 있던 때 것 — 이제 모두 나만 보니 그냥 항목 (11-06)
-  return (Array.isArray(list) ? list : []).filter(p => p && typeof p === "object" && p.id).map(p => { const q = Object.assign({}, p); delete q.hidden; return q; });
+function clean(list) {   // 옛 '숨김(hidden)' 정리 + 중복 id 및 비정상 tint/주소 제거
+  const seen = new Set();
+  return (Array.isArray(list) ? list : []).filter(p => {
+    if (!p || typeof p !== "object" || !p.id) return false;
+    const id = String(p.id).trim();
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  }).map(p => {
+    const q = Object.assign({}, p, { id: String(p.id).trim() });
+    delete q.hidden;
+    if (q.tint && !(q.tint in TINT_NAMES)) delete q.tint;
+    if (q.archived && q.url && !URL_OK.test(String(q.url).replace(/[\t\n\r]+/g, "").trim())) q.url = "/";
+    return q;
+  });
 }
 function keep() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(items)); } catch (e) {} }   // 다음에 열 땐 이걸 바로 그린다
 async function loadItems(take) {   // take = 고치던 것을 버리고 서버 것으로 (충돌 때 '새 목록 받기') · 받았으면 true
@@ -697,6 +853,9 @@ async function loadItems(take) {   // take = 고치던 것을 버리고 서버 �
     if (!admin || (dirty && !take)) return false;   // 받는 사이 '끄기'를 눌렀거나 고치는 중이면 버림 (고친 것은 저장할 때 충돌로 알려 줌)
     const next = clean(cfg.items), changed = take || JSON.stringify(next) !== JSON.stringify(items);
     items = next; saved = clone(next); baseTime = d.updateTime || null; itemsLoaded = true; loadError = loadKind = ""; unsure = dirty = false;
+    const curOrig = towerOrigin();
+    if (curOrig && curOrig !== lastTowerOrig) { lastTowerOrig = curOrig; refreshGlance(true).catch(() => {}); }
+    refreshBadges(false);
     if (take) clearDraft();
     else {
       try {
@@ -710,7 +869,7 @@ async function loadItems(take) {   // take = 고치던 것을 버리고 서버 �
       } catch (e) {}
     }
     keep();
-    if (changed) render(); else syncNote();
+    if (changed) render(); else { paintBadges(); syncNote(); }
     return true;
   } catch (e) {
     if (!admin) return false;
@@ -810,8 +969,9 @@ async function fsCall(path, opt = {}, again = false) {
   if (!u) throw authErr();
   let tok, r;
   try { tok = await u.getIdToken(again); } catch (e) { throw gone(e, u) ? authErr() : netErr(); }
+  const fsUrl = (path.startsWith(":") ? FS.slice(0, -1) + path : FS + path) + (opt.qs || "");
   try {
-    r = await fetch(FS + path + (opt.qs || ""), { method: opt.method || "GET", cache: "no-store", body: opt.body ? JSON.stringify(opt.body) : undefined,
+    r = await fetch(fsUrl, { method: opt.method || "GET", cache: "no-store", body: opt.body ? JSON.stringify(opt.body) : undefined,
       headers: Object.assign({ Authorization: "Bearer " + tok }, opt.body ? { "Content-Type": "application/json" } : {}) });
   } catch (e) { throw netErr(); }
   if (r.status === 401 && !again) return fsCall(path, opt, true);   // 토큰이 막 끝났으면 새로 받아 한 번 더
@@ -890,14 +1050,12 @@ function enterAdmin(confirmed) {
 }
 function exitAdmin(manualOff) {
   try {
-    localStorage.removeItem(ADMIN_AT);
-    localStorage.removeItem(ADMIN_SESSION_KEY);
-    localStorage.removeItem(ADMIN_KEY_LS);
-    localStorage.removeItem(CACHE_KEY);
-    localStorage.removeItem(DRAFT_KEY);
+    [ADMIN_AT, ADMIN_SESSION_KEY, ADMIN_KEY_LS, CACHE_KEY, DRAFT_KEY, "benny.mdDraft", "benny.pcActiveJob", "benny.fkSites", "benny.pcOpen", "benny.pcTab"].forEach(k => localStorage.removeItem(k));
     if (manualOff) localStorage.setItem(ADMIN_OFF_KEY, "1");
   } catch (e) {}
-  admin = editing = dirty = itemsLoaded = unsure = false; query = ""; $("q").value = "";
+  admin = editing = dirty = itemsLoaded = unsure = glanceOk = false; ++glanceSeq; glanceP = null; glanceAt = 0;
+  query = ""; $("q").value = ""; $("mdPrompt").value = ""; $("pcOut").textContent = ""; $("pcPreview").textContent = ""; $("pcLinks").textContent = "";
+  lastTowerOrig = ""; badgeAt = 0; for (const k in badgeState) badgeState[k] = null;
   items = []; saved = []; baseTime = null; loadError = loadKind = ""; openIds.clear(); setSt("");
   render();
 }
@@ -907,7 +1065,7 @@ async function verify() {
   unsure = s === "unknown"; syncNote();
   if (s === "yes") {
     try { localStorage.setItem(ADMIN_AT, String(Date.now())); localStorage.setItem(ADMIN_SESSION_KEY, "1"); } catch (e) {}
-    syncAdminKey(); maybeEnroll();
+    syncAdminKey(); maybeEnroll(); refreshBadges(false);
   }
 }
 function recheck(force) {   // 다시 연결 · 화면으로 돌아옴 · '다시' — 30초에 한 번까지
@@ -916,6 +1074,7 @@ function recheck(force) {   // 다시 연결 · 화면으로 돌아옴 · '다�
   lastSync = Date.now();
   verify();
   refreshGlance(force).catch(() => {});
+  refreshBadges(force);
   if (!dirty && !editing) loadItems();
 }
 async function triggerAdminEnter() {   // 하단 '🔒 관리자' 또는 Benny 3번 클릭
@@ -981,6 +1140,53 @@ function twoTap(b, ask, fn) {   // 막는 창(confirm) 대신 4초 안에 한 �
   };
 }
 twoTap($("revert"), "한 번 더 누르면 되돌려요", () => { items = clone(saved); dirty = false; clearDraft(); openIds.clear(); setSt("저장된 목록으로 되돌렸어요"); render(); });
+
+/* ── 묶음 이름 일괄 변경 & JSON 백업 내보내기/불러오기 */
+let renamingGroup = "";
+const renameDlg = $("renameDlg");
+$("renameNo").onclick = () => renameDlg.close();
+function openRenameGroup(g) {
+  renamingGroup = g;
+  $("renameIn").value = g === "그 밖에" ? "" : g;
+  renameDlg.showModal();
+  $("renameIn").focus();
+  $("renameIn").select();
+}
+$("renameForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const next = $("renameIn").value.trim(), target = next || "그 밖에";
+  renameDlg.close();
+  if (!renamingGroup || target === renamingGroup) return;
+  items.forEach(p => { if (gname(p) === renamingGroup) p.group = next; });
+  mark(); render();
+  setSt("‘" + renamingGroup + "’ → ‘" + target + "’ 묶음 이름을 바꿨어요 · 저장 안 됨", true);
+});
+$("exportBtn").onclick = () => {
+  const d = new Date(), ymd = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const blob = new Blob([JSON.stringify({ exportedAt: d.toISOString(), items }, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = "benny-portal-" + ymd + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  flash("목록 백업 파일을 저장했어요");
+};
+$("importBtn").onclick = () => { $("importFile").value = ""; $("importFile").click(); };
+$("importFile").onchange = async () => {
+  const f = $("importFile").files && $("importFile").files[0];
+  if (!f) return;
+  if (f.size > 1000000) { setSt("백업 파일이 너무 커요 (1MB 이하만 가능)", true); return; }
+  try {
+    const raw = JSON.parse(await f.text());
+    const arr = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : null);
+    const next = clean(arr);
+    if (!arr || !next.length) { setSt("유효한 포털 백업 JSON 파일이 아니에요", true); return; }
+    if (!(await askConfirm("백업 파일 불러오기", "항목 " + next.length + "개를 편집 화면으로 불러올까요?\n(‘저장’을 누르기 전에는 서버 목록을 덮어쓰지 않아요)", "불러오기"))) return;
+    items = next; openIds.clear(); mark(); render();
+    setSt("백업 항목 " + next.length + "개를 불러왔어요 · 확인 후 저장을 눌러 주세요", true);
+  } catch (err) {
+    setSt("백업 파일을 읽지 못했어요: " + (err.message || err), true);
+  }
+};
 
 /* ── 모달 확인창 (블로킹 confirm() 대체) 및 closedby 미지원 브라우저(Safari 등) 배경 터치 닫기 폴백 */
 if (!("closedBy" in HTMLDialogElement.prototype)) {
@@ -1058,15 +1264,53 @@ function bookMode() {   // 0단계 선택에 따라 2단계 문구 바꿈 (주�
   const b2 = $("step2Btn"); b2.textContent = b2.dataset.label = url ? "폼 분석" : "초안 보기";
 }
 $("fireSite").addEventListener("change", bookMode); bookMode();
-$("mdKind").addEventListener("change", () => { $("mdLen").hidden = $("mdKind").value !== "video"; });
+const MD_DRAFT = "benny.mdDraft";
+function saveMdDraft() {
+  try { localStorage.setItem(MD_DRAFT, JSON.stringify({ prompt: $("mdPrompt").value, kind: $("mdKind").value, model: $("mdModel").value, len: $("mdLen").value })); } catch (e) {}
+}
+try {
+  const md = JSON.parse(localStorage.getItem(MD_DRAFT) || "null");
+  if (md) {
+    if (typeof md.prompt === "string") $("mdPrompt").value = md.prompt;
+    if (md.kind === "video" || md.kind === "image") $("mdKind").value = md.kind;
+    if (md.model === "5b" || md.model === "a14b") $("mdModel").value = md.model;
+    if (md.len === "2" || md.len === "4") $("mdLen").value = md.len;
+  }
+} catch (e) {}
+$("mdLen").hidden = $("mdKind").value !== "video";
+$("mdPrompt").addEventListener("input", saveMdDraft);
+$("mdKind").addEventListener("change", () => { $("mdLen").hidden = $("mdKind").value !== "video"; saveMdDraft(); });
+$("mdModel").addEventListener("change", saveMdDraft);
+$("mdLen").addEventListener("change", saveMdDraft);
 const hms = v => v ? (v + ":00").slice(0, 8) : "";
 
 function renderMediaLinks(txt) {
-  const box = $("pcLinks"); box.textContent = "";
-  [...new Set(txt.match(/https:\/\/[a-z0-9.-]+\.ts\.net:8830\/[\w.\-]*/g) || [])].forEach(u => {
-    const a = el("a", null, (u.split("/").pop() || "전체 결과") + " ↗");
+  const box = $("pcLinks"), prev = $("pcPreview");
+  box.textContent = ""; prev.textContent = "";
+  let allowedHost = "";
+  try { const h = new URL(towerOrigin()).hostname; if (h.endsWith(".ts.net")) allowedHost = h; } catch (e) {}
+  const urls = [...new Set(txt.match(/https:\/\/[a-z0-9.-]+\.ts\.net:8830\/[\w.\-/%]*/g) || [])].filter(u => {
+    try { return !allowedHost || new URL(u).hostname === allowedHost; } catch (e) { return false; }
+  });
+  let mediaShown = 0;
+  urls.forEach(u => {
+    const rawName = decodeURIComponent(u.split("/").pop() || "") || "전체 결과";
+    const a = el("a", null, rawName + " ↗");
     a.href = u; a.target = "_blank"; a.rel = "noopener";
     box.appendChild(a);
+    if (mediaShown >= 4) return;
+    if (/\.(mp4|webm)$/i.test(rawName)) {
+      const wrap = el("div", "prev-card"), v = document.createElement("video");
+      v.src = u; v.controls = true; v.muted = true; v.playsInline = true; v.preload = "metadata";
+      v.onerror = () => wrap.remove();
+      wrap.appendChild(v); prev.appendChild(wrap); mediaShown++;
+    } else if (/\.(png|jpe?g|webp|gif)$/i.test(rawName)) {
+      const wrap = el("div", "prev-card"), link = document.createElement("a"), img = document.createElement("img");
+      link.href = u; link.target = "_blank"; link.rel = "noopener";
+      img.src = u; img.loading = "lazy"; img.alt = rawName;
+      img.onerror = () => wrap.remove();
+      link.appendChild(img); wrap.appendChild(link); prev.appendChild(wrap); mediaShown++;
+    }
   });
 }
 function waitPcStep(ms) {
@@ -1187,7 +1431,7 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
     Object.assign(fields, { prompt: { stringValue: prompt.slice(0, 600) }, kind: { stringValue: kind }, model: { stringValue: $("mdModel").value }, len: { stringValue: kind === "video" ? $("mdLen").value : "2" } });
   }
   const isMedia = cmd === "media_gen";
-  $("pcLinks").textContent = "";
+  $("pcLinks").textContent = ""; $("pcPreview").textContent = "";
   b.disabled = true; out.textContent = label + " — PC 에 보냄…";
   try {
     const doc = await fsCall("pcJobs", { method: "POST", qs: "", body: { fields } });
