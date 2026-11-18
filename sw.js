@@ -1,7 +1,8 @@
-const CACHE_NAME = "benny-portal-v5";   // v5: 화면 다시 짬 · maskable 아이콘 (2026-11-06) · v4: 메인에서 목록을 뺌 (옛 화면 지우기) · v2: 공통 토큰 /design/tokens.css 도 오프라인 캐시 · v3: tokens ?v=2, 오프라인 찾는 순서 고침 (2026-10-29)
+const CACHE_NAME = "benny-portal-v6";   // v6: /admin-login.js 오프라인 캐시 추가 · /?source=pwa 정규화 (2026-11-18)
 const PORTAL_PATHS = new Set([
   "/",
   "/index.html",
+  "/admin-login.js",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
@@ -13,7 +14,13 @@ const PORTAL_PATHS = new Set([
 
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(["/", "/manifest.webmanifest", "/icon-192.png", "/design/tokens.css?v=2"])).catch(() => {})
+    caches.open(CACHE_NAME).then(cache => cache.addAll([
+      "/",
+      "/manifest.webmanifest",
+      "/icon-192.png",
+      "/design/tokens.css?v=2",
+      "/admin-login.js?v=20261118a"
+    ])).catch(() => {})
   );
   self.skipWaiting();
 });
@@ -30,30 +37,31 @@ self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
   // 하위 앱(/bridge/, /when/ 등)은 가로채지 않고 루트 포털 파일만 네트워크 우선 + 오프라인 캐시 폴백 처리
   if (url.origin !== self.location.origin || !PORTAL_PATHS.has(url.pathname)) return;
+  const canonPath = url.pathname === "/index.html" ? "/" : url.pathname;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "no-cache" })
       .then(res => {
         if (res && res.ok) {
           const exact = res.clone();
-          // ?v= 같은 꼬리가 붙은 요청은 꼬리 뺀 주소로도 한 벌 더 둔다 → 그 파일의 "가장 최근 것" 자리 (늘 1개)
-          const latest = url.search ? res.clone() : null;
+          // ?v= 나 ?source=pwa 꼬리가 붙은 요청은 꼬리 뺀 대표 경로로도 한 벌 더 둔다 → 항상 최신 오프라인 본 유지
+          const latest = (url.search || url.pathname === "/index.html") ? res.clone() : null;
           caches.open(CACHE_NAME).then(c => Promise.all([
             c.put(event.request, exact),
-            latest && c.put(url.pathname, latest)
+            latest && c.put(canonPath, latest)
           ])).catch(() => {});
         }
         return res;
       })
-      .catch(() => offlineMatch(event.request, url))
+      .catch(() => offlineMatch(event.request, canonPath))
   );
 });
 
-// 오프라인 찾는 순서: ① 주소 그대로(?v 까지 같은 것) ② 같은 파일의 가장 최근 것(꼬리 뺀 주소)
+// 오프라인 찾는 순서: ① 주소 그대로(?v 까지 같은 것) ② 같은 파일의 가장 최근 대표 경로
 // ③ ?v 무시하고 아무거나 — ignoreSearch 는 맞는 것 중 가장 오래된 것을 돌려줘서 맨 마지막에만 쓴다.
-// 다 없으면 화면(HTML)만 "/" 로 대신하고, 토큰 파일은 HTML 로 대신하지 않는다.
-function offlineMatch(request, url) {
+// 다 없으면 페이지 탐색(navigate)일 때만 "/" 로 대신하고, 아이콘·매니페스트·스크립트·토큰은 HTML 로 대신하지 않는다.
+function offlineMatch(request, canonPath) {
   return caches.match(request)
-    .then(r => r || caches.match(url.pathname))
+    .then(r => r || caches.match(canonPath))
     .then(r => r || caches.match(request, { ignoreSearch: true }))
-    .then(r => r || (url.pathname === "/design/tokens.css" ? Response.error() : caches.match("/")));
+    .then(r => r || (request.mode === "navigate" ? caches.match("/") : Response.error()));
 }

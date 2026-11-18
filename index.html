@@ -2,6 +2,7 @@
 <html lang="ko" data-theme="light">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#287047">
@@ -23,6 +24,8 @@
    2026-11-06 다시 짬 (Benny: "다 개선해줘"): 머리 한 줄 · 묶음별 아이콘 · 숨김 대신 보관 · 편집은 ⚙️ 한 곳 */
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+html:has(body.editing){scroll-padding-top:calc(68px + env(safe-area-inset-top, 0px))}
+.visually-hidden:where(:not(:focus-within,:active)){position:absolute!important;clip-path:inset(50%)!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;border:0!important;white-space:nowrap!important}
 body{
   margin:0; background:var(--bn-bg); color:var(--bn-ink);
   font:var(--bn-fs-base)/var(--bn-lh) var(--bn-font);
@@ -66,12 +69,25 @@ body.editing .viewsw{display:none}
 .btn[data-armed]{background:var(--bn-warn-soft);border-color:var(--bn-warn-line);color:var(--bn-warn)}
 
 /* 초점 테두리 — 모두 같게 */
-.btn:focus-visible,.viewsw button:focus-visible,.ehead:focus-visible,.app:focus-visible,.row:focus-visible,
+.btn:focus-visible,.viewsw button:focus-visible,.ehead:focus-visible,.app:focus-visible,.row:focus-visible,.pc-pill:focus-visible,.pc-toggle:focus-visible,
 input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--bn-accent);outline-offset:2px}
 
 /* 손가락 닿는 범위는 최소 44px — 모양은 그대로 두고 보이지 않는 덧칸으로 넓힘 */
-.btn,.viewsw button{position:relative}
-.btn::after,.viewsw button::after{content:"";position:absolute;left:0;right:0;top:50%;height:max(100%,var(--bn-tap));transform:translateY(-50%)}
+.btn,.viewsw button,.pc-pill{position:relative}
+.btn::after,.viewsw button::after,.pc-pill::after{content:"";position:absolute;left:0;right:0;top:50%;height:max(100%,var(--bn-tap));transform:translateY(-50%)}
+
+/* 머리 우측 관제판 연결 배지 (아이콘 보기에서도 PC·일꾼 상태 즉시 확인) */
+.pc-pill{display:inline-flex;align-items:center;gap:6px;padding:var(--bn-sp-1) var(--bn-sp-2);border-radius:var(--bn-r-pill);border:1px solid var(--bn-line);background:var(--bn-surface);color:var(--bn-ink-2);font:600 var(--bn-fs-xs)/1.3 inherit;cursor:pointer;white-space:nowrap;transition:border-color var(--bn-dur) var(--bn-ease),background var(--bn-dur) var(--bn-ease)}
+.pc-pill:hover{border-color:var(--bn-accent)}
+.pc-pill.on{border-color:var(--bn-accent-line);background:var(--bn-accent-faint);color:var(--bn-accent)}
+.pc-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--bn-ink-3);flex-shrink:0}
+.pc-pill.on .dot{background:var(--bn-ok)}
+body.editing #pcBadge{display:none}
+
+/* 초성·이름 빠른 실행 필터 */
+.qbar{display:flex;align-items:center;gap:var(--bn-sp-2);margin:0 0 var(--bn-sp-4)}
+.qbar input{flex:1;min-width:0;min-height:40px;padding:var(--bn-sp-2) var(--bn-sp-3);font:inherit;font-size:var(--bn-fs-base);color:var(--bn-ink);background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-md);box-shadow:var(--bn-shadow-1)}
+body.editing .qbar,body:not(.admin) .qbar{display:none!important}
 
 /* 알림 한 줄 — 인터넷 끊김 · 저장됨 */
 .note{display:flex;align-items:center;gap:var(--bn-sp-2);margin:0 0 var(--bn-sp-3);padding:var(--bn-sp-2) var(--bn-sp-3);border-radius:var(--bn-r-md);background:var(--bn-warn-soft);color:var(--bn-warn);font-size:var(--bn-fs-sm);font-weight:600}
@@ -81,6 +97,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 /* 묶음 */
 .sec{margin:0 0 var(--bn-sp-5)}
 .sec h2{margin:0 var(--bn-sp-1) var(--bn-sp-2);font-size:var(--bn-fs-md);font-weight:700;color:var(--bn-ink-2);letter-spacing:-.01em}
+.sec-head{display:flex;align-items:center;gap:var(--bn-sp-2);margin:0 var(--bn-sp-1) var(--bn-sp-2)}
+.sec-head h2{margin:0;flex:1;min-width:0}
 .ico{--s:46px;width:var(--s);height:var(--s);border-radius:calc(var(--s) * .3);display:flex;align-items:center;justify-content:center;font-size:calc(var(--s) * .5);line-height:1;flex-shrink:0;
   background:var(--t,var(--bn-fill));border:1px solid color-mix(in srgb,var(--bn-ink) 4%,transparent)}
 
@@ -134,10 +152,12 @@ body.editing .editbar{display:flex}
 .empty{background:var(--bn-surface);border:1px dashed var(--bn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-6);text-align:center;color:var(--bn-ink-2);font-size:var(--bn-fs-md)}
 .empty .btn{margin-top:var(--bn-sp-3)}
 
-dialog{border:0;border-radius:var(--bn-r-lg);padding:var(--bn-sp-6);background:var(--bn-surface);color:var(--bn-ink);box-shadow:var(--bn-shadow-2);max-width:min(340px,calc(100vw - var(--bn-sp-8)))}
-dialog::backdrop{background:var(--bn-overlay, rgba(0,0,0,.35))}  /* 옛 브라우저는 ::backdrop 이 :root 변수를 못 받아서 기본값 */
+dialog{border:0;border-radius:var(--bn-r-lg);padding:var(--bn-sp-6);background:var(--bn-surface);color:var(--bn-ink);box-shadow:var(--bn-shadow-2);max-width:min(360px,calc(100vw - var(--bn-sp-8)))}
+dialog:modal{overscroll-behavior:contain}
+dialog::backdrop{background:var(--bn-overlay, rgba(0,0,0,.35));overflow:hidden;overscroll-behavior:contain}  /* 모달 뒤 페이지 스크롤 번짐 차단 */
 dialog h2{margin:0 0 var(--bn-sp-3);font-size:var(--bn-fs-lg)}
 dialog .msg{font-size:var(--bn-fs-sm);color:var(--bn-warn);min-height:18px;margin-top:var(--bn-sp-1)}
+dialog .confirm-body{margin:0;font-size:var(--bn-fs-md);color:var(--bn-ink-2);line-height:1.55;white-space:pre-line;overflow-wrap:anywhere}
 .dlg-acts{display:flex;gap:var(--bn-sp-2);justify-content:flex-end;margin-top:var(--bn-sp-3)}
 .install-help{font-size:var(--bn-fs-md);color:var(--bn-ink-2);line-height:1.55;display:grid;gap:var(--bn-sp-2)}
 .install-help div>b:first-child{color:var(--bn-ink)}
@@ -146,14 +166,21 @@ footer{margin-top:var(--bn-sp-8);display:flex;align-items:center;justify-content
 body:not(.admin) #installBtn,#offBtn{display:none}
 body.editing #offBtn{display:inline-flex}
 body.admin #adminEnterBtn{display:none}
-/* 내 PC (관리자만) — 11-17 다시 짬 (Benny: "지저분하다, 필요한 것만"): 탭 둘(예약 · 사진·영상) · 주 동작 하나씩 · 나머지는 '더보기' */
+/* 내 PC (관리자만) — 11-17 정리 + 11-18 접기·터치·모바일 복귀 대응 보강 */
 #pcPanel{display:none;margin-top:var(--bn-sp-6)}
-body.admin #pcPanel{display:block}
-.pc{display:grid;gap:var(--bn-sp-4);background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-4);box-shadow:var(--bn-shadow-1)}
+body.admin:not(.editing) #pcPanel{display:block}
+#pcPanel>h2{margin:0}
+.pc-toggle{display:flex;align-items:center;justify-content:space-between;gap:var(--bn-sp-2);width:100%;min-height:var(--bn-tap);padding:var(--bn-sp-3) var(--bn-sp-4);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);background:var(--bn-surface);color:var(--bn-ink);font:700 var(--bn-fs-md)/1.3 inherit;cursor:pointer;box-shadow:var(--bn-shadow-1);text-align:left;transition:border-color var(--bn-dur) var(--bn-ease)}
+.pc-toggle:hover{border-color:var(--bn-line-strong)}
+.pc-toggle .sub-st{font-weight:600;font-size:var(--bn-fs-xs);color:var(--bn-ink-2);margin-left:var(--bn-sp-2)}
+.pc-toggle .chev{color:var(--bn-ink-3);font-size:var(--bn-fs-sm);flex-shrink:0}
+.pc{display:grid;gap:var(--bn-sp-4);margin-top:var(--bn-sp-2);background:var(--bn-surface);border:1px solid var(--bn-line);border-radius:var(--bn-r-lg);padding:var(--bn-sp-4);box-shadow:var(--bn-shadow-1)}
 .seg{display:inline-flex;justify-self:start;padding:var(--bn-sp-1);border-radius:var(--bn-r-md);background:var(--bn-track)}
 .seg button{position:relative;border:0;background:none;font:inherit;font-size:var(--bn-fs-sm);font-weight:600;color:var(--bn-ink-3);padding:var(--bn-sp-1) var(--bn-sp-4);border-radius:var(--bn-r-sm);cursor:pointer;
   transition:background var(--bn-dur) var(--bn-ease),color var(--bn-dur) var(--bn-ease),box-shadow var(--bn-dur) var(--bn-ease)}
-.seg button[aria-pressed="true"]{background:var(--bn-surface);color:var(--bn-ink);box-shadow:var(--bn-shadow-1)}
+.seg button::after{content:"";position:absolute;left:0;right:0;top:50%;height:max(100%,var(--bn-tap));transform:translateY(-50%)}
+.seg button[aria-selected="true"]{background:var(--bn-surface);color:var(--bn-ink);box-shadow:var(--bn-shadow-1)}
+.seg button[aria-selected="true"]::before{content:"";position:absolute;left:var(--bn-sp-3);right:var(--bn-sp-3);bottom:2px;border-bottom:2px solid var(--bn-accent);border-radius:2px}
 .seg button:focus-visible{outline:2px solid var(--bn-accent);outline-offset:2px}
 .pane{display:grid;gap:var(--bn-sp-3)}
 .fl{display:flex;flex-wrap:wrap;align-items:center;gap:var(--bn-sp-2)}
@@ -183,6 +210,13 @@ body.admin #pcPanel{display:block}
 .so{max-height:180px}
 #pcLinks{display:flex;flex-wrap:wrap;gap:var(--bn-sp-1)}
 #pcLinks a{font-size:var(--bn-fs-xs);font-weight:600;padding:var(--bn-sp-1) var(--bn-sp-3);border-radius:var(--bn-r-pill);background:var(--bn-accent-faint);border:1px solid var(--bn-accent-line);color:var(--bn-accent);text-decoration:none}
+
+/* 터치 기기(폰·태블릿): 입력칸 16px 이상으로 iOS 자동 화면 확대 방지 + 44px 터치 크기 보장 */
+@media (pointer: coarse) {
+  input:not([type="checkbox"],[type="radio"]),select,textarea{font-size:max(16px,var(--bn-fs-base))!important}
+  .pc input:not([type="checkbox"]),.pc select,.pc .btn,.chk,.more summary{min-block-size:var(--bn-tap)}
+  .more summary{display:inline-flex;align-items:center}
+}
 </style>
 </head>
 <body>
@@ -193,6 +227,7 @@ body.admin #pcPanel{display:block}
     <h1 id="brand">Benny</h1>
     <div class="sp"></div>
     <div class="hdr-right">
+      <button class="pc-pill" id="pcBadge" type="button" title="PC 관제판 연결 상태"><span class="dot" aria-hidden="true"></span><span id="pcBadgeTxt">PC 확인 중</span></button>
       <div class="viewsw" role="group" aria-label="보기 방식">
         <button type="button" data-view="simple" title="아이콘으로 보기" aria-label="아이콘으로 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></button><button type="button" data-view="full" title="설명까지 보기" aria-label="설명까지 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="4.5" rx="1.2"/><rect x="2" y="9" width="12" height="4.5" rx="1.2"/></svg></button>
       </div>
@@ -207,18 +242,24 @@ body.admin #pcPanel{display:block}
   </div>
   <p class="note" id="note" role="status" hidden><span id="noteText"></span><button class="btn sm" id="noteRetry" type="button">다시</button></p>
 
+  <div class="qbar" id="qbar" hidden>
+    <label class="visually-hidden" for="q">앱 빠르게 찾기</label>
+    <input id="q" type="search" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="🔎 앱 빠르게 찾기 (이름 · 초성 · / 키 · Enter 실행)">
+    <button class="btn sm ghost" id="qClear" type="button" hidden>지우기</button>
+  </div>
+
   <main id="list"></main>
   <datalist id="groups"></datalist>
 
-  <!-- 관리자 전용: 내 PC 에서 정해 둔 스크립트 실행 (pcJobs → pc-bridge/portal_jobs.py). 11-17 정리: 예약 · 사진·영상 두 탭 -->
-  <section id="pcPanel" class="sec" aria-label="내 PC">
-    <h2>내 PC</h2>
-    <div class="pc">
-      <div class="seg" role="group" aria-label="내 PC 기능">
-        <button type="button" data-pctab="book">예약</button><button type="button" data-pctab="media">사진·영상</button>
+  <!-- 관리자 전용: 내 PC 에서 정해 둔 스크립트 실행 (pcJobs → pc-bridge/portal_jobs.py). 11-18 접기·터치·복귀 대응 -->
+  <section id="pcPanel" class="sec">
+    <h2><button type="button" class="pc-toggle" id="pcToggle" aria-expanded="false"><span>💻 내 PC 실행<span class="sub-st" id="pcMiniSt">예약 · AI 사진·영상</span></span><span class="chev" id="pcChev" aria-hidden="true">▸</span></button></h2>
+    <div class="pc" id="pcBody" hidden>
+      <div class="seg" role="tablist" aria-label="내 PC 기능">
+        <button type="button" role="tab" id="pcTabBook" data-pctab="book" aria-selected="true">예약</button><button type="button" role="tab" id="pcTabMedia" data-pctab="media" aria-selected="false" tabindex="-1">사진·영상</button>
       </div>
 
-      <div class="pane" data-pane="book">
+      <div class="pane" role="tabpanel" aria-labelledby="pcTabBook" data-pane="book">
         <ol class="steps">
           <li class="step">
             <span class="n">0</span>
@@ -294,7 +335,7 @@ body.admin #pcPanel{display:block}
         </details>
       </div>
 
-      <div class="pane" data-pane="media" hidden>
+      <div class="pane" role="tabpanel" aria-labelledby="pcTabMedia" data-pane="media" hidden>
         <textarea id="mdPrompt" placeholder="무엇을 만들까요? (영어 권장)" maxlength="600" aria-label="프롬프트"></textarea>
         <div class="fl">
           <select id="mdKind" aria-label="종류"><option value="image">사진</option><option value="video">영상</option></select>
@@ -323,9 +364,9 @@ body.admin #pcPanel{display:block}
   </footer>
 </div>
 
-<dialog id="login">
+<dialog id="login" closedby="any" aria-labelledby="loginTitle">
   <form method="dialog" id="loginForm">
-    <h2>관리자</h2>
+    <h2 id="loginTitle">관리자</h2>
     <input type="password" id="pw" autocomplete="current-password" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호">
     <div class="msg" id="loginMsg"></div>
     <div class="dlg-acts">
@@ -335,8 +376,8 @@ body.admin #pcPanel{display:block}
   </form>
 </dialog>
 
-<dialog id="installDlg">
-  <h2>📲 앱으로 설치하기</h2>
+<dialog id="installDlg" closedby="any" aria-labelledby="installTitle">
+  <h2 id="installTitle">📲 앱으로 설치하기</h2>
   <div class="install-help">
     <div><b>📱 갤럭시 (Chrome / 삼성 인터넷)</b><br>우측 상단(또는 하단) 메뉴 <b>⋮</b> → <b>앱 설치</b> 또는 <b>홈 화면에 추가</b></div>
     <div><b>🍎 아이폰 (Safari)</b><br>하단 <b>공유(□↑)</b> 버튼 → <b>홈 화면에 추가</b></div>
@@ -344,6 +385,15 @@ body.admin #pcPanel{display:block}
   </div>
   <div class="dlg-acts">
     <button class="btn primary" type="button" id="installDlgClose">확인</button>
+  </div>
+</dialog>
+
+<dialog id="confirmDlg" closedby="any" aria-labelledby="confirmTitle">
+  <h2 id="confirmTitle">실행 확인</h2>
+  <p class="confirm-body" id="confirmBody"></p>
+  <div class="dlg-acts">
+    <button class="btn" type="button" id="confirmNo" autofocus>취소</button>
+    <button class="btn primary" type="button" id="confirmYes">띄우기</button>
   </div>
 </dialog>
 
@@ -372,19 +422,34 @@ const AUTH_KEY = "firebase:authUser:" + FB.apiKey + ":[DEFAULT]";
 
 let items = [], saved = [], baseTime = null, itemsLoaded = false, loadError = "", loadKind = "";
 let admin = false, editing = false, dirty = false, unsure = false, lastSync = 0;
-let view = "simple";
+let view = "simple", query = "", glanceOk = false;
 let flashing = 0, keyP = null, fbP = null, kitP = null, readyP = null, glanceP = null, glanceAt = 0;
 const openIds = new Set(), scripts = {};
 const $ = id => document.getElementById(id);
 const listEl = $("list");
 const clone = v => JSON.parse(JSON.stringify(v));
+const CHO = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+function choseong(s) {
+  let r = "";
+  for (const ch of String(s || "")) {
+    const n = ch.charCodeAt(0) - 44032;
+    r += (n >= 0 && n < 11172) ? CHO[(n / 588) | 0] : ch;
+  }
+  return r;
+}
+function matchItem(p, q) {
+  if (!q) return true;
+  const hay = [p.name, p.group, p.desc, host(p.url)].join(" ").toLowerCase().replace(/\s+/g, "");
+  const nq = q.toLowerCase().replace(/\s+/g, "");
+  return hay.includes(nq) || choseong(hay).includes(nq);
+}
 
 /* ── 그리기 */
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function host(u) { return String(u || "").replace(/^https?:\/\//, ""); }
 /* 링크는 http(s) 또는 이 사이트 안 경로만 (11-13 보안 점검: 목록 문서가 바뀌어 javascript: 가 들어와도 같은 출처에서 돌지 않게, 보관한 항목 포함) */
 const URL_OK = /^(https?:\/\/[^\s/?#]+|\/(?![\/\\]))/i;
-function safeHref(u) { u = String(u || "").trim(); return URL_OK.test(u) ? u : "#"; }
+function safeHref(u) { u = String(u || "").replace(/[\t\n\r]+/g, "").trim(); return URL_OK.test(u) ? u : "#"; }
 /* 아이콘 타일 색 = 공통 토큰 /design/tokens.css 의 --bn-tint-* (2026-10-29) — 항목의 tint, 없으면 id 해시 */
 const TINT_NAMES = { green: "초록", orange: "주황", blue: "파랑", yellow: "노랑", pink: "분홍", purple: "보라", red: "빨강", teal: "청록", sand: "모래" };
 const HASH_TINTS = ["green", "orange", "blue", "yellow", "pink", "purple", "red", "teal"];
@@ -398,13 +463,24 @@ function splitDesc(d) { d = String(d || ""); const m = /\s*\(([^()]+)\)\s*$/.exe
 function icon(p) { const s = el("span", "ico", p.emoji || "•"); s.style.setProperty("--t", tint(p)); return s; }
 const gname = p => String(p.group || "").trim() || "그 밖에";
 function groupsOf(list) { const m = new Map(); list.forEach(p => { const g = gname(p); if (!m.has(g)) m.set(g, []); m.get(g).push(p); }); return m; }   // 묶음 순서 = 처음 나온 순서
-function section(title, nodes, cls) { const s = el("section", "sec"), box = el("div", cls); s.appendChild(el("h2", null, title)); box.append(...nodes); s.appendChild(box); return s; }
+function section(title, nodes, cls, headExtra) {
+  const s = el("section", "sec"), box = el("div", cls);
+  if (headExtra) { const hd = el("div", "sec-head"); hd.append(el("h2", null, title), ...headExtra); s.appendChild(hd); }
+  else s.appendChild(el("h2", null, title));
+  box.append(...nodes); s.appendChild(box); return s;
+}
 
 /* ── 홈: 묶음별 (2026-10-19 Benny: "1열로 쭉 깔리니까 보기 힘들다" → 묶음 · 간단히 보기.
    11-06: 대표 카드 · '🔒 나만 보는' 칸은 방문자가 있던 때 것이라 뺌, 기본 = 아이콘, 보관한 것은 편집에서만) */
 function renderHome() {
-  const simple = view === "simple";
-  groupsOf(items.filter(p => !p.archived)).forEach((list, g) => listEl.appendChild(section(g, list.map(p => simple ? appTile(p) : rowCard(p)), simple ? "apps" : "rows")));
+  const simple = view === "simple", live = items.filter(p => !p.archived);
+  const filtered = query ? live.filter(p => matchItem(p, query)) : live;
+  refreshGlance(false);
+  if (!filtered.length) {
+    listEl.appendChild(el("div", "empty", "‘" + query + "’에 맞는 항목이 없어요."));
+    return;
+  }
+  groupsOf(filtered).forEach((list, g) => listEl.appendChild(section(g, list.map(p => simple ? appTile(p) : rowCard(p)), simple ? "apps" : "rows")));
 }
 function appTile(p) {
   const a = el("a", "app"); a.href = safeHref(p.url); a.title = p.desc ? p.name + " — " + p.desc : p.name;
@@ -447,6 +523,9 @@ function syncChrome() {
   b.textContent = !editing ? "⚙️ 편집" : dirty ? "저장" : "완료";
   b.classList.toggle("primary", editing);
   $("revert").hidden = !dirty;
+  const liveCount = items.reduce((n, p) => n + (p.archived ? 0 : 1), 0);
+  $("qbar").hidden = !(admin && !editing && liveCount >= 6);
+  $("qClear").hidden = !query;
   syncNote();
 }
 const relog = () => loadKind === "auth" || loadKind === "denied";   // 서버가 이 로그인을 안 받음 → '다시 로그인' (11-06 Argon: 지난 목록이 있으면 들어갈 길이 없던 것)
@@ -461,24 +540,47 @@ function flash(msg, warn) {   // 잠깐 알림 (2.5초)
   $("noteText").textContent = msg; $("note").className = "note" + (warn ? "" : " ok"); $("note").hidden = false; $("noteRetry").hidden = true;
   flashing = setTimeout(() => { flashing = 0; syncNote(); }, 2500);
 }
+const DRAFT_KEY = "portalDraft";
+function saveDraft() { if (dirty) try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ baseTime, items })); } catch (e) {} }
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
 function setSt(msg, warn) { const s = $("st"); s.textContent = msg; s.classList.toggle("warn", !!warn); }
-function mark() { dirty = true; setSt("저장 안 됨", true); syncChrome(); }
+function mark() { dirty = true; saveDraft(); setSt("저장 안 됨", true); syncChrome(); }
 
-/* 관제판 칸: PC 관제판의 요약 숫자 (2026-10-24 Benny, 10-31 통합 설계에서 그대로 두기로). Tailscale 에 붙은 내 기기에서만 응답이 오고,
-   다른 곳에서는 조용히 "PC 연결 안 됨". 숫자만 받음 (세션 이름 X). 주소는 소스에 두지 않고 그 칸의 주소에서 뺀다. 30초 안엔 받은 것을 다시 씀 */
+/* 관제판 칸 + 머리 배지: PC 관제판의 요약 숫자 (아이콘 보기에서도 머리 배지로 연결·일꾼 상태 즉시 확인) */
 function towerOrigin() { const t = items.find(x => x.id === "tower"); try { return new URL(t.url).origin; } catch (e) { return ""; } }
+function formatGlance(g) {
+  const parts = [];
+  if (g.claude_working != null) parts.push("Claude 작업 중 " + g.claude_working + " · 내 차례 " + g.claude_waiting);
+  if (g.max_pct != null) parts.push("Max " + g.max_pct + "%");
+  parts.push(g.running ? "● 일꾼 호출 중 " + g.running : "일꾼 쉬는 중", "오늘 " + g.today + "회");
+  if (g.fails) parts.push("⚠ 실패 " + g.fails);
+  if (g.resting) parts.push("쉬는 일꾼 " + g.resting);
+  return parts.join(" · ");
+}
+function refreshGlance(force) {
+  if (!admin) return Promise.reject();
+  if (force || !glanceP || Date.now() - glanceAt > 30000) {
+    glanceAt = Date.now();
+    glanceP = towerApi("/api/glance");
+    glanceP.then(g => {
+      glanceOk = true;
+      const badge = $("pcBadge"), txt = $("pcBadgeTxt");
+      badge.classList.add("on");
+      txt.textContent = g.running ? "PC · 일꾼 " + g.running : (g.claude_working ? "PC · Claude " + g.claude_working : "PC 켜짐");
+      badge.title = formatGlance(g) + " (누르면 관제판 열기)";
+    }).catch(() => {
+      glanceOk = false;
+      const badge = $("pcBadge"), txt = $("pcBadgeTxt");
+      badge.classList.remove("on");
+      txt.textContent = "PC 오프라인";
+      badge.title = "PC 관제판 연결 안 됨 — 누르면 다시 확인";
+    });
+  }
+  return glanceP;
+}
 function towerGlance() {
   const line = el("p", "tower-live", "관제판 확인 중…");
-  if (!glanceP || Date.now() - glanceAt > 30000) { glanceAt = Date.now(); glanceP = towerApi("/api/glance"); }
-  glanceP.then(g => {
-    const parts = [];
-    if (g.claude_working != null) parts.push("Claude 작업 중 " + g.claude_working + " · 내 차례 " + g.claude_waiting);
-    if (g.max_pct != null) parts.push("Max " + g.max_pct + "%");
-    parts.push(g.running ? "● 일꾼 호출 중 " + g.running : "일꾼 쉬는 중", "오늘 " + g.today + "회");
-    if (g.fails) parts.push("⚠ 실패 " + g.fails);
-    if (g.resting) parts.push("쉬는 일꾼 " + g.resting);
-    line.textContent = parts.join(" · ");
-  }).catch(() => { line.textContent = "PC 관제판 연결 안 됨 (Tailscale·PC 꺼짐)"; });
+  refreshGlance(false).then(g => { line.textContent = formatGlance(g); }).catch(() => { line.textContent = "PC 관제판 연결 안 됨 (Tailscale·PC 꺼짐)"; });
   return line;
 }
 async function towerApi(path) {
@@ -494,13 +596,23 @@ async function towerApi(path) {
   } finally { clearTimeout(tm); }
 }
 
-/* ── 편집: ⚙️ 한 곳 (11-06 — 탭 두 개 · 숨김/공개 대신). 카드를 누르면 고치는 칸이 열리고, 열린 칸은 다시 그려도 그대로.
-   지우기는 없고 보관만 (2026-10-08 Benny: 삭제 버튼 없음) — 보관한 것은 홈에 안 보이고 여기 맨 아래에 모임 */
+/* ── 편집: ⚙️ 한 곳 (11-06 + 11-18 묶음 순서 이동 · 보관함 내 완전 삭제 추가) */
 function renderEdit() {
   const live = items.filter(p => !p.archived), arch = items.filter(p => p.archived), dl = $("groups");
   dl.textContent = "";
   new Set(items.map(gname)).forEach(g => dl.appendChild(new Option(g)));
-  groupsOf(live).forEach((list, g) => listEl.appendChild(section(g, list.map(p => editCard(p, list)), "elist")));
+  const gmap = groupsOf(live), gkeys = [...gmap.keys()];
+  gkeys.forEach((g, gi) => {
+    let extra = null;
+    if (gkeys.length > 1) {
+      const up = el("button", "btn sm ghost", "묶음 ↑"), dn = el("button", "btn sm ghost", "묶음 ↓");
+      up.type = dn.type = "button"; up.disabled = gi === 0; dn.disabled = gi === gkeys.length - 1;
+      up.setAttribute("aria-label", g + " 묶음 위로 이동"); dn.setAttribute("aria-label", g + " 묶음 아래로 이동");
+      up.onclick = () => moveGroup(g, -1); dn.onclick = () => moveGroup(g, 1);
+      extra = [up, dn];
+    }
+    listEl.appendChild(section(g, gmap.get(g).map(p => editCard(p, gmap.get(g))), "elist", extra));
+  });
   if (arch.length) listEl.appendChild(section("보관 " + arch.length + " · 홈에는 안 보여요", arch.map(p => editCard(p, null)), "elist"));
   if (!items.length) listEl.appendChild(el("div", "empty", "항목이 없어요. '+ 새 항목'으로 더해 주세요."));
 }
@@ -538,22 +650,38 @@ function editCard(p, sib) {
      폰에서는 추천을 고를 때 자판이 흔들림) */
   field("group", "묶음", ed, { list: "groups", ph: "그 밖에" });
   const acts = el("div", "acts");
-  const btn = (label, fn, key, off) => { const b = el("button", "btn sm", label); b.type = "button"; b.onclick = fn; b.dataset.fid = p.id + ":" + key; b.disabled = !!off; acts.appendChild(b); };
+  const btn = (label, fn, key, off) => { const b = el("button", "btn sm", label); b.type = "button"; b.onclick = fn; b.dataset.fid = p.id + ":" + key; b.disabled = !!off; acts.appendChild(b); return b; };
   if (sib) {
     const k = sib.indexOf(p);
     btn("↑ 위로", () => move(p, -1), "up", k <= 0);
     btn("↓ 아래로", () => move(p, 1), "down", k >= sib.length - 1);
     btn("보관", () => { p.archived = true; openIds.delete(p.id); mark(); render(); setSt("보관했어요 (맨 아래) · 저장 안 됨", true); }, "arch");
-  } else btn("꺼내기", () => { delete p.archived; openIds.delete(p.id); mark(); render(); }, "arch");
+  } else {
+    btn("꺼내기", () => { delete p.archived; openIds.delete(p.id); mark(); render(); }, "arch");
+    const del = btn("완전 삭제", null, "del");
+    twoTap(del, "한 번 더 누르면 영구 삭제", () => {
+      items = items.filter(x => x !== p); openIds.delete(p.id); mark(); render();
+      setSt("보관 항목을 지웠어요 · 저장을 눌러야 반영돼요", true);
+    });
+  }
   acts.appendChild(go); ed.appendChild(acts); card.appendChild(ed);
   return card;
 }
-function move(p, d) {   // 같은 묶음 안에서 한 칸 (묶음끼리 순서는 그대로)
+function move(p, d) {   // 같은 묶음 안에서 한 칸
   const g = gname(p), i = items.indexOf(p);
   let j = i + d;
   while (j >= 0 && j < items.length && (items[j].archived || gname(items[j]) !== g)) j += d;
   if (j < 0 || j >= items.length) return;
   [items[i], items[j]] = [items[j], items[i]]; mark(); render();
+}
+function moveGroup(g, d) {   // 묶음 통째로 순서 바꾸기
+  const gmap = groupsOf(items.filter(p => !p.archived)), gkeys = [...gmap.keys()], i = gkeys.indexOf(g), j = i + d;
+  if (i < 0 || j < 0 || j >= gkeys.length) return;
+  [gkeys[i], gkeys[j]] = [gkeys[j], gkeys[i]];
+  const reordered = [];
+  gkeys.forEach(k => reordered.push(...gmap.get(k)));
+  reordered.push(...items.filter(p => p.archived));
+  items = reordered; mark(); render();
 }
 
 /* ── 서버 목록 */
@@ -569,6 +697,18 @@ async function loadItems(take) {   // take = 고치던 것을 버리고 서버 �
     if (!admin || (dirty && !take)) return false;   // 받는 사이 '끄기'를 눌렀거나 고치는 중이면 버림 (고친 것은 저장할 때 충돌로 알려 줌)
     const next = clean(cfg.items), changed = take || JSON.stringify(next) !== JSON.stringify(items);
     items = next; saved = clone(next); baseTime = d.updateTime || null; itemsLoaded = true; loadError = loadKind = ""; unsure = dirty = false;
+    if (take) clearDraft();
+    else {
+      try {
+        const dr = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+        if (dr && Array.isArray(dr.items) && (!dr.baseTime || dr.baseTime === baseTime)) {
+          items = clean(dr.items); dirty = true; editing = true;
+          setSt("저장 안 한 편집 초안을 복원했어요", true);
+          render();
+          return true;
+        }
+      } catch (e) {}
+    }
     keep();
     if (changed) render(); else syncNote();
     return true;
@@ -598,7 +738,7 @@ async function save(force) {
     /* 받은 뒤 다른 기기에서 바뀌었으면 서버가 거절 (11-06: 오래 열어 둔 창이 새 목록을 덮던 것) */
     const qs = "?updateMask.fieldPaths=json&updateMask.fieldPaths=updatedAt" + (force ? "" : baseTime ? "&currentDocument.updateTime=" + encodeURIComponent(baseTime) : "&currentDocument.exists=false");
     const d = await fsCall("portal/config", { method: "PATCH", qs, body: { fields: { json: { stringValue: json }, updatedAt: { timestampValue: new Date().toISOString() } } } });
-    baseTime = d.updateTime || null; saved = clone(items); dirty = false; loadError = loadKind = ""; keep(); setSt(""); flash("저장했어요");
+    baseTime = d.updateTime || null; saved = clone(items); dirty = false; loadError = loadKind = ""; clearDraft(); keep(); setSt(""); flash("저장했어요");
     return true;
   } catch (e) {
     if (e.code === "FAILED_PRECONDITION" || e.code === "ABORTED" || e.code === "ALREADY_EXISTS" || e.status === 409) showConflict();
@@ -643,7 +783,7 @@ function ensureFirebase() {
 }
 function loginKit() {   // 비번 로그인 · 믿을 기기 등록에만 — functions SDK + 공용 admin-login.js (관리자 새 기기 확인 2026-10-27)
   if (!kitP) {
-    kitP = ensureFirebase().then(a => Promise.all([loadOnce(SDK + "firebase-functions-compat.js"), loadOnce("/admin-login.js?v=20261029a")]).then(() => a));
+    kitP = ensureFirebase().then(a => Promise.all([loadOnce(SDK + "firebase-functions-compat.js"), loadOnce("/admin-login.js?v=20261118a")]).then(() => a));
     kitP.catch(() => { kitP = null; });
   }
   return kitP;
@@ -733,16 +873,20 @@ function maybeEnroll() {
 }
 
 /* ── 관리자 켜고 끄기 */
-function enterAdmin() {
+const wakeWaiters = new Set(), watchingJobIds = new Set();
+function wakePcPoll() { [...wakeWaiters].forEach(fn => fn()); wakeWaiters.clear(); }
+function enterAdmin(confirmed) {
   admin = true;
-  try {
-    localStorage.setItem(ADMIN_AT, String(Date.now()));
-    localStorage.setItem(ADMIN_SESSION_KEY, "1");
-    localStorage.removeItem(ADMIN_OFF_KEY);
-  } catch (e) {}
+  if (confirmed) {
+    try {
+      localStorage.setItem(ADMIN_AT, String(Date.now()));
+      localStorage.setItem(ADMIN_SESSION_KEY, "1");
+      localStorage.removeItem(ADMIN_OFF_KEY);
+    } catch (e) {}
+  }
   loadError = loadKind = ""; lastSync = Date.now();
   setSt(dirty ? "저장 안 됨" : "", dirty);   // 다시 로그인해 들어와도 고치던 것은 그대로 — '저장'을 다시 누르면 됨
-  render(); loadItems(); syncAdminKey();
+  render(); loadItems(); syncAdminKey(); refreshGlance(false).catch(() => {}); resumePcJob();
 }
 function exitAdmin(manualOff) {
   try {
@@ -750,9 +894,11 @@ function exitAdmin(manualOff) {
     localStorage.removeItem(ADMIN_SESSION_KEY);
     localStorage.removeItem(ADMIN_KEY_LS);
     localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(DRAFT_KEY);
     if (manualOff) localStorage.setItem(ADMIN_OFF_KEY, "1");
   } catch (e) {}
-  admin = editing = dirty = itemsLoaded = unsure = false; items = []; saved = []; baseTime = null; loadError = loadKind = ""; openIds.clear(); setSt("");
+  admin = editing = dirty = itemsLoaded = unsure = false; query = ""; $("q").value = "";
+  items = []; saved = []; baseTime = null; loadError = loadKind = ""; openIds.clear(); setSt("");
   render();
 }
 async function verify() {
@@ -765,19 +911,46 @@ async function verify() {
   }
 }
 function recheck(force) {   // 다시 연결 · 화면으로 돌아옴 · '다시' — 30초에 한 번까지
+  wakePcPoll();
   if (!admin || (!force && Date.now() - lastSync < 30000)) return;
   lastSync = Date.now();
   verify();
+  refreshGlance(force).catch(() => {});
   if (!dirty && !editing) loadItems();
 }
 async function triggerAdminEnter() {   // 하단 '🔒 관리자' 또는 Benny 3번 클릭
   if (admin) { if (relog()) openLogin(); return; }   // 서버가 로그인을 안 받으면 다시 로그인
-  try { localStorage.removeItem(ADMIN_OFF_KEY); } catch (e) {}
+  // '이 기기에서 관리자 끄기'를 직접 누른 상태라면 비밀번호를 다시 확인해야 잠금이 풀림
+  let wasOff = false;
+  try { wasOff = localStorage.getItem(ADMIN_OFF_KEY) === "1"; } catch (e) {}
+  if (wasOff) return openLogin();
   const s = await checkAdmin();
   if (s === "no") return openLogin();
-  enterAdmin(); unsure = s === "unknown"; syncNote();
+  enterAdmin(s === "yes"); unsure = s === "unknown"; syncNote();
   if (s === "yes") maybeEnroll();
 }
+
+/* ── 빠른 검색(초성 · 이름 · '/' 단축키) 및 머리 관제 배지 */
+$("q").addEventListener("input", () => { query = $("q").value.trim(); render(); });
+$("qClear").onclick = () => { query = ""; $("q").value = ""; render(); $("q").focus(); };
+$("q").addEventListener("keydown", e => {
+  if (e.key === "Escape" && query) { e.preventDefault(); query = ""; $("q").value = ""; render(); }
+  else if (e.key === "Enter" && query) {
+    const first = items.find(p => !p.archived && matchItem(p, query));
+    if (first) { const h = safeHref(first.url); if (h !== "#") location.href = h; }
+  }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && admin && !editing && !$("qbar").hidden && !document.querySelector("dialog[open]") && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || "")) {
+    e.preventDefault(); $("q").focus(); $("q").select();
+  }
+});
+$("pcBadge").onclick = () => {
+  const t = items.find(x => x.id === "tower" && !x.archived);
+  if (t && glanceOk) { const h = safeHref(t.url); if (h !== "#") { location.href = h; return; } }
+  $("pcBadgeTxt").textContent = "확인 중…";
+  refreshGlance(true).catch(() => {});
+};
 
 /* ── 단추 */
 function syncViewButtons() { document.querySelectorAll(".viewsw button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view))); }
@@ -807,18 +980,68 @@ function twoTap(b, ask, fn) {   // 막는 창(confirm) 대신 4초 안에 한 �
     t = setTimeout(() => { delete b.dataset.armed; b.textContent = label; }, 4000);
   };
 }
-twoTap($("revert"), "한 번 더 누르면 되돌려요", () => { items = clone(saved); dirty = false; openIds.clear(); setSt("저장된 목록으로 되돌렸어요"); render(); });
+twoTap($("revert"), "한 번 더 누르면 되돌려요", () => { items = clone(saved); dirty = false; clearDraft(); openIds.clear(); setSt("저장된 목록으로 되돌렸어요"); render(); });
+
+/* ── 모달 확인창 (블로킹 confirm() 대체) 및 closedby 미지원 브라우저(Safari 등) 배경 터치 닫기 폴백 */
+if (!("closedBy" in HTMLDialogElement.prototype)) {
+  const outside = (e, d) => { const r = d.getBoundingClientRect(); return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom; };
+  document.querySelectorAll('dialog[closedby="any"]').forEach(d => {
+    let downOut = false;
+    d.addEventListener("pointerdown", e => { downOut = outside(e, d); });
+    d.addEventListener("pointerup", e => { if (downOut && outside(e, d)) d.close(); downOut = false; });
+  });
+}
+function askConfirm(title, body, okLabel) {
+  const cd = $("confirmDlg");
+  $("confirmTitle").textContent = title;
+  $("confirmBody").textContent = body;
+  $("confirmYes").textContent = okLabel || "띄우기";
+  return new Promise(res => {
+    const done = val => { cd.removeEventListener("close", onClose); cd.returnValue = ""; if (cd.open) cd.close(); res(val); };
+    const onClose = () => done(false);
+    $("confirmYes").onclick = () => done(true);
+    $("confirmNo").onclick = () => done(false);
+    cd.addEventListener("close", onClose, { once: true });
+    cd.showModal();
+  });
+}
+
 // 로그아웃은 하지 않음(하면 베니브릿지도 같이 로그아웃) — 이 기기에서 관리자 화면만 끔
-/* 11-16 내 PC 실행: 관리자만 pcJobs 에 {cmd(+정각클릭은 url·at·key·dry)} 생성 → PC 가 5초 안에 받아 실행하고 status·out 을 같은 문서에 씀 */
+/* 11-16 내 PC 실행 + 11-18 접기·복귀 폴링: 영구 관리자 기기만 pcJobs 생성 → PC 가 받아 실행하고 status·out 을 기록 */
 const PC_STATUS = { running: "⏳ 실행 중", done: "✅ 끝", fail: "❌ 실패", rejected: "⛔ 거절", expired: "⌛ PC 가 못 받음" };
-const PC_TAB = "benny.pcTab", PC_SITES = "benny.fkSites";
-function pcTab(t) {
-  document.querySelectorAll("[data-pctab]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.pctab === t)));
+const PC_TAB = "benny.pcTab", PC_SITES = "benny.fkSites", PC_OPEN = "benny.pcOpen", PC_ACTIVE = "benny.pcActiveJob";
+function setPcOpen(on, persist) {
+  $("pcToggle").setAttribute("aria-expanded", String(!!on));
+  $("pcBody").hidden = !on;
+  $("pcChev").textContent = on ? "▾" : "▸";
+  if (persist) try { localStorage.setItem(PC_OPEN, on ? "1" : "0"); } catch (e) {}
+}
+$("pcToggle").onclick = () => setPcOpen($("pcBody").hidden, true);
+setPcOpen((() => { try { return localStorage.getItem(PC_OPEN) === "1"; } catch (e) { return false; } })(), false);
+
+const pcTabs = [...document.querySelectorAll("[data-pctab]")];
+function pcTab(t, focusTab) {
+  pcTabs.forEach(x => {
+    const on = x.dataset.pctab === t;
+    x.setAttribute("aria-selected", String(on));
+    x.tabIndex = on ? 0 : -1;
+    if (on && focusTab) x.focus();
+  });
   document.querySelectorAll("[data-pane]").forEach(x => { x.hidden = x.dataset.pane !== t; });
   try { localStorage.setItem(PC_TAB, t); } catch (e) {}
 }
-document.querySelectorAll("[data-pctab]").forEach(x => x.addEventListener("click", () => pcTab(x.dataset.pctab)));
-pcTab((() => { try { return localStorage.getItem(PC_TAB); } catch (e) { return null; } })() === "media" ? "media" : "book");
+pcTabs.forEach((x, idx) => {
+  x.addEventListener("click", () => pcTab(x.dataset.pctab, false));
+  x.addEventListener("keydown", e => {
+    let next = -1;
+    if (e.key === "ArrowRight") next = (idx + 1) % pcTabs.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + pcTabs.length) % pcTabs.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = pcTabs.length - 1;
+    if (next >= 0) { e.preventDefault(); pcTab(pcTabs[next].dataset.pctab, true); }
+  });
+});
+pcTab((() => { try { return localStorage.getItem(PC_TAB); } catch (e) { return null; } })() === "media" ? "media" : "book", false);
 function fillSites(names) {   // 폼키트에 저장된 사이트 + '다른 주소…'(범용 정각 클릭)
   const sel = $("fireSite"), cur = sel.value;
   sel.textContent = "";
@@ -837,6 +1060,89 @@ function bookMode() {   // 0단계 선택에 따라 2단계 문구 바꿈 (주�
 $("fireSite").addEventListener("change", bookMode); bookMode();
 $("mdKind").addEventListener("change", () => { $("mdLen").hidden = $("mdKind").value !== "video"; });
 const hms = v => v ? (v + ":00").slice(0, 8) : "";
+
+function renderMediaLinks(txt) {
+  const box = $("pcLinks"); box.textContent = "";
+  [...new Set(txt.match(/https:\/\/[a-z0-9.-]+\.ts\.net:8830\/[\w.\-]*/g) || [])].forEach(u => {
+    const a = el("a", null, (u.split("/").pop() || "전체 결과") + " ↗");
+    a.href = u; a.target = "_blank"; a.rel = "noopener";
+    box.appendChild(a);
+  });
+}
+function waitPcStep(ms) {
+  return new Promise(res => {
+    const wake = () => { clearTimeout(t); wakeWaiters.delete(wake); res(); };
+    const t = setTimeout(wake, ms);
+    wakeWaiters.add(wake);
+  });
+}
+async function watchPcJob(job, out, btn) {
+  if (!job || !job.id || watchingJobIds.has(job.id)) return;
+  watchingJobIds.add(job.id);
+  const maxMs = job.isMedia ? 1200000 : 240000;
+  let stepN = 0;
+  $("pcMiniSt").textContent = "⏳ " + job.label + " 실행 중";
+  if (btn) btn.disabled = true;
+  try {
+    while (admin && Date.now() - job.t0 < maxMs) {
+      await waitPcStep(stepN < 10 ? 2000 : job.isMedia ? 5000 : 4000);
+      stepN++;
+      let doc;
+      try { doc = await fsCall(job.id); }
+      catch (e) {
+        if (e && e.kind === "net") {
+          out.textContent = "⏳ " + job.label + " — 화면 복귀·인터넷 재연결 대기 중…";
+          continue;
+        }
+        throw e;
+      }
+      const f = doc.fields || {};
+      const st = f.status && f.status.stringValue, txt = (f.out && f.out.stringValue) || "";
+      if (!st) { out.textContent = job.label + " — PC 응답 기다리는 중… (" + stepN + ")"; continue; }
+      out.textContent = (PC_STATUS[st] || st) + "  " + job.label + (txt ? "\n\n" + txt : "");
+      if (job.cmd === "formkit_new" && st === "done") {
+        const m = txt.match(/\[([a-z0-9-]{1,30})\]/);
+        if (m) {
+          let names = [...$("fireSite").options].map(o => o.value).filter(v => v !== "__url");
+          names = [...new Set([...names, m[1]])]; fillSites(names); $("fireSite").value = m[1]; bookMode();
+          try { localStorage.setItem(PC_SITES, JSON.stringify(names)); } catch (e) {}
+        }
+      }
+      if (job.cmd === "formkit_set" && st === "done") $("fkVal").value = "";
+      if (job.cmd === "formkit_list" && st === "done") {
+        const names = txt.split("\n").map(l => l.trim().split(/\s+/)[0]).filter(n => /^[a-z0-9-]+$/.test(n));
+        if (names.length) { fillSites(names); try { localStorage.setItem(PC_SITES, JSON.stringify(names)); } catch (e) {} }
+      }
+      if (st !== "running") {
+        $("pcMiniSt").textContent = (PC_STATUS[st] || st) + " · " + job.label;
+        if (job.cmd.startsWith("media_")) renderMediaLinks(txt);
+        try { localStorage.removeItem(PC_ACTIVE); } catch (e) {}
+        return;
+      }
+    }
+    $("pcMiniSt").textContent = "⌛ 대기 시간 초과";
+    try { localStorage.removeItem(PC_ACTIVE); } catch (e) {}
+  } catch (e) {
+    out.textContent = "확인 실패: " + (e.message || e);
+    $("pcMiniSt").textContent = "❌ 오류";
+  } finally {
+    watchingJobIds.delete(job.id);
+    if (btn) btn.disabled = false;
+  }
+}
+function resumePcJob() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PC_ACTIVE) || "null");
+    if (!raw || !raw.id || Date.now() - Number(raw.t0 || 0) > (raw.isMedia ? 1200000 : 240000)) {
+      localStorage.removeItem(PC_ACTIVE);
+      return;
+    }
+    setPcOpen(true, false);
+    if (String(raw.cmd || "").startsWith("media_")) pcTab("media", false);
+    watchPcJob(raw, $("pcOut"), null);
+  } catch (e) {}
+}
+
 document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click", async () => {
   const step = b.closest(".step"), out = (step && step.querySelector(".so")) || $("pcOut"), label = b.dataset.label || b.textContent;
   let cmd = b.dataset.pcjob;
@@ -857,12 +1163,12 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
     if (/[<>"'`\\]/.test(v)) { out.textContent = "⛔ 따옴표·꺾쇠는 넣을 수 없어요"; return; }
     Object.assign(fields, { key: { stringValue: $("fkKey").value }, value: { stringValue: v } });
   }
-  if (cmd === "keyescape_open" && !confirm("PC 에 오픈 대기 창을 띄웁니다. 캡차·확인은 PC 앞에서 해야 해요. 띄울까요?")) return;
+  if (cmd === "keyescape_open" && !(await askConfirm("키이스케이프 오픈 대기", "PC 에 오픈 대기 창을 띄웁니다.\n캡차·최종 확인은 PC 앞에서 해야 해요. 띄울까요?"))) return;
   if (cmd === "clicker") {
     const url = pageUrl, at = hms($("fireAt").value), key = $("clkKey").value, dry = $("fireDry").checked;
     if (!/^https?:\/\/\S+$/.test(url)) { out.textContent = "⛔ 0단계 주소는 https:// 로 시작해야 해요"; return; }
     if (!at) { out.textContent = "⛔ 다른 주소는 누를 시각을 꼭 넣어 주세요"; return; }
-    if (!confirm(`PC 에 정각 클릭 창을 띄웁니다.\n${url}\n서버 ${at} 에 ${key}${dry ? " (연습)" : ""}\n마우스는 PC 앞에서 버튼 위에 두세요. 띄울까요?`)) return;
+    if (!(await askConfirm("정각 클릭 대기", `PC 에 정각 클릭 창을 띄웁니다.\n${url}\n서버 ${at} 에 ${key}${dry ? " (연습)" : ""}\n마우스는 PC 앞에서 버튼 위에 두세요.`))) return;
     Object.assign(fields, { url: { stringValue: url }, at: { stringValue: at }, key: { stringValue: key }, dry: { booleanValue: dry } });
   }
   if (cmd === "formkit_new") {
@@ -871,7 +1177,7 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
   }
   if (cmd === "formkit_fire") {
     const at = hms($("fireAt").value), dry = $("fireDry").checked;
-    if (!confirm(`PC 에 ${site} 정각 누름 창을 띄웁니다.${at ? "\n서버 " + at : " (사이트 기본 시각)"}${dry ? " — 연습" : ""}\n크롬에서 폼키트 북마클릿 → 캡차 체크는 PC 앞에서. 띄울까요?`)) return;
+    if (!(await askConfirm("폼키트 정각 누름", `PC 에 ${site} 정각 누름 창을 띄웁니다.${at ? "\n서버 " + at : " (사이트 기본 시각)"}${dry ? " — 연습" : ""}\n크롬에서 폼키트 북마클릿 → 캡차 체크는 PC 앞에서 해 주세요.`))) return;
     fields.site = { stringValue: site }; fields.dry = { booleanValue: dry };
     if (at) fields.at = { stringValue: at };
   }
@@ -886,33 +1192,13 @@ document.querySelectorAll("[data-pcjob]").forEach(b => b.addEventListener("click
   try {
     const doc = await fsCall("pcJobs", { method: "POST", qs: "", body: { fields } });
     const id = doc.name.split("/documents/")[1];
-    for (let i = 0; i < (isMedia ? 200 : 60); i++) {
-      await new Promise(r => setTimeout(r, i < 10 ? 2000 : isMedia ? 5000 : 4000));
-      const f = (await fsCall(id)).fields || {};
-      const st = f.status && f.status.stringValue, txt = (f.out && f.out.stringValue) || "";
-      if (!st) { out.textContent = label + " — PC 응답 기다리는 중… (" + (i + 1) + ")"; continue; }
-      out.textContent = (PC_STATUS[st] || st) + "  " + label + (txt ? "\n\n" + txt : "");
-      if (cmd === "formkit_new" && st === "done") {   // 등록되면 0단계 목록에 넣고 바로 선택
-        const m = txt.match(/\[([a-z0-9-]{1,30})\]/);
-        if (m) {
-          let names = [...$("fireSite").options].map(o => o.value).filter(v => v !== "__url");
-          names = [...new Set([...names, m[1]])]; fillSites(names); $("fireSite").value = m[1]; bookMode();
-          try { localStorage.setItem(PC_SITES, JSON.stringify(names)); } catch (e) {}
-        }
-      }
-      if (cmd === "formkit_set" && st === "done") $("fkVal").value = "";
-      if (cmd === "formkit_list" && st === "done") {
-        const names = txt.split("\n").map(l => l.trim().split(/\s+/)[0]).filter(n => /^[a-z0-9-]+$/.test(n));
-        if (names.length) { fillSites(names); try { localStorage.setItem(PC_SITES, JSON.stringify(names)); } catch (e) {} }
-      }
-      if (st !== "running") {
-        if (cmd.startsWith("media_")) $("pcLinks").innerHTML = [...new Set(txt.match(/https:\/\/[a-z0-9.-]+\.ts\.net:8830\/[\w.\-]*/g) || [])]
-          .map(u => `<a href="${u}" target="_blank" rel="noopener">${u.split("/").pop() || "전체 결과"} ↗</a>`).join("");
-        break;
-      }
-    }
-  } catch (e) { out.textContent = "보내기 실패: " + (e.message || e); }
-  finally { b.disabled = false; }
+    const job = { id, cmd, label, isMedia, t0: Date.now() };
+    try { localStorage.setItem(PC_ACTIVE, JSON.stringify(job)); } catch (e) {}
+    await watchPcJob(job, out, b);
+  } catch (e) {
+    out.textContent = "보내기 실패: " + (e.message || e);
+    b.disabled = false;
+  }
 }));
 twoTap($("offBtn"), () => dirty ? "저장 안 한 것까지 버려요 — 한 번 더" : "한 번 더 누르면 꺼져요", () => exitAdmin(true));
 $("noteRetry").onclick = () => relog() ? openLogin() : recheck(true);
@@ -925,7 +1211,8 @@ $("brand").addEventListener("click", () => {
   if (clicks >= 3) { clicks = 0; triggerAdminEnter(); }
 });
 window.addEventListener("online", () => recheck(true));
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") recheck(false); });   // 폰 앱은 돌아올 때 online 이 안 뜰 수 있음
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") recheck(false); else saveDraft(); });   // 폰 앱은 돌아올 때 online 이 안 뜰 수 있고, 닫힐 때 beforeunload 가 안 뜰 수 있음
+window.addEventListener("pagehide", saveDraft);
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ── 비번 로그인 */
@@ -950,7 +1237,7 @@ $("loginForm").addEventListener("submit", async (e) => {
     const tok = await window.bennyAdminLogin(a, pw);   // 처음 보는 기기면 베니 폰·PC 허용 또는 문자 인증을 기다림
     await a.auth().signInWithCustomToken(tok);
     $("pw").value = "";
-    unsure = false; enterAdmin();
+    unsure = false; enterAdmin(true);
   } catch (err) {
     syncNote(); dlg.showModal();
     msg.textContent = (err && err.message) ? err.message : "들어가지 못했어요.";
@@ -971,7 +1258,7 @@ render();
 try {
   if (localStorage.getItem(ADMIN_OFF_KEY) !== "1") storedUid().then(uid => {
     if (uid !== "admin") { if (admin) exitAdmin(false); return; }
-    enterAdmin(); verify();
+    enterAdmin(false); verify();
   });
 } catch (e) {}
 
