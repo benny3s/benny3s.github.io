@@ -1,4 +1,4 @@
-const CACHE_NAME = "benny-portal-v8";   // v8: 내 PC 실행 '카톡 요약' 탭 추가 (2026-11-20)
+const CACHE_NAME = "benny-portal-v9";   // v9: 헤더 '🤖 비서' 웹앱 바로가기 추가 (2026-11-24)
 const PORTAL_PATHS = new Set([
   "/",
   "/index.html",

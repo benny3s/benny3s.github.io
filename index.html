@@ -82,7 +82,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 .pc-pill.on{border-color:var(--bn-accent-line);background:var(--bn-accent-faint);color:var(--bn-accent)}
 .pc-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--bn-ink-3);flex-shrink:0}
 .pc-pill.on .dot{background:var(--bn-ok)}
-body.editing #pcBadge{display:none}
+body.editing #pcBadge,body.editing #assistantBtn{display:none}
 
 /* 초성·이름 빠른 실행 필터 */
 .qbar{display:flex;align-items:center;gap:var(--bn-sp-2);margin:0 0 var(--bn-sp-4)}
@@ -233,6 +233,7 @@ body.admin:not(.editing) #pcPanel{display:block}
     <h1 id="brand">Benny</h1>
     <div class="sp"></div>
     <div class="hdr-right">
+      <a class="btn primary sm" href="/assistant/" id="assistantBtn" title="베니 비서 웹앱 열기">🤖 비서</a>
       <button class="pc-pill" id="pcBadge" type="button" title="PC 관제판 연결 상태"><span class="dot" aria-hidden="true"></span><span id="pcBadgeTxt">PC 확인 중</span></button>
       <div class="viewsw" role="group" aria-label="보기 방식">
         <button type="button" data-view="simple" title="아이콘으로 보기" aria-label="아이콘으로 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></button><button type="button" data-view="full" title="설명까지 보기" aria-label="설명까지 보기"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="4.5" rx="1.2"/><rect x="2" y="9" width="12" height="4.5" rx="1.2"/></svg></button>
