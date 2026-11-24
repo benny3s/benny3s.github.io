@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#287047">
+<title>부동산 시뮬레이터 · 관리자 전용</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../design/tokens.css?v=2">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bn-bg);
+    color: var(--bn-ink);
+    font: 14px/1.55 var(--bn-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 16px; }
+  .hidden { display: none !important; }
+
+  /* Login Gate */
+  .gate-wrap {
+    min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .gate-card {
+    width: 100%; max-width: 400px; background: var(--bn-surface);
+    border: 1px solid var(--bn-line); border-radius: var(--bn-r-lg); padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.05);
+  }
+  .gate-card h1 { margin: 0 0 6px; font-size: 19px; }
+  .gate-card p { margin: 0 0 14px; font-size: 13px; color: var(--bn-ink-2); }
+  .gate-card input {
+    width: 100%; min-height: 44px; padding: 10px 12px; border-radius: var(--bn-r-sm);
+    border: 1px solid var(--bn-line-strong); font: 15px var(--bn-font); background: var(--bn-surface);
+  }
+  .gate-card .msg { margin-top: 10px; font-size: 12.5px; color: var(--bn-bad); min-height: 18px; }
+
+  /* Header */
+  .hdr {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--bn-line); margin-bottom: 16px;
+  }
+  .hdr-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .hdr-title h1 { margin: 0; font-size: 19px; letter-spacing: -.01em; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; background: var(--bn-fill); color: var(--bn-ink-2);
+  }
+  .pill.ok { background: var(--bn-ok-soft); color: var(--bn-ok); }
+  .pill.warn { background: var(--bn-warn-soft); color: var(--bn-warn); }
+  .pill.bad { background: var(--bn-bad-soft); color: var(--bn-bad); }
+  .pill.info { background: var(--bn-info-soft); color: var(--bn-info); }
+
+  /* Buttons & Tabs */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    min-height: 34px; padding: 6px 12px; border-radius: var(--bn-r-sm);
+    border: 1px solid var(--bn-line); background: var(--bn-surface); color: var(--bn-ink);
+    font: 600 12.5px var(--bn-font); cursor: pointer; text-decoration: none; transition: .15s;
+  }
+  .btn:hover { border-color: var(--bn-accent); }
+  .btn.primary { background: var(--bn-accent); border-color: var(--bn-accent); color: var(--bn-on-accent); }
+  .btn.primary:hover { background: var(--bn-accent-strong); }
+  .btn.sm { min-height: 30px; padding: 4px 10px; font-size: 12px; }
+  .tabs {
+    display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--bn-r-md);
+    background: var(--bn-track);
+  }
+  .tab-btn {
+    border: 0; background: transparent; color: var(--bn-ink-2); padding: 7px 14px;
+    border-radius: var(--bn-r-sm); font: 700 12.5px var(--bn-font); cursor: pointer; transition: .15s;
+  }
+  .tab-btn.active { background: var(--bn-surface); color: var(--bn-accent); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* Cards & Grids */
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    background: var(--bn-surface); border: 1px solid var(--bn-line);
+    border-radius: var(--bn-r-lg); padding: 16px;
+  }
+  .card-hd {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+    padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--bn-line);
+  }
+  .card-hd h2, .card-hd h3 { margin: 0; font-size: 14.5px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .two-col, .three-col, .chart-grid { grid-template-columns: 1fr; }
+  }
+  .kpi { background: var(--bn-surface); border: 1px solid var(--bn-line); border-radius: var(--bn-r-md); padding: 14px; }
+  .kpi .lbl { font-size: 11.5px; color: var(--bn-ink-2); }
+  .kpi .val { font-size: 21px; font-weight: 800; margin-top: 4px; }
+  .kpi .sub { font-size: 11.5px; color: var(--bn-ink-2); margin-top: 4px; }
+
+  /* Form Rows */
+  .frow {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 5px 0; font-size: 12.5px;
+  }
+  .frow label, .frow .flbl { color: var(--bn-ink-2); flex: 1; min-width: 0; }
+  .frow .hint { opacity: .75; font-size: 11.5px; }
+  .frow input[type="number"], .frow select {
+    padding: 5px 8px; border-radius: 6px; border: 1px solid var(--bn-line-strong);
+    background: var(--bn-surface-2); color: var(--bn-ink); font: 600 12.5px var(--bn-font);
+  }
+  .frow input[type="number"] { width: 104px; text-align: right; }
+  .fright { display: flex; align-items: center; gap: 6px; shrink: 0; }
+  .sub-box {
+    background: var(--bn-surface-2); border: 1px solid var(--bn-line);
+    border-radius: var(--bn-r-md); padding: 12px; font-size: 12.5px;
+  }
+
+  /* Stack Bar */
+  .sbar-wrap { margin-top: 6px; }
+  .sbar-lbl { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .sbar {
+    height: 26px; border-radius: 7px; overflow: hidden; display: flex;
+    background: var(--bn-fill); border: 1px solid var(--bn-line);
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .sbar > div { display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; padding: 0 4px; }
+
+  /* Sliders & Compare Cards */
+  input[type="range"] { width: 100%; accent-color: var(--bn-accent); cursor: pointer; }
+  .comp-card {
+    padding: 10px 12px; border-radius: var(--bn-r-md); border: 1px solid var(--bn-line);
+    background: var(--bn-surface-2); cursor: pointer; transition: .15s;
+  }
+  .comp-card.sel { border-color: var(--bn-accent); background: var(--bn-accent-faint); }
+
+  /* Tables */
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--bn-line); border-radius: var(--bn-r-md); }
+  .tbl-wrap.tall { max-height: 520px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 680px; }
+  table.wide { min-width: 920px; }
+  th, td { padding: 8px 9px; border-bottom: 1px solid var(--bn-line); }
+  th { position: sticky; top: 0; background: var(--bn-surface-2); color: var(--bn-ink-2); font-weight: 700; text-align: left; z-index: 2; }
+  th.r, td.r { text-align: right; }
+  tr.sub-row { font-weight: 700; background: var(--bn-surface-2); }
+  tr.hit-row { background: var(--bn-ok-soft); }
+
+  /* Canvas Chart */
+  .chart-box { position: relative; width: 100%; height: 270px; }
+  .chart-box canvas { width: 100%; height: 100%; display: block; }
+  .tip {
+    position: absolute; z-index: 10; pointer-events: none; min-width: 195px;
+    background: var(--bn-surface); border: 1px solid var(--bn-line-strong);
+    border-radius: 10px; padding: 9px 11px; font-size: 12px; box-shadow: 0 6px 18px rgba(0,0,0,.12);
+  }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 999;
+    background: var(--bn-ink); color: #fff; padding: 9px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.22);
+  }
+</style>
+</head>
+<body>
+
+<!-- 🔐 Admin Login Gate -->
+<div id="gateView" class="gate-wrap">
+  <div class="gate-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <h1>🔐 관리자 전용</h1>
+      <a href="../" class="btn sm">← 포털</a>
+    </div>
+    <p id="gateSub">관리자 인증을 확인하는 중입니다…</p>
+    <form id="loginForm" class="hidden" style="display:flex;flex-direction:column;gap:10px;">
+      <input id="pwInput" type="password" autocomplete="current-password" placeholder="관리자 비밀번호" required>
+      <button type="submit" id="loginBtn" class="btn primary" style="min-height:44px;font-size:14px;">관리자 로그인</button>
+    </form>
+    <div id="loginMsg" class="msg" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- 🏠 Main App (Hidden until admin verified & cloud profile loaded) -->
+<div id="appView" class="wrap hidden">
+  <header class="hdr">
+    <div>
+      <div class="hdr-title">
+        <a href="../" class="btn sm">← 포털</a>
+        <h1 id="appTitle">부동산 갈아타기 시뮬레이터</h1>
+        <span class="pill ok">🔒 관리자 전용 · 클라우드 동기화</span>
+      </div>
+      <div id="appSubtitle" style="font-size:12px;color:var(--bn-ink-2);margin-top:4px;"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab-btn active" data-tab="funding">💰 1. 매수 비용 · 자금 조달</button>
+        <button type="button" class="tab-btn" data-tab="repay">📈 2. 월별 상환 (58개월)</button>
+      </div>
+      <button type="button" id="btnCloudSave" class="btn primary sm">💾 설정 저장</button>
+    </div>
+  </header>
+
+  <!-- TAB 1: Funding & Costs -->
+  <section id="panelFunding" class="stack">
+    <div class="card" style="padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;">
+      <div id="presetBar" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;"></div>
+      <button type="button" id="btnGoRepay" class="btn primary sm">이 대출 구성으로 58개월 상환 보기 →</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="lbl">총 필요 자금 (매수가 + 모든 비용)</div><div id="fKpiNeed" class="val num">-</div><div id="fKpiNeedSub" class="sub num">-</div></div>
+      <div class="kpi"><div class="lbl">총 조달 가능 자금</div><div id="fKpiSupply" class="val num">-</div><div id="fKpiSupplySub" class="sub num">-</div></div>
+      <div class="kpi"><div class="lbl">자금 과부족 (여유 / 부족)</div><div id="fKpiGap" class="val num">-</div><div id="fKpiGapSub" class="sub num">-</div></div>
+      <div class="kpi"><div class="lbl">최종 확정 신규 대출 (정산 후)</div><div id="fKpiLoan" class="val num">-</div><div id="fKpiLoanSub" class="sub num">-</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">
+        <h2>필요 자금 vs 조달 자금 구성 비교</h2>
+        <div id="fWarnArea" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <div class="sbar-wrap">
+        <div class="sbar-lbl"><span>필요 자금 (매수가 + 세금·복비·수리)</span><strong id="barNeedLbl" class="num">-</strong></div>
+        <div id="barNeed" class="sbar"></div>
+      </div>
+      <div class="sbar-wrap" style="margin-top:10px;">
+        <div class="sbar-lbl"><span>조달 자금 (매도순현금 + 현금·퇴직 + 대출)</span><strong id="barSupplyLbl" class="num">-</strong></div>
+        <div id="barSupply" class="sbar"></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11.5px;color:var(--bn-ink-2);">
+        <span>■ <span style="color:#2c5aa0">매도 순현금</span></span>
+        <span>■ <span style="color:#287047">현금·퇴직·상여·순증</span></span>
+        <span>■ <span style="color:#4f46e5">사내대출</span></span>
+        <span>■ <span style="color:#c26d1f">보보대</span></span>
+        <span>■ <span style="color:#c0392b">신용대출</span></span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="stack">
+        <div class="card">
+          <div class="card-hd">
+            <h3 id="sellCardTitle">🏠 ① 기존 주택 매도 정산</h3>
+            <span id="sellNetBadge" class="pill ok num">-</span>
+          </div>
+          <div class="frow"><label>매도가 (만 원)</label><div class="fright"><input id="inSellPrice" type="number" step="1000"><span id="lblSellEok" class="num" style="width:46px;text-align:right;color:var(--bn-ink-2);"></span></div></div>
+          <div class="frow"><label>기존 주담대 상환 (만 원)</label><div class="fright"><input id="inOldMort" type="number" step="100"><span class="num" style="width:46px;text-align:right;color:var(--bn-ink-2);">상환</span></div></div>
+          <div class="frow"><span class="flbl">1주택 고가 양도세 <span class="hint">(장특공·공동명의 자동)</span></span><strong id="lblCgt" class="num" style="color:var(--bn-bad);">-</strong></div>
+          <div class="frow">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--bn-ink-2);">매도 중개보수</span>
+              <select id="inSellFeeRate">
+                <option value="0.0044">0.4% (+VAT)</option>
+                <option value="0.0055">0.5% (+VAT)</option>
+                <option value="0.0066">0.6% (+VAT)</option>
+                <option value="0.0077">0.7% 상한 (+VAT)</option>
+              </select>
+            </div>
+            <strong id="lblSellFee" class="num" style="color:var(--bn-bad);">-</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <h3>🔑 ② 신규 주택 매수 & 부대비용</h3>
+            <span id="buyTotalBadge" class="pill info num">-</span>
+          </div>
+          <div class="frow"><label>신규 매수가 (만 원) <span class="hint">[25억 이하 기준]</span></label><div class="fright"><input id="inBuyPrice" type="number" step="1000"><span id="lblBuyEok" class="num" style="width:46px;text-align:right;color:var(--bn-ink-2);"></span></div></div>
+          <div class="frow"><span class="flbl">취득세 <span class="hint">(9억 초과 · 85㎡ 이하 3.3% 자동)</span></span><strong id="lblAcqTax" class="num">-</strong></div>
+          <div class="frow">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--bn-ink-2);">매수 중개보수</span>
+              <select id="inBuyFeeRate">
+                <option value="0.0044">0.4% (+VAT)</option>
+                <option value="0.0055">0.5% (+VAT)</option>
+                <option value="0.0066">0.6% (+VAT)</option>
+                <option value="0.0077">0.7% 상한 (+VAT)</option>
+              </select>
+            </div>
+            <strong id="lblBuyFee" class="num">-</strong>
+          </div>
+          <div class="frow"><label>등기 · 채권할인 · 인지세 · 법무사</label><div class="fright"><input id="inRegFee" type="number" step="50"><span>만</span></div></div>
+          <div class="frow"><label>이사비 · 보관이사 · 입주청소</label><div class="fright"><input id="inMoveFee" type="number" step="50"><span>만</span></div></div>
+          <div class="frow"><label>인테리어 · 수리비</label><div class="fright"><input id="inRepairFee" type="number" step="500"><span>만</span></div></div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="card-hd">
+            <h3>💵 ③ 추가 자기자본 (현금 · 퇴직연금 · 상여)</h3>
+            <span id="extraCashBadge" class="pill ok num">-</span>
+          </div>
+          <div class="frow"><label>보유 현금 (가용분)</label><div class="fright"><input id="inCash" type="number" step="500"><span>만</span></div></div>
+          <div class="frow"><label>DC 퇴직연금 중도인출 (세후)</label><div class="fright"><input id="inPension" type="number" step="500"><span>만</span></div></div>
+          <div class="frow"><label>1월 상여 잔금 보강 (세후)</label><div class="fright"><input id="inOpi1Init" type="number" step="200"><span>만</span></div></div>
+          <div class="frow"><label>배우자 회사대출 순증 <span class="hint">(담보 무관)</span></label><div class="fright"><input id="inWifeCoNet" type="number" step="200"><span>만</span></div></div>
+          <div class="frow"><label>부모님 초기 지원/차입</label><div class="fright"><input id="inParentInit" type="number" step="1000"><span>만</span></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <h3>🏦 ④ 신규 대출 조달 구성</h3>
+            <span id="loanTotalBadge" class="pill warn num">-</span>
+          </div>
+          <div class="frow"><label>사내대출 (1.5% · 3년거치 10년)</label><div class="fright"><input id="inEsrm" type="number" step="1000" max="50000"><span>만</span></div></div>
+          <div class="frow"><label>보보대 (~4.0% · 2년 일시 · 수수료 0%)</label><div class="fright"><input id="inBobo" type="number" step="1000" max="30000"><span>만</span></div></div>
+          <div class="frow"><label>배우자 신용대출(마통) 가능 한도 <span class="hint">[1억 이하]</span></label><div class="fright"><input id="inWifeCreditCap" type="number" step="100"><span>만</span></div></div>
+          <div class="frow" style="border-top:1px solid var(--bn-line);margin-top:6px;padding-top:10px;">
+            <strong style="color:var(--bn-ink);">👉 실제 필요한 신용대출 사용액</strong>
+            <strong id="lblWifeCreditUsed" class="num">-</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">
+        <h2>📆 단계별 현금흐름 & 퇴직금 브릿지 점검</h2>
+        <span style="font-size:11.5px;color:var(--bn-ink-2);">계약금 → 잔금일 당일(퇴직금 입금 전) → 잔금+5일 정산 후</span>
+      </div>
+      <div class="three-col">
+        <div class="sub-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>1단계 · 계약금(10%)</strong><span id="st1Badge" class="pill">-</span></div><div id="st1Body" class="num" style="color:var(--bn-ink-2);line-height:1.7;"></div></div>
+        <div class="sub-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>2단계 · 잔금일 당일</strong><span id="st2Badge" class="pill">-</span></div><div id="st2Body" class="num" style="color:var(--bn-ink-2);line-height:1.7;"></div></div>
+        <div class="sub-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>3단계 · 퇴직금 정산 후</strong><span id="st3Badge" class="pill">-</span></div><div id="st3Body" class="num" style="color:var(--bn-ink-2);line-height:1.7;"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">
+        <h2>📋 전체 자금 조달 · 비용 명세서 (단위: 만 원)</h2>
+        <button type="button" id="btnExportFundingCsv" class="btn sm">📥 명세 CSV 저장</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>구분</th><th>항목</th><th class="r">금액(만)</th><th class="r">억 환산</th><th>비고</th></tr></thead>
+          <tbody id="fundingLedgerBody" class="num"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: 58-Month Repayment Simulator -->
+  <section id="panelRepay" class="stack hidden">
+    <div class="card" style="padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;">
+        <span class="pill ok">탭 1 실시간 연동</span>
+        <span id="linkedSummaryText" class="num" style="color:var(--bn-ink-2);">-</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" id="btnSyncFromFunding" class="btn sm">🔄 탭 1 대출액 불러오기</button>
+        <button type="button" id="btnExportCsv" class="btn primary sm">📥 58개월 CSV 저장</button>
+      </div>
+    </div>
+
+    <div class="card stack" style="gap:12px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+          <span style="font-size:12px;font-weight:700;color:var(--bn-ink-2);">시황 시나리오:</span>
+          <button type="button" data-scen="pessimistic" class="btn sm scen-btn">🔴 비관</button>
+          <button type="button" data-scen="realistic" class="btn sm scen-btn">🔵 예상(현실)</button>
+          <button type="button" data-scen="optimistic" class="btn sm scen-btn">🟢 낙관</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--bn-ink-2);">빠른 대출:</span>
+          <button type="button" data-loan="89000" class="btn sm loan-preset">8.9억</button>
+          <button type="button" data-loan="84000" class="btn sm loan-preset">8.4억</button>
+          <button type="button" data-loan="77000" class="btn sm loan-preset">7.7억</button>
+        </div>
+      </div>
+
+      <div class="three-col" style="padding-top:10px;border-top:1px solid var(--bn-line);">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:var(--bn-ink-2);">초기 총 대출</span><strong id="loanVal" class="num">-</strong>
+          </div>
+          <input id="loanSlider" type="range" min="50000" max="95000" step="500" value="84000">
+          <div id="loanSplitText" class="num" style="font-size:11.5px;color:var(--bn-ink-2);margin-top:2px;">-</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:var(--bn-ink-2);">월 생활비 (관리비·보유세 포함)</span><strong id="livingVal" class="num">-</strong>
+          </div>
+          <input id="livingSlider" type="range" min="300" max="500" step="10" value="400">
+          <div id="salaryHint" style="font-size:11.5px;color:var(--bn-ink-2);margin-top:2px;">-</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:var(--bn-ink-2);">육아휴직 1년 반영</span><strong id="matVal">없음</strong>
+          </div>
+          <select id="matSelect" style="width:100%;padding:6px 8px;border-radius:7px;border:1px solid var(--bn-line-strong);background:var(--bn-surface-2);font:600 12px var(--bn-font);">
+            <option value="0">없음 (정상 맞벌이)</option>
+            <option value="2028">2028년 (거치 기간 내)</option>
+            <option value="2029">2029년 (거치 기간 내)</option>
+            <option value="2030">2030년 (거치 종료 직후)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="lbl">고금리 대출 완납 시점</div><div id="kpiPayoff" class="val num">-</div><div id="kpiPayoffSub" class="sub num">-</div></div>
+      <div class="kpi"><div class="lbl">2029.12 (거치 종료) 남은 보보대</div><div id="kpi2029" class="val num">-</div><div class="sub">2030.03부터 사내대출 원리금 개시</div></div>
+      <div class="kpi"><div class="lbl">2031.12 누적 순현금</div><div id="kpiCash" class="val num">-</div><div id="kpiCashSub" class="sub num">-</div></div>
+      <div class="kpi"><div class="lbl">5년 누적 특별수입 (세후)</div><div id="kpiSpecial" class="val num">-</div><div class="sub">상여 · 주식 · 정기지원 합산</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-hd">
+          <h2>월별 대출 잔액 & 누적 순현금 추이 (2027.03 ~ 2031.12)</h2>
+          <div style="display:flex;gap:10px;font-size:11.5px;">
+            <span>● <span style="color:#c0392b">고금리(신용+보보대)</span></span>
+            <span>● <span style="color:#2c5aa0">사내대출</span></span>
+            <span>● <span style="color:#287047">누적 순현금</span></span>
+          </div>
+        </div>
+        <div class="chart-box">
+          <canvas id="mainChart"></canvas>
+          <div id="chartTooltip" class="tip hidden"></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+        <div>
+          <h2 style="margin:0 0 8px;font-size:14.5px;">3가지 시나리오 비교</h2>
+          <div id="compareCards" class="stack" style="gap:8px;"></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--bn-ink-2);padding-top:8px;border-top:1px solid var(--bn-line);">
+          상환 순서: 고금리 신용대출 → 보보대(수수료 0%) 완납 후, 저금리 사내대출은 유지하고 잉여금을 순현금으로 적립합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">
+        <h2>월별 상세 현금흐름 테이블 (단위: 만 원)</h2>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;">
+          <button type="button" data-yr="all" class="btn sm yr-btn">전체</button>
+          <button type="button" data-yr="2027" class="btn sm yr-btn">2027</button>
+          <button type="button" data-yr="2028" class="btn sm yr-btn">2028</button>
+          <button type="button" data-yr="2029" class="btn sm yr-btn">2029</button>
+          <button type="button" data-yr="2030" class="btn sm yr-btn">2030</button>
+          <button type="button" data-yr="2031" class="btn sm yr-btn">2031</button>
+          <label style="font-size:12px;color:var(--bn-ink-2);margin-left:6px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+            <input id="onlyEvents" type="checkbox"> 이벤트 월만
+          </label>
+        </div>
+      </div>
+      <div class="tbl-wrap tall">
+        <table class="wide">
+          <thead>
+            <tr>
+              <th>연월</th><th>주요 이벤트</th><th class="r">월급</th><th class="r">특별수입</th>
+              <th class="r">금융비용</th><th class="r">생활비</th><th class="r">순잉여</th>
+              <th class="r">신용 잔액</th><th class="r">보보대 잔액</th><th class="r">사내 잔액</th><th class="r">누적 현금</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="num"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+(function () {
+  const FB = {
+    apiKey: "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs",
+    authDomain: "benny-meeting.firebaseapp.com",
+    projectId: "benny-meeting",
+    storageBucket: "benny-meeting.firebasestorage.app",
+    messagingSenderId: "925758544707",
+    appId: "1:925758544707:web:a0c55e596ae0b15e7fadf6"
+  };
+  const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const FS_DOC = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents/adminOnly/estate_sim";
+
+  const loaded = {};
+  function loadScript(src) {
+    return loaded[src] || (loaded[src] = new Promise((ok, bad) => {
+      const s = document.createElement("script");
+      s.src = src; s.onload = ok; s.onerror = () => bad(new Error("스크립트 로드 실패"));
+      document.head.appendChild(s);
+    }));
+  }
+
+  let fbApp = null;
+  async function initFb() {
+    if (fbApp) return fbApp;
+    await loadScript(SDK + "firebase-app-compat.js");
+    await loadScript(SDK + "firebase-auth-compat.js");
+    fbApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
+    return fbApp;
+  }
+
+  async function initLoginKit() {
+    const app = await initFb();
+    await Promise.all([
+      loadScript(SDK + "firebase-functions-compat.js"),
+      loadScript("../admin-login.js?v=20261125a")
+    ]);
+    return app;
+  }
+
+  async function getAdminToken() {
+    const app = await initFb();
+    const u = app.auth().currentUser;
+    if (!u) return null;
+    const res = await u.getIdTokenResult();
+    if (!res || !res.claims || !res.claims.admin) return null;
+    return res.token;
+  }
+
+  async function loadCloudConfig() {
+    const tok = await getAdminToken();
+    if (!tok) throw new Error("관리자 권한이 필요합니다.");
+    const r = await fetch(FS_DOC, { headers: { Authorization: "Bearer " + tok } });
+    if (!r.ok) throw new Error("데이터 조회 실패 (" + r.status + ")");
+    const doc = await r.json();
+    const raw = doc && doc.fields && doc.fields.json && doc.fields.json.stringValue;
+    if (!raw) throw new Error("저장된 시뮬레이터 설정이 없습니다.");
+    return JSON.parse(raw);
+  }
+
+  async function saveCloudConfig(cfg) {
+    const tok = await getAdminToken();
+    if (!tok) throw new Error("관리자 인증이 만료되었습니다.");
+    const body = {
+      fields: {
+        json: { stringValue: JSON.stringify(cfg) },
+        updatedAt: { timestampValue: new Date().toISOString() }
+      }
+    };
+    const r = await fetch(FS_DOC + "?updateMask.fieldPaths=json&updateMask.fieldPaths=updatedAt", {
+      method: "PATCH",
+      headers: { Authorization: "Bearer " + tok, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error("저장 실패 (" + r.status + ")");
+  }
+
+  const $ = id => document.getElementById(id);
+  function toast(msg) {
+    const el = $("toast"); el.textContent = msg; el.classList.remove("hidden");
+    clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.add("hidden"), 2400);
+  }
+
+  const fmt = n => Math.round(n).toLocaleString("ko-KR");
+  const fmtEok = man => Math.abs(man) < 1 ? "0원" : (Math.abs(man) >= 10000 ? (man / 10000).toFixed(2) + "억" : fmt(man) + "만");
+
+  let CFG = null;
+  let activeTab = "funding";
+  let lastFunding = null;
+
+  const rState = {
+    scen: "realistic", totalLoan: 84000, esrmAmt: 50000, boboAmt: 30000, matongAmt: 4000,
+    living: 400, matLeaveYr: 0, yearFilter: "all", onlyEvents: false, lastResult: null
+  };
+
+  function calcCgt(sellPrice) {
+    const p = CFG.profile;
+    const gain = Math.max(0, sellPrice - p.acqCost);
+    if (sellPrice <= 120000 || gain <= 0) return 0;
+    const taxable = gain * (sellPrice - 120000) / sellPrice;
+    const afterLtc = taxable * (1 - p.ltcRate);
+    const baseEach = Math.max(0, (afterLtc / (p.joint ? 2 : 1)) - 250);
+    let taxEach = 0;
+    if (baseEach <= 1400) taxEach = baseEach * 0.06;
+    else if (baseEach <= 5000) taxEach = baseEach * 0.15 - 126;
+    else if (baseEach <= 8800) taxEach = baseEach * 0.24 - 576;
+    else if (baseEach <= 15000) taxEach = baseEach * 0.35 - 1544;
+    else if (baseEach <= 30000) taxEach = baseEach * 0.38 - 1994;
+    else taxEach = baseEach * 0.40 - 2594;
+    return Math.max(0, taxEach * (p.joint ? 2 : 1) * 1.1);
+  }
+
+  function calcFunding() {
+    const f = CFG.funding;
+    const cgt = calcCgt(f.sellPrice);
+    const sellFee = f.sellPrice * f.sellFeeRate;
+    const sellNet = f.sellPrice - f.oldMort - cgt - sellFee;
+
+    const acqTax = f.buyPrice * 0.033;
+    const buyFee = f.buyPrice * f.buyFeeRate;
+    const sideCosts = acqTax + buyFee + f.regFee + f.moveFee + f.repairFee;
+    const totalNeed = f.buyPrice + sideCosts;
+
+    const extraCash = f.cash + f.pension + f.opi1Init + f.wifeCoNet + f.parentInit;
+    const totalEquity = sellNet + extraCash;
+
+    const neededLoan = Math.max(0, totalNeed - totalEquity);
+    const usedEsrm = Math.min(f.esrm, neededLoan);
+    const rem1 = Math.max(0, neededLoan - usedEsrm);
+    const usedBobo = Math.min(f.bobo, rem1);
+    const rem2 = Math.max(0, rem1 - usedBobo);
+    const usedWifeCredit = Math.min(f.wifeCreditCap, rem2);
+
+    const maxSupply = totalEquity + f.esrm + f.bobo + f.wifeCreditCap;
+    const gap = maxSupply - totalNeed;
+    const finalLoan = usedEsrm + usedBobo + usedWifeCredit;
+
+    const sellDep = f.sellPrice * 0.10;
+    const buyDep = f.buyPrice * 0.10;
+    const depCashNeed = Math.max(0, buyDep - sellDep);
+    const bridgeShortfall = Math.max(0, totalNeed - (totalEquity - f.pension) - f.esrm - f.bobo);
+    const bridgeCovered = bridgeShortfall <= f.wifeCreditCap;
+
+    return {
+      cgt, sellFee, sellNet, acqTax, buyFee, sideCosts, totalNeed,
+      extraCash, totalEquity, usedEsrm, usedBobo, usedWifeCredit,
+      maxSupply, gap, finalLoan, sellDep, buyDep, depCashNeed,
+      bridgeShortfall, bridgeCovered
+    };
+  }
+
+  function syncInputsFromState() {
+    const f = CFG.funding;
+    $("inSellPrice").value = f.sellPrice;
+    $("inOldMort").value = f.oldMort;
+    $("inSellFeeRate").value = String(f.sellFeeRate);
+    $("inBuyPrice").value = f.buyPrice;
+    $("inBuyFeeRate").value = String(f.buyFeeRate);
+    $("inRegFee").value = f.regFee;
+    $("inMoveFee").value = f.moveFee;
+    $("inRepairFee").value = f.repairFee;
+    $("inCash").value = f.cash;
+    $("inPension").value = f.pension;
+    $("inOpi1Init").value = f.opi1Init;
+    $("inWifeCoNet").value = f.wifeCoNet;
+    $("inParentInit").value = f.parentInit;
+    $("inEsrm").value = f.esrm;
+    $("inBobo").value = f.bobo;
+    $("inWifeCreditCap").value = f.wifeCreditCap;
+  }
+
+  function renderFunding(syncRepay = true) {
+    const f = CFG.funding;
+    const res = calcFunding();
+    lastFunding = res;
+
+    $("lblSellEok").textContent = (f.sellPrice / 10000).toFixed(2) + "억";
+    $("lblBuyEok").textContent = (f.buyPrice / 10000).toFixed(2) + "억";
+    $("lblCgt").textContent = "-" + fmt(res.cgt) + "만";
+    $("lblSellFee").textContent = "-" + fmt(res.sellFee) + "만";
+    $("sellNetBadge").textContent = "순현금 " + fmtEok(res.sellNet);
+
+    $("lblAcqTax").textContent = fmt(res.acqTax) + "만";
+    $("lblBuyFee").textContent = fmt(res.buyFee) + "만";
+    $("buyTotalBadge").textContent = "총 필요 " + fmtEok(res.totalNeed);
+    $("extraCashBadge").textContent = "합계 " + fmtEok(res.extraCash);
+    $("loanTotalBadge").textContent = "가용 한도 " + fmtEok(f.esrm + f.bobo + f.wifeCreditCap);
+
+    const usedEl = $("lblWifeCreditUsed");
+    if (res.gap < 0) {
+      usedEl.textContent = fmt(res.usedWifeCredit) + "만 (초과! " + fmt(-res.gap) + "만 부족)";
+      usedEl.style.color = "var(--bn-bad)";
+    } else {
+      usedEl.textContent = fmt(res.usedWifeCredit) + "만 / " + fmt(f.wifeCreditCap) + "만 (여유 " + fmt(f.wifeCreditCap - res.usedWifeCredit) + "만)";
+      usedEl.style.color = res.usedWifeCredit > 7000 ? "var(--bn-warn)" : "var(--bn-ok)";
+    }
+
+    $("fKpiNeed").textContent = fmtEok(res.totalNeed);
+    $("fKpiNeedSub").textContent = "매수가 " + fmtEok(f.buyPrice) + " + 비용 " + fmtEok(res.sideCosts);
+    $("fKpiSupply").textContent = fmtEok(res.maxSupply);
+    $("fKpiSupplySub").textContent = "자기자본 " + fmtEok(res.totalEquity) + " + 대출한도 " + fmtEok(f.esrm + f.bobo + f.wifeCreditCap);
+
+    const gapEl = $("fKpiGap");
+    gapEl.textContent = res.gap >= 0 ? "여유 +" + fmt(res.gap) + "만" : "부족 " + fmt(res.gap) + "만";
+    gapEl.style.color = res.gap >= 0 ? "var(--bn-ok)" : "var(--bn-bad)";
+    $("fKpiGapSub").textContent = res.gap >= 0 ? "풀한도 대비 안전 버퍼" : "현금 보강 또는 매수가·수리비 조정 필요";
+
+    $("fKpiLoan").textContent = fmtEok(res.finalLoan);
+    $("fKpiLoanSub").textContent = "사내 " + (res.usedEsrm/10000).toFixed(2) + "억 · 보보대 " + (res.usedBobo/10000).toFixed(2) + "억 · 신용 " + fmt(res.usedWifeCredit) + "만";
+
+    const warns = [];
+    if (f.buyPrice > 250000) warns.push('<span class="pill bad">⚠️ 25억 초과 → 사내대출 불가</span>');
+    if (f.wifeCreditCap > 10000) warns.push('<span class="pill bad">⚠️ 신용 1억 초과 제한</span>');
+    warns.push(res.gap >= 0 ? '<span class="pill ok">✅ 자금 조달 통과</span>' : '<span class="pill bad">🚨 ' + fmt(-res.gap) + '만 부족</span>');
+    $("fWarnArea").innerHTML = warns.join("");
+
+    const maxBar = Math.max(res.totalNeed, res.totalEquity + res.finalLoan, 1);
+    $("barNeedLbl").textContent = fmt(res.totalNeed) + "만 (" + fmtEok(res.totalNeed) + ")";
+    $("barSupplyLbl").textContent = fmt(res.totalEquity + res.finalLoan) + "만 (" + fmtEok(res.totalEquity + res.finalLoan) + ")";
+    const seg = (v, c, l) => {
+      const pct = Math.max(0, (v / maxBar) * 100);
+      return pct < 0.5 ? "" : '<div style="width:' + pct.toFixed(2) + '%;background:' + c + ';" title="' + l + ': ' + fmt(v) + '만">' + (pct > 7 ? l : "") + '</div>';
+    };
+    $("barNeed").innerHTML = seg(f.buyPrice, "#287047", "매수가 " + (f.buyPrice/10000).toFixed(1) + "억") + seg(res.sideCosts, "#64748b", "비용 " + fmt(res.sideCosts) + "만");
+    $("barSupply").innerHTML = seg(res.sellNet, "#2c5aa0", "매도 " + (res.sellNet/10000).toFixed(2) + "억") + seg(res.extraCash, "#287047", "현금·퇴직 " + (res.extraCash/10000).toFixed(2) + "억") + seg(res.usedEsrm, "#4f46e5", "사내 " + (res.usedEsrm/10000).toFixed(1) + "억") + seg(res.usedBobo, "#c26d1f", "보보대 " + (res.usedBobo/10000).toFixed(1) + "억") + seg(res.usedWifeCredit, "#c0392b", "신용 " + fmt(res.usedWifeCredit) + "만");
+
+    const st1Ok = res.depCashNeed <= f.cash;
+    $("st1Badge").textContent = st1Ok ? "현금 충분" : "마통 일부";
+    $("st1Badge").className = "pill " + (st1Ok ? "ok" : "warn");
+    $("st1Body").innerHTML = "매도 계약금 +" + fmt(res.sellDep) + "만<br>매수 계약금 -" + fmt(res.buyDep) + "만<br>필요 차액 <strong style='color:var(--bn-ink)'>" + fmt(res.depCashNeed) + "만</strong>";
+
+    $("st2Badge").textContent = res.bridgeCovered ? "자체 해결" : "브릿지 필요";
+    $("st2Badge").className = "pill " + (res.bridgeCovered ? "ok" : "bad");
+    $("st2Body").innerHTML = "퇴직금(" + fmt(f.pension) + "만) 입금 전<br>당일 필요 단기액 <strong style='color:var(--bn-ink)'>" + fmt(res.bridgeShortfall) + "만</strong><br>" + (res.bridgeCovered ? "신용한도 내 자체 해결 가능" : "한도 " + fmt(res.bridgeShortfall - f.wifeCreditCap) + "만 초과 → 2주 시차·단기 브릿지 필요");
+
+    $("st3Badge").textContent = res.gap >= 0 ? "확정 안정" : "자금 부족";
+    $("st3Badge").className = "pill " + (res.gap >= 0 ? "ok" : "bad");
+    $("st3Body").innerHTML = "퇴직금 +" + fmt(f.pension) + "만 정산 후<br>사내 " + (res.usedEsrm/10000).toFixed(2) + "억 + 보보대 " + (res.usedBobo/10000).toFixed(2) + "억<br>최종 신용대출 <strong style='color:var(--bn-ink)'>" + fmt(res.usedWifeCredit) + "만</strong>";
+
+    const ledger = [
+      ["매도", "기존 주택 매도가", f.sellPrice, "매도 기준가"],
+      ["매도 차감", "기존 주담대 상환", -f.oldMort, "매도 잔금일 말소"],
+      ["매도 차감", "1주택 고가 양도세(지방세 포함)", -res.cgt, "공동명의·장특공 자동 계산"],
+      ["매도 차감", "매도 중개보수(VAT 포함)", -res.sellFee, (f.sellFeeRate*100/1.1).toFixed(1) + "% 요율"],
+      ["소계", "▶ 기존 주택 매도 순현금", res.sellNet, "실수령액", true],
+      ["매수", "신규 주택 매수가", f.buyPrice, "전용 85㎡ 이하 기준"],
+      ["매수 비용", "취득세 + 지방교육세 (3.3%)", res.acqTax, "농특세 면제"],
+      ["매수 비용", "매수 중개보수(VAT 포함)", res.buyFee, (f.buyFeeRate*100/1.1).toFixed(1) + "% 요율"],
+      ["매수 비용", "등기 · 채권할인 · 인지세 · 법무사", f.regFee, "근저당비 회사 부담 기준"],
+      ["매수 비용", "이사 · 보관이사 · 청소", f.moveFee, "1박 시차 기준"],
+      ["매수 비용", "인테리어 · 수리비", f.repairFee, "미수리 매물 반영"],
+      ["소계", "▶ 총 필요 자금", res.totalNeed, "매수가 + 모든 비용", true],
+      ["자기자본", "매도 순현금 + 보유현금·퇴직·상여·순증·부모님", res.totalEquity, "매도 " + fmt(res.sellNet) + " + 추가 " + fmt(res.extraCash)],
+      ["신규 대출", "사내대출 (1.5%)", res.usedEsrm, "3년 거치 10년 상환"],
+      ["신규 대출", "보보대 (~4.0%)", res.usedBobo, "2년 일시 · 수수료 0%"],
+      ["신규 대출", "배우자 신용대출 (실사용)", res.usedWifeCredit, "한도 " + fmt(f.wifeCreditCap) + "만 중 사용"],
+      ["소계", "▶ 최종 자금 과부족", res.gap, res.gap >= 0 ? "조달 가능" : "부족분 보강 필요", true]
+    ];
+    $("fundingLedgerBody").innerHTML = ledger.map(([c, n, v, note, sub]) =>
+      '<tr class="' + (sub ? "sub-row" : "") + '"><td>' + c + '</td><td>' + n + '</td><td class="r">' + fmt(v) + '</td><td class="r">' + fmtEok(v) + '</td><td style="color:var(--bn-ink-2)">' + note + '</td></tr>'
+    ).join("");
+
+    if (syncRepay) {
+      rState.esrmAmt = Math.round(res.usedEsrm);
+      rState.boboAmt = Math.round(res.usedBobo);
+      rState.matongAmt = Math.round(res.usedWifeCredit);
+      rState.totalLoan = rState.esrmAmt + rState.boboAmt + rState.matongAmt;
+      $("loanSlider").value = Math.max(50000, Math.min(95000, Math.round(rState.totalLoan / 500) * 500));
+    }
+    $("linkedSummaryText").textContent = "매도 " + (f.sellPrice/10000).toFixed(2) + "억 → 매수 " + (f.buyPrice/10000).toFixed(2) + "억 (수리 " + fmt(f.repairFee) + "만) ⇒ 확정 대출 " + (res.finalLoan/10000).toFixed(2) + "억";
+  }
+
+  function opi2AfterTax(dsOp, pen, thr) {
+    const p = CFG.profile;
+    if (dsOp < thr) return 0;
+    let gross = (dsOp * 100000000 * p.opi2PoolRate * p.opi2CommonShare) / p.dsHeadcount;
+    if (pen) gross *= p.deficitPenalty;
+    return gross * p.highBracketNet;
+  }
+
+  function simulate(scenKey, esrmInit, boboInit, matongInit, living, matLeaveYr) {
+    const p = CFG.profile;
+    const c = CFG.scenarios[scenKey];
+    let esrm = esrmInit, bobo = boboInit, matong = matongInit, cash = 0;
+
+    const opi2Grants = {};
+    for (let py = 2026; py <= 2030; py++) {
+      opi2Grants[py] = opi2AfterTax(c.ds_op[py], c.deficit[py], py <= 2028 ? 200 : 100);
+    }
+
+    const rEsrm = 0.015 / 12;
+    const pmtEsrm = esrmInit > 0 ? esrmInit * (rEsrm * Math.pow(1 + rEsrm, 120)) / (Math.pow(1 + rEsrm, 120) - 1) : 0;
+
+    const rows = [];
+    let payoffYm = (matong <= 0.05 && bobo <= 0.05) ? "2027-03" : null;
+    let totalSpecial = 0, bobo2029End = 0;
+
+    for (let y = 2027; y <= 2031; y++) {
+      for (let m = 1; m <= 12; m++) {
+        if (y === 2027 && m < 3) continue;
+        const ym = y + "-" + String(m).padStart(2, "0");
+        const salary = p.monthlyNet - (y === matLeaveYr ? p.matLeaveDrop : 0);
+        const events = [];
+        let opi1 = 0, parent = 0, tai = 0, rsu = 0, opi2 = 0;
+
+        if (m === 1 && y >= 2028) {
+          opi1 = p.baseAnnual * c.opi1[y] * 0.65;
+          events.push({ tag: "OPI1 " + Math.round(c.opi1[y]*100) + "%", cls: opi1 > 0 ? "info" : "" });
+        }
+        if (m === 1 || (y === 2027 && m === 3)) {
+          parent = p.parentAnnual;
+          events.push({ tag: "정기지원", cls: "ok" });
+        }
+        if (m === 7 || m === 12) {
+          tai = p.taiBase * c.tai[y] * 0.68;
+          events.push({ tag: "TAI " + Math.round(c.tai[y]*100) + "%", cls: "info" });
+        }
+        if (p.rsuSched[ym]) {
+          const sh = p.rsuSched[ym];
+          rsu = sh * c.price[y] * p.highBracketNet;
+          events.push({ tag: "RSU " + sh + "주", cls: "warn" });
+        }
+        if (m === 4) {
+          let cnt = 0;
+          for (const py of [y - 1, y - 2, y - 3]) {
+            if (opi2Grants[py] > 0) { opi2 += opi2Grants[py] / 3; cnt++; }
+          }
+          events.push({ tag: opi2 > 0 ? "OPI2(" + cnt + "년 중첩)" : "OPI2 미발동", cls: opi2 > 0 ? "info" : "" });
+        }
+        if (y === 2030 && m === 3) events.push({ tag: "거치종료", cls: "bad" });
+
+        const special = opi1 + parent + tai + rsu + opi2;
+        totalSpecial += special;
+
+        const esrmInt = esrm * rEsrm;
+        const esrmTax = esrmInit > 0 ? (50 * (esrm / 50000)) : 0;
+        const isAmort = (y > 2030) || (y === 2030 && m >= 3);
+        const esrmPrin = isAmort ? Math.min(esrm, pmtEsrm - esrmInt) : 0;
+        const finCost = esrmInt + esrmTax + esrmPrin + bobo * (0.04 / 12) + matong * (0.055 / 12);
+
+        esrm = Math.max(0, esrm - esrmPrin);
+        const net = salary + special - living - finCost;
+
+        if (net >= 0) {
+          let rn = net;
+          const pm = Math.min(matong, rn); matong -= pm; rn -= pm;
+          const pb = Math.min(bobo, rn); bobo -= pb; rn -= pb;
+          cash += rn;
+        } else {
+          let nd = -net;
+          const fc = Math.min(cash, nd); cash -= fc; nd -= fc;
+          matong += nd;
+        }
+        if (payoffYm === null && matong <= 0.05 && bobo <= 0.05) payoffYm = ym;
+        if (y === 2029 && m === 12) bobo2029End = matong + bobo;
+        rows.push({ ym, y, m, events, salary, special, opi1, parent, tai, rsu, opi2, finCost, living, net, matong, bobo, esrm, cash });
+      }
+    }
+    const last = rows[rows.length - 1];
+    return { rows, payoffYm, bobo2029End, endCash: last.cash, endEsrm: last.esrm, endHighRate: last.matong + last.bobo, totalSpecial };
+  }
+
+  function renderRepay() {
+    document.querySelectorAll(".scen-btn").forEach(b => b.classList.toggle("primary", b.dataset.scen === rState.scen));
+    document.querySelectorAll(".yr-btn").forEach(b => b.classList.toggle("primary", b.dataset.yr === rState.yearFilter));
+
+    $("loanVal").textContent = (rState.totalLoan / 10000).toFixed(2) + "억 원";
+    $("loanSplitText").textContent = "사내 " + (rState.esrmAmt/10000).toFixed(2) + "억 · 보보대 " + (rState.boboAmt/10000).toFixed(2) + "억 · 신용 " + fmt(rState.matongAmt) + "만";
+    $("livingVal").textContent = rState.living + "만 원";
+    $("salaryHint").textContent = "월 합산 실수령 " + fmt(CFG.profile.monthlyNet) + "만 원 기준";
+    $("matVal").textContent = rState.matLeaveYr === 0 ? "없음" : rState.matLeaveYr + "년 (1년)";
+
+    const all = {
+      pessimistic: simulate("pessimistic", rState.esrmAmt, rState.boboAmt, rState.matongAmt, rState.living, rState.matLeaveYr),
+      realistic:   simulate("realistic",   rState.esrmAmt, rState.boboAmt, rState.matongAmt, rState.living, rState.matLeaveYr),
+      optimistic:  simulate("optimistic",  rState.esrmAmt, rState.boboAmt, rState.matongAmt, rState.living, rState.matLeaveYr)
+    };
+    const cur = all[rState.scen];
+    rState.lastResult = cur;
+
+    const pEl = $("kpiPayoff");
+    pEl.textContent = cur.payoffYm ? cur.payoffYm.replace("-", "년 ") + "월" : "2032년 이후";
+    pEl.style.color = cur.payoffYm && cur.payoffYm <= "2030-02" ? "var(--bn-ok)" : (cur.payoffYm ? "var(--bn-warn)" : "var(--bn-bad)");
+    const mc = cur.payoffYm ? cur.rows.findIndex(r => r.ym === cur.payoffYm) + 1 : null;
+    $("kpiPayoffSub").textContent = mc ? "입주 후 " + mc + "개월 만 완납" : "2031.12 잔액 " + fmtEok(cur.endHighRate);
+
+    $("kpi2029").textContent = cur.bobo2029End < 1 ? "0원 (완납)" : fmtEok(cur.bobo2029End);
+    $("kpi2029").style.color = cur.bobo2029End < 1 ? "var(--bn-ok)" : "var(--bn-ink)";
+    $("kpiCash").textContent = fmtEok(cur.endCash);
+    $("kpiCash").style.color = cur.endCash > 0 ? "var(--bn-ok)" : "var(--bn-ink-2)";
+    $("kpiCashSub").textContent = "사내대출 잔액 " + fmtEok(cur.endEsrm);
+    $("kpiSpecial").textContent = fmtEok(cur.totalSpecial);
+
+    const names = { pessimistic: "🔴 비관", realistic: "🔵 예상(현실)", optimistic: "🟢 낙관" };
+    $("compareCards").innerHTML = ["pessimistic", "realistic", "optimistic"].map(k => {
+      const r = all[k];
+      return '<div data-pick="' + k + '" class="comp-card ' + (k === rState.scen ? "sel" : "") + '">' +
+        '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:12.5px;"><span>' + names[k] + '</span><span class="num">' + (r.payoffYm ? r.payoffYm + " 완납" : "2032+") + '</span></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;font-size:11.5px;" class="num">' +
+        '<div><div style="color:var(--bn-ink-2)">29.12 보보대</div><strong>' + (r.bobo2029End < 1 ? "0원" : fmtEok(r.bobo2029End)) + '</strong></div>' +
+        '<div><div style="color:var(--bn-ink-2)">31.12 현금</div><strong style="color:var(--bn-ok)">' + fmtEok(r.endCash) + '</strong></div>' +
+        '<div><div style="color:var(--bn-ink-2)">5년 특별수입</div><strong>' + fmtEok(r.totalSpecial) + '</strong></div>' +
+        '</div></div>';
+    }).join("");
+    $("compareCards").querySelectorAll(".comp-card").forEach(el => el.onclick = () => { rState.scen = el.dataset.pick; renderRepay(); });
+
+    const filtered = cur.rows.filter(r => (rState.yearFilter === "all" || String(r.y) === rState.yearFilter) && (!rState.onlyEvents || r.events.length > 0));
+    $("tableBody").innerHTML = filtered.map(r => {
+      const hit = r.ym === cur.payoffYm;
+      const b = r.events.map(e => '<span class="pill ' + e.cls + '" style="margin:1px 3px 1px 0;">' + e.tag + '</span>').join("") + (hit ? '<span class="pill ok">🎉 완납</span>' : "");
+      return '<tr class="' + (hit ? "hit-row" : "") + '">' +
+        '<td><strong>' + r.ym + '</strong></td><td>' + (b || "—") + '</td>' +
+        '<td class="r">' + fmt(r.salary) + '</td>' +
+        '<td class="r" style="color:' + (r.special > 0 ? "var(--bn-accent)" : "var(--bn-ink-2)") + ';font-weight:700">' + (r.special > 0 ? "+" + fmt(r.special) : "-") + '</td>' +
+        '<td class="r" style="color:var(--bn-ink-2)">-' + fmt(r.finCost) + '</td>' +
+        '<td class="r" style="color:var(--bn-ink-2)">-' + fmt(r.living) + '</td>' +
+        '<td class="r" style="font-weight:700;color:' + (r.net >= 0 ? "var(--bn-ok)" : "var(--bn-bad)") + '">' + (r.net >= 0 ? "+" : "") + fmt(r.net) + '</td>' +
+        '<td class="r" style="color:' + (r.matong > 0 ? "var(--bn-bad)" : "var(--bn-ink-2)") + '">' + fmt(r.matong) + '</td>' +
+        '<td class="r" style="color:' + (r.bobo > 0 ? "var(--bn-warn)" : "var(--bn-ink-2)") + '">' + fmt(r.bobo) + '</td>' +
+        '<td class="r">' + fmt(r.esrm) + '</td>' +
+        '<td class="r" style="font-weight:700;color:' + (r.cash > 0 ? "var(--bn-ok)" : "var(--bn-ink-2)") + '">' + fmt(r.cash) + '</td></tr>';
+    }).join("");
+    drawChart(cur);
+  }
+
+  let hoverIdx = -1;
+  function drawChart(cur) {
+    const cv = $("mainChart"), rect = cv.getBoundingClientRect();
+    if (rect.width < 20) return;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.floor(rect.width * dpr); cv.height = Math.floor(rect.height * dpr);
+    const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height, pad = { l: 44, r: 14, t: 14, b: 26 };
+    const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b, rows = cur.rows;
+    const maxV = Math.max(60000, ...rows.map(r => Math.max(r.matong + r.bobo, r.esrm, r.cash))) * 1.08;
+    const xOf = i => pad.l + (i / (rows.length - 1)) * cw;
+    const yOf = v => pad.t + ch - (v / maxV) * ch;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = "#e5e4df"; ctx.fillStyle = "#65655e"; ctx.font = "11px sans-serif"; ctx.textAlign = "right";
+    for (let v = 0; v <= maxV; v += 10000) {
+      const y = yOf(v); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+      ctx.fillText((v / 10000).toFixed(0) + "억", pad.l - 6, y + 4);
+    }
+    ctx.textAlign = "center";
+    rows.forEach((r, i) => { if (i === 0 || r.m === 1 || i === rows.length - 1) ctx.fillText(r.ym.slice(2), xOf(i), H - 8); });
+
+    const gi = rows.findIndex(r => r.ym === "2030-03");
+    if (gi >= 0) {
+      const gx = xOf(gi); ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = "#999";
+      ctx.beginPath(); ctx.moveTo(gx, pad.t); ctx.lineTo(gx, pad.t + ch); ctx.stroke(); ctx.restore();
+      ctx.textAlign = "left"; ctx.fillText("거치종료", gx + 4, pad.t + 11);
+    }
+
+    function line(vals, col, alpha) {
+      ctx.beginPath(); vals.forEach((v, i) => i ? ctx.lineTo(xOf(i), yOf(v)) : ctx.moveTo(xOf(i), yOf(v)));
+      ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.stroke();
+      ctx.lineTo(xOf(vals.length - 1), yOf(0)); ctx.lineTo(xOf(0), yOf(0)); ctx.closePath();
+      ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = col; ctx.fill(); ctx.restore();
+    }
+    line(rows.map(r => r.esrm), "#2c5aa0", 0.06);
+    line(rows.map(r => r.matong + r.bobo), "#c0392b", 0.12);
+    line(rows.map(r => r.cash), "#287047", 0.12);
+
+    if (hoverIdx >= 0 && hoverIdx < rows.length) {
+      const hx = xOf(hoverIdx), r = rows[hoverIdx];
+      ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.moveTo(hx, pad.t); ctx.lineTo(hx, pad.t + ch); ctx.stroke();
+      [[r.matong + r.bobo, "#c0392b"], [r.esrm, "#2c5aa0"], [r.cash, "#287047"]].forEach(([v, c]) => {
+        ctx.beginPath(); ctx.arc(hx, yOf(v), 4, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill();
+      });
+    }
+  }
+
+  $("mainChart").addEventListener("mousemove", e => {
+    if (!rState.lastResult) return;
+    const rect = $("mainChart").getBoundingClientRect(), mx = e.clientX - rect.left, rows = rState.lastResult.rows;
+    hoverIdx = Math.max(0, Math.min(rows.length - 1, Math.round(((mx - 44) / (rect.width - 58)) * (rows.length - 1))));
+    drawChart(rState.lastResult);
+    const r = rows[hoverIdx], tip = $("chartTooltip");
+    tip.innerHTML = '<strong>' + r.ym + '</strong> <span style="color:var(--bn-ink-2)">(' + (r.events.map(x => x.tag).join(", ") || "정기") + ')</span>' +
+      '<div class="num" style="margin-top:4px;line-height:1.6;">고금리: <strong>' + fmt(r.matong + r.bobo) + '만</strong><br>사내: <strong>' + fmt(r.esrm) + '만</strong><br>순현금: <strong style="color:var(--bn-ok)">' + fmt(r.cash) + '만</strong></div>';
+    tip.classList.remove("hidden");
+    tip.style.left = (mx > rect.width * 0.6 ? Math.max(8, mx - 205) : Math.min(rect.width - 205, mx + 12)) + "px";
+    tip.style.top = "10px";
+  });
+  $("mainChart").addEventListener("mouseleave", () => { hoverIdx = -1; $("chartTooltip").classList.add("hidden"); if (rState.lastResult) drawChart(rState.lastResult); });
+
+  function switchTab(tab) {
+    activeTab = tab;
+    $("panelFunding").classList.toggle("hidden", tab !== "funding");
+    $("panelRepay").classList.toggle("hidden", tab !== "repay");
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+    if (tab === "repay") { renderRepay(); setTimeout(() => rState.lastResult && drawChart(rState.lastResult), 30); }
+    else renderFunding(false);
+  }
+
+  function mountApp(cfg) {
+    CFG = cfg;
+    $("appTitle").textContent = cfg.meta.title || "부동산 시뮬레이터";
+    $("appSubtitle").textContent = cfg.meta.subtitle || "";
+    $("sellCardTitle").textContent = "🏠 ① " + (cfg.meta.sellLabel || "기존 주택 매도 정산");
+    rState.living = cfg.profile.defaultLiving || 400;
+    $("livingSlider").value = rState.living;
+
+    // Build preset buttons from cloud data
+    $("presetBar").innerHTML = '<span style="font-size:12px;font-weight:700;color:var(--bn-ink-2);">프리셋:</span>' +
+      (cfg.presets || []).map((p, i) => '<button type="button" class="btn sm fpreset-btn" data-idx="' + i + '">' + p.label + '</button>').join("");
+    $("presetBar").querySelectorAll(".fpreset-btn").forEach(b => {
+      b.onclick = () => {
+        Object.assign(CFG.funding, CFG.presets[Number(b.dataset.idx)].values);
+        syncInputsFromState();
+        renderFunding(true);
+      };
+    });
+
+    syncInputsFromState();
+    renderFunding(true);
+    $("gateView").classList.add("hidden");
+    $("appView").classList.remove("hidden");
+    switchTab("funding");
+  }
+
+  // Wire controls
+  document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+  $("btnGoRepay").onclick = () => { renderFunding(true); switchTab("repay"); };
+  $("btnSyncFromFunding").onclick = () => { renderFunding(true); renderRepay(); toast("탭 1 대출액을 반영했어요"); };
+  $("btnCloudSave").onclick = async () => {
+    try {
+      CFG.profile.defaultLiving = rState.living;
+      await saveCloudConfig(CFG);
+      toast("클라우드에 저장했어요");
+    } catch (e) { toast(e.message || "저장 실패"); }
+  };
+
+  [["inSellPrice","sellPrice"],["inOldMort","oldMort"],["inBuyPrice","buyPrice"],["inRegFee","regFee"],
+   ["inMoveFee","moveFee"],["inRepairFee","repairFee"],["inCash","cash"],["inPension","pension"],
+   ["inOpi1Init","opi1Init"],["inWifeCoNet","wifeCoNet"],["inParentInit","parentInit"],
+   ["inEsrm","esrm"],["inBobo","bobo"],["inWifeCreditCap","wifeCreditCap"]].forEach(([id, k]) => {
+    $(id).addEventListener("input", () => { CFG.funding[k] = Number($(id).value) || 0; renderFunding(true); });
+  });
+  $("inSellFeeRate").onchange = e => { CFG.funding.sellFeeRate = Number(e.target.value); renderFunding(true); };
+  $("inBuyFeeRate").onchange = e => { CFG.funding.buyFeeRate = Number(e.target.value); renderFunding(true); };
+
+  document.querySelectorAll(".scen-btn").forEach(b => b.onclick = () => { rState.scen = b.dataset.scen; renderRepay(); });
+  document.querySelectorAll(".loan-preset").forEach(b => b.onclick = () => {
+    const t = Number(b.dataset.loan); rState.totalLoan = t;
+    rState.esrmAmt = Math.min(50000, t); rState.boboAmt = Math.min(30000, Math.max(0, t - rState.esrmAmt));
+    rState.matongAmt = Math.max(0, t - rState.esrmAmt - rState.boboAmt); $("loanSlider").value = t; renderRepay();
+  });
+  $("loanSlider").oninput = e => {
+    const t = Number(e.target.value); rState.totalLoan = t;
+    rState.esrmAmt = Math.min(50000, t); rState.boboAmt = Math.min(30000, Math.max(0, t - rState.esrmAmt));
+    rState.matongAmt = Math.max(0, t - rState.esrmAmt - rState.boboAmt); renderRepay();
+  };
+  $("livingSlider").oninput = e => { rState.living = Number(e.target.value); renderRepay(); };
+  $("matSelect").onchange = e => { rState.matLeaveYr = Number(e.target.value); renderRepay(); };
+  document.querySelectorAll(".yr-btn").forEach(b => b.onclick = () => { rState.yearFilter = b.dataset.yr; renderRepay(); });
+  $("onlyEvents").onchange = e => { rState.onlyEvents = e.target.checked; renderRepay(); };
+
+  $("btnExportFundingCsv").onclick = () => {
+    if (!lastFunding) return;
+    const f = CFG.funding, r = lastFunding;
+    const rows = [
+      ["구분","항목","금액(만원)"],["매도","매도가",f.sellPrice],["매도차감","기존주담대",-f.oldMort],["매도차감","양도세",-Math.round(r.cgt)],["매도차감","매도복비",-Math.round(r.sellFee)],["소계","매도순현금",Math.round(r.sellNet)],
+      ["매수","매수가",f.buyPrice],["비용","취득세",Math.round(r.acqTax)],["비용","매수복비",Math.round(r.buyFee)],["비용","등기/법무사",f.regFee],["비용","이사",f.moveFee],["비용","수리비",f.repairFee],["소계","총필요자금",Math.round(r.totalNeed)],
+      ["조달","보유현금",f.cash],["조달","퇴직연금",f.pension],["조달","상여보강",f.opi1Init],["조달","배우자순증",f.wifeCoNet],["조달","부모님지원",f.parentInit],
+      ["대출","사내대출",Math.round(r.usedEsrm)],["대출","보보대",Math.round(r.usedBobo)],["대출","신용실사용",Math.round(r.usedWifeCredit)],["결론","과부족",Math.round(r.gap)]
+    ];
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["\uFEFF" + rows.map(x => x.join(",")).join("\r\n")], { type: "text/csv;charset=utf-8;" }));
+    a.download = "estate_funding.csv"; a.click();
+  };
+
+  $("btnExportCsv").onclick = () => {
+    if (!rState.lastResult) return;
+    const lines = ["연월,이벤트,월급,OPI1,OPI2,TAI,RSU,정기지원,금융비용,생활비,순잉여,신용잔액,보보대잔액,사내잔액,누적현금"];
+    rState.lastResult.rows.forEach(r => lines.push([r.ym, '"' + r.events.map(e => e.tag).join(" / ") + '"', Math.round(r.salary), Math.round(r.opi1), Math.round(r.opi2), Math.round(r.tai), Math.round(r.rsu), Math.round(r.parent), Math.round(r.finCost), Math.round(r.living), Math.round(r.net), Math.round(r.matong), Math.round(r.bobo), Math.round(r.esrm), Math.round(r.cash)].join(",")));
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" }));
+    a.download = "estate_repayment_" + rState.scen + ".csv"; a.click();
+  };
+
+  window.addEventListener("resize", () => { if (activeTab === "repay" && rState.lastResult) drawChart(rState.lastResult); });
+
+  // Auth Bootstrap
+  async function boot() {
+    try {
+      const app = await initFb();
+      await new Promise(ok => {
+        const t = setTimeout(ok, 4000);
+        const off = app.auth().onAuthStateChanged(() => { clearTimeout(t); off(); ok(); });
+      });
+      const tok = await getAdminToken();
+      if (tok) {
+        $("gateSub").textContent = "시뮬레이터 데이터를 불러오는 중…";
+        const cfg = await loadCloudConfig();
+        mountApp(cfg);
+        return;
+      }
+      $("gateSub").textContent = "베니 포털과 동일한 관리자 비밀번호로 로그인해 주세요. (포털에 이미 로그인되어 있으면 자동 진입됩니다.)";
+      $("loginForm").classList.remove("hidden");
+    } catch (e) {
+      $("gateSub").textContent = "관리자 로그인이 필요합니다.";
+      $("loginForm").classList.remove("hidden");
+      $("loginMsg").textContent = e.message || "";
+    }
+  }
+
+  $("loginForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const pw = $("pwInput").value;
+    if (!pw) return;
+    $("loginBtn").disabled = true;
+    $("loginMsg").textContent = "관리자 확인 중…";
+    try {
+      const app = await initLoginKit();
+      const tok = await window.bennyAdminLogin(app, pw);
+      await app.auth().signInWithCustomToken(tok);
+      if (window.bennyAdminEnroll) window.bennyAdminEnroll(app);
+      $("pwInput").value = "";
+      $("loginMsg").textContent = "데이터 불러오는 중…";
+      const cfg = await loadCloudConfig();
+      mountApp(cfg);
+    } catch (err) {
+      $("loginMsg").textContent = (err && err.message) || "로그인하지 못했어요.";
+    } finally {
+      $("loginBtn").disabled = false;
+    }
+  });
+
+  boot();
+})();
+</script>
+</body>
+</html>
