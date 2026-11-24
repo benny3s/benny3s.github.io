@@ -8,7 +8,7 @@
 <title>베니 비서</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../design/tokens.css?v=2">
-<link rel="stylesheet" href="./app.css?v=20261124a">
+<link rel="stylesheet" href="./app.css?v=20261124b">
 </head>
 <body>
 <div class="app-shell">
@@ -25,8 +25,8 @@
     </div>
     <div class="sp"></div>
     <div class="top-actions">
-      <button type="button" id="btnLiveMeet" class="btn tonal sm" hidden>🎙 회의</button>
-      <button type="button" id="btnCapture" class="btn sm" title="AI 한 번에 입력">✨ 입력</button>
+      <button type="button" id="btnLiveMeet" class="btn tonal sm" hidden title="실시간 회의">🎙<span class="lbl"> 회의</span></button>
+      <button type="button" id="btnCapture" class="btn sm" title="AI 한 번에 입력">✨<span class="lbl"> 입력</span></button>
       <button type="button" id="btnAlerts" class="btn sm" title="알림함">🔔 <span id="alertCount">0</span></button>
       <button type="button" id="btnNativeSettings" class="btn icon-only sm" hidden title="앱 설정">⚙</button>
       <button type="button" id="btnRefresh" class="btn icon-only sm" title="새로고침">↻</button>
@@ -109,6 +109,6 @@
 </dialog>
 
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
-<script src="./app.js?v=20261124a"></script>
+<script src="./app.js?v=20261124b"></script>
 </body>
 </html>

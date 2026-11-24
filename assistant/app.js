@@ -103,6 +103,29 @@
     return `${y}-${m}-${day}`;
   }
 
+  function addDaysIso(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function nextWeekendIso() {
+    const d = new Date();
+    const wd = d.getDay(); // 0=일, 6=토
+    const add = wd === 6 ? 1 : (wd === 0 ? 6 : 6 - wd);
+    return addDaysIso(add);
+  }
+
+  function nextMondayIso() {
+    const d = new Date();
+    const wd = d.getDay();
+    const add = wd === 0 ? 1 : (8 - wd);
+    return addDaysIso(add);
+  }
+
   function weekdayKo(iso) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
     if (!m) return "";
@@ -123,10 +146,13 @@
     return `${Number(s.slice(5, 7))}/${Number(s.slice(8, 10))}(${weekdayKo(s)})`;
   }
 
-  function setConn(kind, text) {
+  function setConn(kind, text, tip) {
     const pill = $("connPill");
     const lbl = $("connLabel");
-    if (pill) pill.className = "conn-pill " + kind;
+    if (pill) {
+      pill.className = "conn-pill " + kind;
+      if (tip) pill.title = tip;
+    }
     if (lbl) lbl.textContent = text;
   }
 
@@ -268,7 +294,7 @@
     if (h === "127.0.0.1" || h === "localhost" || h.endsWith(".ts.net")) {
       state.mode = "direct";
       state.directBase = location.origin;
-      setConn("direct", Native ? "폰 직통" : "집 PC 직통");
+      setConn("direct", "직통", "집 PC·폰 직통 연결 (전체 기능)");
       return "direct";
     }
     // benny3s.github.io 에서도 집 PC·폰(Tailscale ON)이면 1.4초 핑으로 자동 직통 승격
@@ -280,14 +306,14 @@
       if (r.ok) {
         state.mode = "direct";
         state.directBase = TS_BASE;
-        setConn("direct", "Tailscale 직통");
+        setConn("direct", "직통", "Tailscale 직통 연결 (전체 기능)");
         return "direct";
       }
     } catch (_) {
-      // 회사 PC / 외부망: Firebase 안전 중계 모드로 전환
+      // 회사 PC / 외부망: Firebase 보안 중계 모드로 전환
     }
     state.mode = "relay";
-    setConn("relay", "안전 중계");
+    setConn("relay", "🔒 보안 모드 적용중", "회사 PC 보안 중계 · 회의록·회사 할 일 원문 제외");
     return "relay";
   }
 
@@ -300,13 +326,13 @@
       let snap = null;
       if (state.mode === "direct") {
         snap = await directFetchJson("/web/snapshot", { timeout: 15000 });
-        setConn("direct", Native ? "폰 직통" : "집 PC 직통");
+        setConn("direct", "직통", "집 PC·폰 직통 연결 (전체 기능)");
       } else {
         const doc = await fsReq(`${ADMIN_COL}/${SNAP_DOC}`);
         const raw = doc && doc.fields && doc.fields.json && doc.fields.json.stringValue;
         if (!raw) throw new Error("집 PC 스냅샷이 아직 도착하지 않았어요. 집 PC 가 켜져 있는지 확인해 주세요.");
         snap = JSON.parse(raw);
-        setConn("relay", "안전 중계");
+        setConn("relay", "🔒 보안 모드 적용중", "회사 PC 보안 중계 · 회의록·회사 할 일 원문 제외");
       }
       state.snap = snap;
       state.lastSyncAt = Date.now();
@@ -328,7 +354,7 @@
   }
 
   const MUTATING_OPS = new Set([
-    "refresh", "todo_add", "todo_done", "todo_delete", "todo_apply",
+    "refresh", "todo_add", "todo_done", "todo_delete", "todo_update", "todo_apply",
     "calendar_write", "access_decide", "campus_habit", "campus_grade", "campus_done",
   ]);
 
@@ -448,21 +474,12 @@
     if (!s) { host.innerHTML = '<div class="card">불러오는 중…</div>'; return; }
     const br = s.briefing || {};
     const cats = br.categories || {};
-    const modeLabel = { work: "업무 모드", evening: "퇴근 후", weekend: "주말 모드" }[br.mode] || "";
     const today = todayIso();
     const todayEvents = (s.calendar || []).filter((e) => e.date === today);
     const meTodos = s.todos_me || [];
     const wkTodos = s.todos_work || [];
     const meetings = s.meetings || [];
     const approvals = s.approvals || [];
-
-    const relayBanner = state.mode === "relay"
-      ? `<div class="card" style="padding:10px 14px;background:var(--work-soft);border-color:rgba(2,132,199,.25);">
-           <div class="row-sub" style="color:var(--work);margin:0;">
-             <b>🛡 회사 PC 안전 중계 모드</b> · 기본 비서 기능 전부 이용 가능 (보안상 회의록·회사 할 일 원문은 집 PC·폰 직통에서만 표시)
-           </div>
-         </div>`
-      : "";
 
     const linesHtml = (br.lines || []).map((ln) => `<div style="margin-top:4px;">· ${esc(ln)}</div>`).join("");
     const impHtml = (br.important || []).length
@@ -520,23 +537,34 @@
           </div>`).join("")
       : `<p class="meta" style="margin:4px 0;">오늘 등록된 일정이 없어요.</p>`;
 
-    // 개인 할 일 상위 5건 (기한 빠른 순)
-    const sortedMe = [...meTodos].sort((a, b) => (a.at || "9999").localeCompare(b.at || "9999")).slice(0, 5);
-    const meCardHtml = sortedMe.length
+    // 개인 할 일: 오늘 할 일 최우선 → 밀린 일 → 예정된 일 (기한 없는 '나중에'는 아래 개수 요약으로만 표시)
+    const meToday = meTodos.filter((it) => it.at && it.at.slice(0, 10) === today);
+    const meOver = meTodos.filter((it) => it.at && it.at.slice(0, 10) < today).sort((a, b) => a.at.localeCompare(b.at));
+    const meFuture = meTodos.filter((it) => it.at && it.at.slice(0, 10) > today).sort((a, b) => a.at.localeCompare(b.at));
+    const meLater = meTodos.filter((it) => !it.at);
+    const sortedMe = [...meToday, ...meOver, ...meFuture].slice(0, 5);
+    const extraInfo = [
+      meFuture.length ? `예정 ${meFuture.length}건` : "",
+      meLater.length ? `나중에 ${meLater.length}건` : "",
+    ].filter(Boolean).join(" · ");
+    const meCardHtml = (sortedMe.length
       ? sortedMe.map((it) => {
           const isOver = it.at && it.at.slice(0, 10) < today;
+          const isToday = it.at && it.at.slice(0, 10) === today;
           return `<div class="row-item">
             <button type="button" class="btn sm" data-done-box="me" data-done-id="${it.id}" title="완료">✓</button>
             <div class="row-main">
               <div class="row-title">${esc(it.text)}</div>
               <div class="row-sub">
-                ${it.at ? `<span class="tag ${isOver ? "urgent" : ""}">${esc(shortDate(it.at))}${it.day ? "" : " " + esc(it.at.slice(11, 16))}</span>` : ""}
+                ${it.at ? `<span class="tag ${isOver ? "urgent" : (isToday ? "primary" : "")}">${esc(shortDate(it.at))}${it.day ? "" : " " + esc(it.at.slice(11, 16))}</span>` : ""}
                 ${it.pri === "high" ? `<span class="tag urgent">중요</span>` : ""}
               </div>
             </div>
+            <button type="button" class="btn sm" data-defer-box="me" data-defer-id="${it.id}" title="미루기 · 나중에">⏰</button>
           </div>`;
         }).join("")
-      : `<p class="meta" style="margin:4px 0;">남은 개인 할 일이 없어요.</p>`;
+      : `<p class="meta" style="margin:4px 0;">오늘 급한 개인 할 일이 없어요.</p>`)
+      + (extraInfo ? `<div class="small" style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);cursor:pointer;" id="sumExtraTodo">📌 ${esc(extraInfo)} 보관 중 →</div>` : "");
 
     // 직통 모드 전용: 회사 할 일 + 최근 회의
     let workCard = "";
@@ -553,8 +581,9 @@
             <button type="button" class="btn sm" data-done-box="work" data-done-id="${it.id}" title="완료">✓</button>
             <div class="row-main">
               <div class="row-title">${esc(it.text)}</div>
-              ${it.at ? `<div class="row-sub">${esc(shortDate(it.at))}</div>` : ""}
+              ${it.at ? `<div class="row-sub">${esc(shortDate(it.at))}</div>` : `<div class="row-sub"><span class="tag">나중에</span></div>`}
             </div>
+            <button type="button" class="btn sm" data-defer-box="work" data-defer-id="${it.id}" title="미루기 · 나중에">⏰</button>
           </div>`).join("")}</div>` : ""}
         ${topMeet.length ? `<div class="list" style="margin-top:6px;">${topMeet.map((m) => `
           <div class="row-item" style="cursor:pointer;" data-open-meet="${esc(m.id)}">
@@ -572,10 +601,9 @@
     const wosCat = cats.wos || {};
 
     host.innerHTML = `
-      ${relayBanner}
       <section class="card hero">
         <div class="card-head">
-          <h2 class="card-title">✨ 베니 비서 브리핑 ${modeLabel ? `<span class="tag primary">${esc(modeLabel)}</span>` : ""}</h2>
+          <h2 class="card-title">✨ 베니 비서 브리핑</h2>
           <span class="small">${esc((br.updated_at || s.updated || "").slice(5, 16))}</span>
         </div>
         <div style="font-size:16px;font-weight:800;letter-spacing:-0.01em;">${esc(br.headline || "현황을 확인했어요.")}</div>
@@ -661,6 +689,16 @@
       btn.addEventListener("click", () => toggleTodoDone(btn.dataset.doneBox, Number(btn.dataset.doneId), true, btn));
     });
 
+    host.querySelectorAll("[data-defer-id]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const box = btn.dataset.deferBox;
+        const id = Number(btn.dataset.deferId);
+        const list = box === "work" ? wkTodos : meTodos;
+        const item = list.find((x) => x.id === id);
+        if (item) openTodoDeferModal(box, item);
+      });
+    });
+
     host.querySelectorAll("[data-open-meet]").forEach((row) => {
       row.addEventListener("click", () => openMeetingDetail(row.dataset.openMeet));
     });
@@ -669,6 +707,8 @@
     if (bCal) bCal.addEventListener("click", openCalendarAddModal);
     const bTodo = $("sumGoTodo");
     if (bTodo) bTodo.addEventListener("click", () => switchPage("todo"));
+    const bExTodo = $("sumExtraTodo");
+    if (bExTodo) bExTodo.addEventListener("click", () => switchPage("todo"));
     const bMeet = $("goMeetingsBtn");
     if (bMeet) bMeet.addEventListener("click", () => switchPage("meetings"));
     const bKakao = $("sumKakaoBtn");
@@ -709,7 +749,39 @@
     const list = state.todoBox === "work" ? (s.todos_work || []) : (s.todos_me || []);
     const doneList = state.todoBox === "me" ? (s.todos_me_done || []) : [];
 
-    const sorted = [...list].sort((a, b) => (a.at || "9999").localeCompare(b.at || "9999"));
+    const dueList = list.filter((it) => it.at && it.at.slice(0, 10) <= today)
+      .sort((a, b) => {
+        const aT = a.at.slice(0, 10) === today ? 0 : 1;
+        const bT = b.at.slice(0, 10) === today ? 0 : 1;
+        return aT !== bT ? aT - bT : a.at.localeCompare(b.at);
+      });
+    const futureList = list.filter((it) => it.at && it.at.slice(0, 10) > today)
+      .sort((a, b) => a.at.localeCompare(b.at));
+    const laterList = list.filter((it) => !it.at);
+
+    const renderTodoRow = (it) => {
+      const isOver = it.at && it.at.slice(0, 10) < today;
+      const isToday = it.at && it.at.slice(0, 10) === today;
+      return `<div class="row-item">
+        <button type="button" class="btn sm" data-td-done="${it.id}" title="완료">✓</button>
+        <div class="row-main">
+          <div class="row-title">${esc(it.text)}</div>
+          <div class="row-sub">
+            ${it.at
+              ? `<span class="tag ${isOver ? "urgent" : (isToday ? "primary" : "")}">${esc(shortDate(it.at))}${it.day ? "" : " " + esc(it.at.slice(11, 16))}</span>`
+              : `<span class="tag">나중에</span>`}
+            ${it.pri === "high" ? `<span class="tag urgent">중요</span>` : ""}
+            ${it.repeat ? `<span class="tag">반복 ${esc(it.repeat)}</span>` : ""}
+            ${it.note ? `<div>${esc(it.note)}</div>` : ""}
+          </div>
+        </div>
+        <div class="row-acts">
+          <button type="button" class="btn sm" data-td-defer="${it.id}" title="미루기 · 나중에 · 수정">⏰</button>
+          <button type="button" class="btn sm danger" data-td-del="${it.id}" title="삭제">✕</button>
+        </div>
+      </div>`;
+    };
+
     const boxSwitch = state.mode === "direct"
       ? `<div class="pill-row" style="margin-top:0;margin-bottom:10px;">
            <button type="button" class="btn sm ${state.todoBox === "me" ? "primary" : ""}" data-tbox="me">🏠 개인 (${(s.todos_me || []).length})</button>
@@ -732,6 +804,10 @@
         </div>
       </div>`).join("") || `<p class="meta">등록된 14일 일정이 없어요.</p>`;
 
+    const wkndIso = nextWeekendIso();
+    const monIso = nextMondayIso();
+    const tmrwIso = addDaysIso(1);
+
     host.innerHTML = `
       <section class="card">
         <div class="card-head">
@@ -740,33 +816,28 @@
           <button type="button" class="btn sm" id="tdAiCap">✨ 한 번에 입력</button>
         </div>
         ${boxSwitch}
-        <form id="todoAddForm" class="input-row" style="margin-bottom:10px;">
-          <input id="todoTextIn" type="text" placeholder="새 할 일 입력…" style="flex:1;min-width:160px;" maxlength="140" required>
-          <input id="todoDateIn" type="date" value="${today}" title="기한 날짜">
-          <label class="small" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
-            <input id="todoPriIn" type="checkbox"> 중요
-          </label>
-          <button type="submit" class="btn primary sm" id="todoAddBtn">추가</button>
+        <form id="todoAddForm" style="margin-bottom:10px;">
+          <div class="input-row">
+            <input id="todoTextIn" type="text" placeholder="새 할 일 입력…" style="flex:1;min-width:160px;" maxlength="140" required>
+            <input id="todoDateIn" type="date" value="${today}" title="기한 날짜 (비우면 '나중에' 보관)">
+            <label class="small" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+              <input id="todoPriIn" type="checkbox"> 중요
+            </label>
+            <button type="submit" class="btn primary sm" id="todoAddBtn">추가</button>
+          </div>
+          <div class="pill-row" style="margin-top:6px;">
+            <span class="small" style="align-self:center;">언제:</span>
+            <button type="button" class="btn sm" data-add-preset="${today}">오늘</button>
+            <button type="button" class="btn sm" data-add-preset="${tmrwIso}">내일</button>
+            <button type="button" class="btn sm" data-add-preset="${wkndIso}">이번 주말(${esc(shortDate(wkndIso))})</button>
+            <button type="button" class="btn sm" data-add-preset="${monIso}">다음 주</button>
+            <button type="button" class="btn sm tonal" data-add-preset="">📌 나중에(기한 없음)</button>
+          </div>
         </form>
-        <div class="list">
-          ${sorted.map((it) => {
-            const isOver = it.at && it.at.slice(0, 10) < today;
-            const isToday = it.at && it.at.slice(0, 10) === today;
-            return `<div class="row-item">
-              <button type="button" class="btn sm" data-td-done="${it.id}" title="완료">✓</button>
-              <div class="row-main">
-                <div class="row-title">${esc(it.text)}</div>
-                <div class="row-sub">
-                  ${it.at ? `<span class="tag ${isOver ? "urgent" : (isToday ? "primary" : "")}">${esc(shortDate(it.at))}${it.day ? "" : " " + esc(it.at.slice(11, 16))}</span>` : ""}
-                  ${it.pri === "high" ? `<span class="tag urgent">중요</span>` : ""}
-                  ${it.repeat ? `<span class="tag">반복 ${esc(it.repeat)}</span>` : ""}
-                  ${it.note ? `<div>${esc(it.note)}</div>` : ""}
-                </div>
-              </div>
-              <button type="button" class="btn sm danger" data-td-del="${it.id}" title="삭제">✕</button>
-            </div>`;
-          }).join("") || `<p class="meta">남은 할 일이 없어요.</p>`}
-        </div>
+        ${dueList.length ? `<div class="todo-sec-hdr">🔥 오늘 · 밀린 일 <span class="tag">${dueList.length}</span></div><div class="list">${dueList.map(renderTodoRow).join("")}</div>` : ""}
+        ${futureList.length ? `<div class="todo-sec-hdr">📆 예정된 할 일 <span class="tag primary">${futureList.length}</span></div><div class="list">${futureList.map(renderTodoRow).join("")}</div>` : ""}
+        ${laterList.length ? `<div class="todo-sec-hdr">📌 나중에 · 잊지 않기 <span class="tag">${laterList.length}</span></div><div class="list">${laterList.map(renderTodoRow).join("")}</div>` : ""}
+        ${!list.length ? `<p class="meta">남은 할 일이 없어요.</p>` : ""}
         ${doneList.length ? `<details style="margin-top:10px;"><summary class="small" style="cursor:pointer;">최근 완료 (${doneList.length})</summary>
           <div class="list" style="margin-top:6px;">
             ${doneList.slice().reverse().map((it) => `
@@ -789,6 +860,12 @@
     host.querySelectorAll("[data-tbox]").forEach((b) => {
       b.addEventListener("click", () => { state.todoBox = b.dataset.tbox; renderTodo(); });
     });
+    host.querySelectorAll("[data-add-preset]").forEach((b) => {
+      b.addEventListener("click", () => {
+        $("todoDateIn").value = b.dataset.addPreset;
+        toast(b.dataset.addPreset ? `기한을 ${shortDate(b.dataset.addPreset)}로 맞췄어요` : "📌 나중에(기한 없음)로 맞췄어요", 1500);
+      });
+    });
     $("tdAiOrg").addEventListener("click", () => openOrganizeModal(state.todoBox));
     $("tdAiCap").addEventListener("click", openCaptureModal);
     $("tdAddCal").addEventListener("click", openCalendarAddModal);
@@ -800,17 +877,18 @@
       const btn = $("todoAddBtn");
       btn.disabled = true;
       try {
+        const atVal = $("todoDateIn").value || "";
         const res = await sendCmd("todo_add", {
           box: state.todoBox,
           text: txt,
-          at: $("todoDateIn").value || "",
-          day: true,
+          at: atVal,
+          day: Boolean(atVal),
           pri: $("todoPriIn").checked ? "high" : "",
         });
         if (res && res.ok) {
           $("todoTextIn").value = "";
           $("todoPriIn").checked = false;
-          toast("할 일을 추가했어요");
+          toast(atVal ? "할 일을 추가했어요" : "📌 '나중에 · 잊지 않기'에 담았어요");
           await loadSnapshot(true);
         } else {
           toast((res && res.error) || "추가 실패", 3500);
@@ -821,6 +899,12 @@
 
     host.querySelectorAll("[data-td-done]").forEach((b) => {
       b.addEventListener("click", () => toggleTodoDone(state.todoBox, Number(b.dataset.tdDone), true, b));
+    });
+    host.querySelectorAll("[data-td-defer]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const it = list.find((x) => x.id === Number(b.dataset.tdDefer));
+        if (it) openTodoDeferModal(state.todoBox, it);
+      });
     });
     host.querySelectorAll("[data-td-reopen]").forEach((b) => {
       b.addEventListener("click", () => toggleTodoDone("me", Number(b.dataset.tdReopen), false, b));
@@ -835,6 +919,74 @@
           else toast((res && res.error) || "삭제 실패");
         } catch (err) { toast(err.message); }
         b.disabled = false;
+      });
+    });
+  }
+
+  function openTodoDeferModal(box, item) {
+    const today = todayIso();
+    const tmrw = addDaysIso(1);
+    const wknd = nextWeekendIso();
+    const mon = nextMondayIso();
+    const curDate = (item.at || "").slice(0, 10);
+
+    openModal("⏰ 할 일 미루기 · 수정", `
+      <div style="font-weight:700;margin-bottom:6px;">${esc(item.text)}</div>
+      <div class="small" style="margin-bottom:10px;">
+        현재: ${item.at ? esc(shortDate(item.at)) : "📌 나중에 (기한 없음)"}
+      </div>
+      <div class="pill-row" style="margin-top:0;margin-bottom:12px;">
+        <button type="button" class="btn sm tonal" data-qdate="${today}">📅 오늘</button>
+        <button type="button" class="btn sm tonal" data-qdate="${tmrw}">🌅 내일</button>
+        <button type="button" class="btn sm primary" data-qdate="${wknd}">🛋 이번 주말(${esc(shortDate(wknd))})</button>
+        <button type="button" class="btn sm tonal" data-qdate="${mon}">📆 다음 주(${esc(shortDate(mon))})</button>
+        <button type="button" class="btn sm" data-qdate="">📌 나중에 (기한 없음)</button>
+      </div>
+      <p class="small" style="margin:0 0 12px;">※ <b>📌 나중에</b>로 두면 밀린 일·브리핑 알림에서 빠지고, 할 일 탭 아래 '나중에 · 잊지 않기' 목록에 안전하게 남아요.</p>
+      <form id="tdEditForm" style="display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px;">
+        <input id="teText" type="text" value="${esc(item.text)}" maxlength="140" required>
+        <div class="input-row">
+          <input id="teDate" type="date" value="${esc(curDate)}" style="flex:1;" title="직접 날짜 지정 (비우면 나중에)">
+          <label class="small" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+            <input id="tePri" type="checkbox" ${item.pri === "high" ? "checked" : ""}> 중요
+          </label>
+        </div>
+        <input id="teNote" type="text" value="${esc(item.note || "")}" placeholder="메모 (선택)" maxlength="240">
+        <button type="submit" class="btn primary" id="teSaveBtn">저장</button>
+      </form>
+    `, (root) => {
+      const applyUpdate = async (payload, okMsg) => {
+        try {
+          const r = await sendCmd("todo_update", Object.assign({ box, id: item.id }, payload));
+          if (r && r.ok) {
+            toast(okMsg || "반영했어요 ✓");
+            closeModal();
+            await loadSnapshot(true);
+          } else {
+            toast((r && r.error) || "변경하지 못했어요", 3500);
+          }
+        } catch (err) { toast(err.message, 3500); }
+      };
+      root.querySelectorAll("[data-qdate]").forEach((b) => {
+        b.addEventListener("click", () => {
+          b.disabled = true;
+          const d = b.dataset.qdate;
+          const msg = d ? `${shortDate(d)}로 미뤘어요 ✓` : "📌 '나중에 · 잊지 않기'로 옮겼어요 ✓";
+          applyUpdate({ at: d, day: Boolean(d) }, msg);
+        });
+      });
+      $("tdEditForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        $("teSaveBtn").disabled = true;
+        const d = $("teDate").value || "";
+        await applyUpdate({
+          text: $("teText").value.trim(),
+          at: d,
+          day: Boolean(d),
+          pri: $("tePri").checked ? "high" : "",
+          note: $("teNote").value.trim(),
+        }, "할 일을 수정했어요 ✓");
+        $("teSaveBtn").disabled = false;
       });
     });
   }
@@ -854,7 +1006,7 @@
       <section class="card">
         <div class="card-head">
           <h2 class="card-title">💬 베니 비서와 대화</h2>
-          ${Native && Native.openNativeChat ? `<button type="button" class="btn tonal sm" id="chatOpenNative">🎤 음성·화면 제어</button>` : `<span class="small">${state.mode === "direct" ? "집 PC 직통" : "비-NDA 안전 중계"}</span>`}
+          ${Native && Native.openNativeChat ? `<button type="button" class="btn tonal sm" id="chatOpenNative">🎤 음성·화면 제어</button>` : `<span class="small">${state.mode === "direct" ? "직통" : "🔒 보안 모드 적용중"}</span>`}
         </div>
         <div class="pill-row" style="margin-top:0;margin-bottom:10px;">
           ${chips.map((c) => `<button type="button" class="btn sm tonal" data-qchip="${esc(c)}">${esc(c)}</button>`).join("")}

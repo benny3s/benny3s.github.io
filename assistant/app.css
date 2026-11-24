@@ -114,8 +114,38 @@ body {
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  flex-shrink: 0;
 }
+
+@media (max-width: 600px) {
+  .topbar {
+    gap: 5px;
+    padding: max(8px, env(safe-area-inset-top, 0px)) 10px 8px;
+  }
+  .brand { gap: 6px; }
+  .brand-mark { width: 28px; height: 28px; font-size: 14px; border-radius: 8px; }
+  .brand-title { font-size: 15px; }
+  .conn-pill { padding: 2px 7px; font-size: 11px; }
+  .top-actions { gap: 4px; }
+  .top-actions .btn.sm { padding: 4px 8px; min-height: 30px; font-size: 12px; }
+  .top-actions .btn.icon-only { width: 32px; }
+  .top-actions .lbl { display: none; }
+}
+
+.todo-sec-hdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+.todo-sec-hdr:first-child { margin-top: 2px; padding-top: 0; border-top: 0; }
+.row-acts { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 
 .body-wrap {
   flex: 1;
