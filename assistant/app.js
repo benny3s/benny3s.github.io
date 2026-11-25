@@ -297,21 +297,8 @@
       setConn("direct", "직통", "집 PC·폰 직통 연결 (전체 기능)");
       return "direct";
     }
-    // benny3s.github.io 에서도 집 PC·폰(Tailscale ON)이면 1.4초 핑으로 자동 직통 승격
-    try {
-      const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 1400);
-      const r = await fetch(TS_BASE + "/ping", { mode: "cors", cache: "no-store", signal: ac.signal });
-      clearTimeout(timer);
-      if (r.ok) {
-        state.mode = "direct";
-        state.directBase = TS_BASE;
-        setConn("direct", "직통", "Tailscale 직통 연결 (전체 기능)");
-        return "direct";
-      }
-    } catch (_) {
-      // 회사 PC / 외부망: Firebase 보안 중계 모드로 전환
-    }
+    // 11-25: benny3s.github.io 에서 집 PC 다리로 직통 승격하던 길은 없앴다 — 다리가 github.io 전체(소개팅 · 게임 등)를
+    // 믿게 돼 그 중 한 페이지만 뚫려도 회의록 · 승인을 건드릴 수 있었다. 직통은 집 PC 다리 주소(…ts.net:8766/web/)로만.
     state.mode = "relay";
     setConn("relay", "🔒 보안 모드 적용중", "회사 PC 보안 중계 · 회의록·회사 할 일 원문 제외");
     return "relay";
@@ -664,7 +651,7 @@
         if (!a) return;
         if (a.kind === "ai_organize") openOrganizeModal(a.arg === "work" && state.mode === "direct" ? "work" : "me");
         else if (a.kind === "kakao_scan") openKakaoModal(true);
-        else if (a.kind === "ask") { switchPage("chat"); sendChatText(a.arg); }
+        else if (a.kind === "ask") askAssistant(a.arg);
         else if (a.kind === "alert_cat" || a.kind === "approvals") openAlertsModal();
       });
     });
@@ -1005,9 +992,12 @@
     host.innerHTML = `
       <section class="card">
         <div class="card-head">
-          <h2 class="card-title">💬 베니 비서와 대화</h2>
-          ${Native && Native.openNativeChat ? `<button type="button" class="btn tonal sm" id="chatOpenNative">🎤 음성·화면 제어</button>` : `<span class="small">${state.mode === "direct" ? "직통" : "🔒 보안 모드 적용중"}</span>`}
+          <h2 class="card-title">베니 비서와 대화</h2>
+          ${Native && Native.openNativeChat ? `<button type="button" class="btn tonal sm" id="chatOpenNative">폰 비서로 열기</button>` : `<span class="small">${state.mode === "direct" ? "직통" : "보안 모드"}</span>`}
         </div>
+        <p class="small" style="margin:0 0 8px;">${state.mode === "direct"
+          ? "집 PC 비서는 파일을 읽고 답만 합니다. 할 일 · 일정 넣기는 '입력' 창으로 열어 드려요."
+          : "보안 모드: 집 PC 파일은 안 읽고 답합니다. 이 대화는 Firebase 를 거치니 회사 내용은 적지 마세요."}</p>
         <div class="pill-row" style="margin-top:0;margin-bottom:10px;">
           ${chips.map((c) => `<button type="button" class="btn sm tonal" data-qchip="${esc(c)}">${esc(c)}</button>`).join("")}
         </div>
@@ -1037,10 +1027,38 @@
     });
   }
 
+  /* 대화 기록: 이 탭(sessionStorage)에만 — 화면을 다시 열어도 앞 대화가 남게 (탭을 닫으면 지워짐) */
+  const CHAT_KEY = "benny_chat_v1";
+  function saveChat() {
+    try { sessionStorage.setItem(CHAT_KEY, JSON.stringify(state.chat.slice(-40))); } catch (_) {}
+  }
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(CHAT_KEY) || "null");
+    if (Array.isArray(saved) && saved.length) state.chat = saved.filter((m) => m && typeof m.text === "string").slice(-40);
+  } catch (_) {}
+
+  /** 요약의 '비서에게 묻기' 같은 질문: 폰 앱이면 폰 비서로, 아니면 웹 대화로 */
+  function askAssistant(text) {
+    if (Native && Native.askNative) { Native.askNative(String(text || "")); return; }
+    switchPage("chat");
+    sendChatText(text);
+  }
+
   async function sendChatText(text) {
     if (!text || state.chatBusy) return;
     state.chat.push({ role: "me", text });
+    // 할 일 · 일정 넣기는 읽기 전용 PC 비서가 못 한다 → 넣기 창을 열어 바로 분해
+    if (/(할\s*일|일정|약속|캘린더)/.test(text) && /(추가|넣어|등록|잡아|적어)/.test(text)) {
+      state.chat.push({ role: "bot", text: "할 일 · 일정 넣기 창을 열었어요. 나눈 항목을 확인하고 '선택 항목 저장'을 눌러 주세요." });
+      saveChat();
+      renderChat();
+      openCaptureModal();
+      const ta = $("capText");
+      if (ta) { ta.value = text; const b = $("capParseBtn"); if (b) b.click(); }
+      return;
+    }
     state.chatBusy = true;
+    saveChat();
     renderChat();
     try {
       let reply = "";
@@ -1053,9 +1071,10 @@
       }
       state.chat.push({ role: "bot", text: reply });
     } catch (e) {
-      state.chat.push({ role: "bot", text: "⚠ " + (e.message || "응답 실패") });
+      state.chat.push({ role: "bot", text: "응답 실패: " + (e.message || "집 PC 에 닿지 않아요") });
     } finally {
       state.chatBusy = false;
+      saveChat();
       renderChat();
     }
   }
@@ -1962,8 +1981,20 @@
 
   /* ── 전역 버튼 · 내비게이션 연결 */
   document.querySelectorAll(".nav-btn").forEach((btn) => {
-    btn.addEventListener("click", () => switchPage(btn.dataset.page));
+    btn.addEventListener("click", () => {
+      // 11-25 베니 님 "채팅 보내고 뒤로 가니까 앞에 대화가 사라져서" · "할 일 추가를 못 한대":
+      // 폰 앱 안에서는 '대화' 가 폰 비서(할 일 · 일정 · 폰 도구, 대화 기록 유지)로 간다. 웹 대화는 PC 브라우저용.
+      if (btn.dataset.page === "chat" && Native && Native.openNativeChat) { Native.openNativeChat(); return; }
+      switchPage(btn.dataset.page);
+    });
   });
+
+  /* ── 폰 앱의 뒤로 가기: 열린 창 → 요약 순서로 닫고, 더 닫을 게 없으면 false (앱이 뒤로 보냄) */
+  window.bennyBack = function () {
+    if (modalDlg && modalDlg.open) { modalDlg.close(); return true; }
+    if (state.page !== "summary") { switchPage("summary"); return true; }
+    return false;
+  };
   $("btnRefresh").addEventListener("click", async () => {
     if (state.mode === "relay") {
       toast("집 PC 최신 현황 요청 중…");
