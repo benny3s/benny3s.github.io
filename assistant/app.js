@@ -14,7 +14,7 @@
   };
   const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
   const FS = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents/";
-  const ADMIN_COL = "adminOnly";
+  const RELAY_COL = "assistantRelay"; // 11-26: adminOnly(소개팅 관리자 자리)에서 떼어 옴 — 앱은 읽기와 요청 만들기만 (규칙)
   const SNAP_DOC = "assistant_snap";
 
   const Native = window.BennyNative || null;
@@ -317,7 +317,7 @@
         snap = await directFetchJson("/web/snapshot", { timeout: 15000 });
         setConn("direct", "직통", "집 PC·폰 직통 연결 (전체 기능)");
       } else {
-        const doc = await fsReq(`${ADMIN_COL}/${SNAP_DOC}`);
+        const doc = await fsReq(`${RELAY_COL}/${SNAP_DOC}`);
         const raw = doc && doc.fields && doc.fields.json && doc.fields.json.stringValue;
         if (!raw) throw new Error("집 PC 스냅샷이 아직 도착하지 않았어요. 집 PC 가 켜져 있는지 확인해 주세요.");
         snap = JSON.parse(raw);
@@ -361,9 +361,9 @@
       }
       return res;
     }
-    // Relay 모드: adminOnly/assistant_req_<id> 작성 후 집 PC 회신 폴링
+    // Relay 모드: assistantRelay/assistant_req_<id> 작성 후 집 PC 회신 폴링
     const reqId = "assistant_req_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
-    await fsReq(`${ADMIN_COL}/${reqId}`, {
+    await fsReq(`${RELAY_COL}/${reqId}`, {
       method: "PATCH",
       qs: "?updateMask.fieldPaths=op&updateMask.fieldPaths=payload&updateMask.fieldPaths=status",
       body: {
@@ -377,7 +377,7 @@
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 1200));
-      const d = await fsReq(`${ADMIN_COL}/${reqId}`);
+      const d = await fsReq(`${RELAY_COL}/${reqId}`);
       const f = (d && d.fields) || {};
       const st = (f.status && f.status.stringValue) || "";
       if (st === "done" || st === "error") {
