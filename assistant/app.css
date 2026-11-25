@@ -180,6 +180,12 @@ body {
   padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px));
 }
 
+/* 글을 쓰는 동안(키보드가 떠 있는 동안) 바닥 탭 줄이 입력칸을 덮지 않게 숨김 (11-25) */
+@media (max-width: 859px) {
+  body.kb-open .bottom-nav { display: none; }
+  body.kb-open .main { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+}
+
 .nav-btn {
   flex: 1;
   display: flex;

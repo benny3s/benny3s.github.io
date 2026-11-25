@@ -1995,6 +1995,29 @@
     if (state.page !== "summary") { switchPage("summary"); return true; }
     return false;
   };
+
+  /* ── 11-25 베니 님 "키보드는 올라오는데 입력칸은 안 올라와서 내 글이 안 보여":
+     폰은 키보드가 뜨면 화면이 줄고, 바닥에 붙은 탭 줄이 키보드 바로 위로 따라 올라와 입력칸을 덮었다.
+     글을 쓰는 동안엔 탭 줄을 숨기고, 입력칸을 화면 가운데로 끌어온다 (키보드가 다 뜬 뒤 한 번 더). */
+  const isTyping = (el) => !!el && (el.isContentEditable || el.tagName === "TEXTAREA" ||
+    (el.tagName === "INPUT" && !/^(button|submit|checkbox|radio|range|color|file|reset|image)$/i.test(el.type || "")) ||
+    el.tagName === "SELECT");
+  const bringIntoView = () => {
+    const el = document.activeElement;
+    if (!isTyping(el)) return;
+    try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (_) { el.scrollIntoView(); }
+  };
+  document.addEventListener("focusin", (e) => {
+    if (!isTyping(e.target)) return;
+    document.body.classList.add("kb-open");
+    setTimeout(bringIntoView, 250);
+    setTimeout(bringIntoView, 650);
+  });
+  document.addEventListener("focusout", () => {
+    setTimeout(() => { if (!isTyping(document.activeElement)) document.body.classList.remove("kb-open"); }, 150);
+  });
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", () => setTimeout(bringIntoView, 80));
+  window.addEventListener("resize", () => setTimeout(bringIntoView, 80));
   $("btnRefresh").addEventListener("click", async () => {
     if (state.mode === "relay") {
       toast("집 PC 최신 현황 요청 중…");
