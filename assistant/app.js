@@ -395,6 +395,7 @@
   function showLoginView() {
     $("loginView").hidden = false;
     $("appPages").hidden = true;
+    $("btnLogout").hidden = true;
     setConn("relay", "로그인 필요");
   }
 
@@ -402,6 +403,7 @@
     $("loginView").hidden = true;
     $("appPages").hidden = false;
     const isDirect = state.mode === "direct";
+    $("btnLogout").hidden = isDirect;   // 로그인은 중계(회사 PC · 밖)에만 있다
     $("navMeetingsSide").hidden = !isDirect;
     $("navMeetingsBottom").hidden = !isDirect;
     if (Native) {
@@ -1175,7 +1177,7 @@
         : "공부 약속을 정해두면 매일 한 번 알려드려요";
       habitHtml = `<section class="card">
         <div class="card-head">
-          <h2 class="card-title">🗓 이번 주 ${Number(h.done || 0)}/${Number(h.goal || 5)}일 ${h.streak ? `<span class="tag ok">${h.streak}일 연속</span>` : ""}</h2>
+          <h2 class="card-title">🗓 이번 주 ${Number(h.done || 0)}/${Number(h.goal || 5)}일 ${Number(h.streak) ? `<span class="tag ok">${Number(h.streak)}일 연속</span>` : ""}</h2>
           <button type="button" class="btn sm" id="cGoalBtn">목표 ${Number(h.goal || 5)}일</button>
           <button type="button" class="btn sm" id="cPlanBtn">약속 수정</button>
         </div>
@@ -1254,7 +1256,7 @@
         ${isReview ? `
           <div class="pill-row">
             ${grades.map(([g, lbl]) => {
-              const iv = ivls[g] ? ` (${ivls[g]}일)` : "";
+              const iv = Number(ivls[g]) ? ` (${Number(ivls[g])}일)` : "";
               return `<button type="button" class="btn sm ${g === "good" ? "primary" : ""}" data-grade="${g}">${lbl}${iv}</button>`;
             }).join("")}
           </div>` : ""}
@@ -1268,10 +1270,12 @@
            <div class="card-head"><h2 class="card-title">📚 과목 진도</h2></div>
            <div class="list">
              ${subs.map((s) => {
-               const pct = s.total > 0 ? Math.round((s.done / s.total) * 100) : 0;
+               const sDone = Number(s.done) || 0;
+               const sTotal = Number(s.total) || 0;
+               const pct = sTotal > 0 ? Math.round((sDone / sTotal) * 100) : 0;
                return `<div class="row-item">
                  <div class="row-main">
-                   <div class="row-title">${esc(s.title)} <span class="small">${s.done}/${s.total} (${pct}%)</span></div>
+                   <div class="row-title">${esc(s.title)} <span class="small">${sDone}/${sTotal} (${pct}%)</span></div>
                    ${s.next_title ? `<div class="row-sub">다음: ${esc(s.next_title)}</div>` : ""}
                  </div>
                  ${isDirect && s.id ? `<button type="button" class="btn sm" data-sub-open="${esc(s.id)}">열기 ↗</button>` : ""}
@@ -1281,7 +1285,13 @@
          </section>`
       : "";
 
-    panel.innerHTML = habitHtml + routineHtml + quizHtml + subHtml;
+    // 회사 PC 중계에는 설계 과목 카드 · 수업 제목을 싣지 않는다 (11-25) — 없어진 게 아니라는 한 줄
+    const hidN = Number(c.cards_hidden) || 0;
+    const hidHtml = (!isDirect && (hidN > 0 || (nextL && nextL.hidden)))
+      ? `<p class="small" style="margin:2px 4px 10px;">🔒 설계 과목${hidN > 0 ? ` 카드 ${hidN}개` : ""}는 회사 PC 에 보내지 않아요. 폰이나 집 PC 의 캠퍼스에서 이어 가세요.</p>`
+      : "";
+
+    panel.innerHTML = habitHtml + routineHtml + quizHtml + hidHtml + subHtml;
 
     // 이벤트 연결
     if (h) {
@@ -1604,7 +1614,7 @@
                 : stTag}
               <div class="row-main">
                 <div class="row-title">${esc(m.title || m.id)}</div>
-                <div class="row-sub">${esc(String(m.created || "").slice(0, 16))}${m.duration ? ` · ${Math.round(m.duration / 60)}분` : ""}${m.inbox_left ? ` · 미정리 ${m.inbox_left}건` : ""}</div>
+                <div class="row-sub">${esc(String(m.created || "").slice(0, 16))}${m.duration ? ` · ${Math.round(m.duration / 60)}분` : ""}${Number(m.inbox_left) ? ` · 미정리 ${Number(m.inbox_left)}건` : ""}</div>
                 ${m.summary ? `<div class="row-sub" style="color:var(--ink-2);">${esc(String(m.summary).slice(0, 110))}</div>` : ""}
               </div>
             </div>`;
@@ -2000,6 +2010,8 @@
     try {
       const app = await ensureLoginKit();
       const tok = await window.bennyAdminLogin(app, pw);
+      // 이 화면에서 한 로그인은 탭을 닫으면 끝난다 — 회사 PC 브라우저에 관리자 세션이 남지 않게 (11-25)
+      try { await app.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION); } catch (_) {}
       await app.auth().signInWithCustomToken(tok);
       if (window.bennyAdminEnroll) window.bennyAdminEnroll(app);
       $("loginPw").value = "";
@@ -2058,6 +2070,18 @@
     }
     await loadSnapshot(false);
     toast("새로고침했어요");
+  });
+  $("btnLogout").addEventListener("click", async () => {
+    // 로그아웃 (11-25): 이 브라우저의 관리자 세션을 지운다 (같은 주소의 포털도 같이 로그아웃됨)
+    $("btnLogout").disabled = true;
+    try { const app = await ensureFirebase(); await app.auth().signOut(); } catch (_) {}
+    try { sessionStorage.removeItem(CHAT_KEY); } catch (_) {}
+    state.snap = null;
+    state.chat = state.chat.slice(0, 1);
+    readyP = null;
+    $("btnLogout").disabled = false;
+    showLoginView();
+    toast("로그아웃했어요");
   });
   $("btnCapture").addEventListener("click", openCaptureModal);
   $("btnAlerts").addEventListener("click", openAlertsModal);
