@@ -483,8 +483,22 @@
          </div>`
       : "";
 
+    // 11-25 베니 님 "승인 처리가 안 되는데?": 목록이 늘 비어 있었고(PC 가 다른 이름표를 찾음) 단추 값도 승인 모듈과 달랐다.
+    // 단추는 관제판 ✅ 승인 탭과 같게 — 기기: 하루 · 1주 · 1달 · 계속 · 거절, 노래 만들기: 지금 · 오늘 밤 · 거절.
+    const SVC_NAME = { music: "Music Lab", musicgen: "Music Lab · 노래 만들기", game: "아케이드" };
+    const PERIODS = [["day", "하루"], ["week", "1주"], ["month", "1달"], ["always", "계속"]];
+    const apprBtns = (ap, i) => {
+      const b = (act, label, primary) =>
+        `<button type="button" class="btn ${primary ? "primary" : "tonal"} sm" data-appr-i="${i}" data-appr-act="${act}" data-appr-label="${esc(label)}">${esc(label)}</button>`;
+      const deny = `<button type="button" class="btn danger sm" data-appr-i="${i}" data-appr-act="deny" data-appr-label="거절">거절</button>`;
+      if (ap.svc === "musicgen") {
+        return b("now", "지금", !ap.when || ap.when === "now") + b("night", "오늘 밤", ap.when === "night") + deny;
+      }
+      const want = ap.want || "always";
+      return PERIODS.map(([k, label]) => b(k, label, k === want)).join("") + deny;
+    };
     const apprCard = approvals.length
-      ? `<section class="card" style="border-color:rgba(220,38,38,.3);">
+      ? `<section class="card" id="apprCard" style="border-color:rgba(220,38,38,.3);scroll-margin-top:64px;">
            <div class="card-head">
              <h2 class="card-title">🛂 승인 대기 <span class="tag urgent">${approvals.length}</span></h2>
            </div>
@@ -492,13 +506,9 @@
              ${approvals.map((ap, i) => `
                <div class="row-item">
                  <div class="row-main">
-                   <div class="row-title">${esc(ap.title || ap.name || ap.svc || "요청")}</div>
-                   <div class="row-sub">${esc(ap.detail || ap.sub || ap.svc || "")}</div>
-                   <div class="pill-row" style="margin-top:6px;">
-                     <button type="button" class="btn primary sm" data-appr-i="${i}" data-appr-act="approve" data-appr-perm="once">1회 허용</button>
-                     <button type="button" class="btn tonal sm" data-appr-i="${i}" data-appr-act="approve" data-appr-perm="always">영구 허용</button>
-                     <button type="button" class="btn danger sm" data-appr-i="${i}" data-appr-act="deny" data-appr-perm="">거절</button>
-                   </div>
+                   <div class="row-title">${esc(ap.name || "이름 없음")} <span class="tag">${esc(SVC_NAME[ap.svc] || ap.svc || "")}</span>${ap.what ? ` <span class="tag">${esc(ap.what)}</span>` : ""}</div>
+                   <div class="row-sub">${esc([ap.detail, ap.svc === "musicgen" ? ap.status : (ap.want ? "바라는 기간 " + (Object.fromEntries(PERIODS)[ap.want] || "계속") : "")].filter(Boolean).join(" · "))}</div>
+                   <div class="pill-row" style="margin-top:6px;">${apprBtns(ap, i)}</div>
                  </div>
                </div>
              `).join("")}
@@ -652,7 +662,12 @@
         if (a.kind === "ai_organize") openOrganizeModal(a.arg === "work" && state.mode === "direct" ? "work" : "me");
         else if (a.kind === "kakao_scan") openKakaoModal(true);
         else if (a.kind === "ask") askAssistant(a.arg);
-        else if (a.kind === "alert_cat" || a.kind === "approvals") openAlertsModal();
+        else if (a.kind === "approvals") {
+          const card = $("apprCard");   // 승인 단추는 알림함이 아니라 승인 대기 카드에 있다
+          if (card) card.scrollIntoView({ block: "start" });   // 부드러운 스크롤은 WebView 가 가끔 멈춰 바로 옮김
+          else { toast("승인 목록을 다시 받는 중…"); loadSnapshot(true); }
+        }
+        else if (a.kind === "alert_cat") openAlertsModal();
       });
     });
 
@@ -660,15 +675,21 @@
       btn.addEventListener("click", async () => {
         const ap = approvals[Number(btn.dataset.apprI)];
         if (!ap) return;
-        btn.disabled = true;
+        const row = btn.closest(".pill-row");
+        const all = row ? row.querySelectorAll("button") : [btn];
+        all.forEach((x) => { x.disabled = true; });   // 한 요청에 두 번 보내지 않게 그 줄 단추를 다 잠금
         try {
           const res = await sendCmd("access_decide", {
             svc: ap.svc || "", id: ap.id || "",
-            action: btn.dataset.apprAct, perm: btn.dataset.apprPerm,
+            action: btn.dataset.apprAct, perm: ap.perm || "",
           });
-          toast(res.ok ? "승인 처리했어요" : (res.error || "처리 실패"));
-        } catch (e) { toast(e.message); }
-        btn.disabled = false;
+          if (res && res.ok !== false) {
+            toast(`${ap.name || "요청"} · ${btn.dataset.apprLabel || "처리"} 했어요`);
+            return;   // 성공하면 sendCmd 가 현황을 다시 받아 카드를 새로 그림
+          }
+          toast((res && res.error) || "처리 실패", 3500);
+        } catch (e) { toast(e.message || "처리 실패", 3500); }
+        all.forEach((x) => { x.disabled = false; });
       });
     });
 
