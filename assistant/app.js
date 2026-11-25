@@ -1048,13 +1048,17 @@
     });
   }
 
-  /* 대화 기록: 이 탭(sessionStorage)에만 — 화면을 다시 열어도 앞 대화가 남게 (탭을 닫으면 지워짐) */
+  /* 대화 기록: 이 탭(sessionStorage)에만 — 화면을 다시 열어도 앞 대화가 남게 (탭을 닫으면 지워짐).
+     폰 앱 안(WebView)에서는 저장하지 않는다 — 답에 회사 할 일 · 회의 글이 섞이면 폰 저장소에 남을 수 있어서 (11-25 보안 검토).
+     폰에서 '대화'는 어차피 폰 비서로 간다. */
   const CHAT_KEY = "benny_chat_v1";
   function saveChat() {
+    if (Native) return;
     try { sessionStorage.setItem(CHAT_KEY, JSON.stringify(state.chat.slice(-40))); } catch (_) {}
   }
   try {
-    const saved = JSON.parse(sessionStorage.getItem(CHAT_KEY) || "null");
+    if (Native) sessionStorage.removeItem(CHAT_KEY);
+    const saved = Native ? null : JSON.parse(sessionStorage.getItem(CHAT_KEY) || "null");
     if (Array.isArray(saved) && saved.length) state.chat = saved.filter((m) => m && typeof m.text === "string").slice(-40);
   } catch (_) {}
 
@@ -1163,7 +1167,9 @@
     let habitHtml = "";
     if (h) {
       const days = h.days || [];
-      const dots = days.map((d) => `<span class="wdot ${d.done ? "on" : (d.future ? "future" : "")}">${esc(d.label || "")}</span>`).join("");
+      // 공부방 habit.days = 월~일 7칸 {d: 날짜, on: true · false · null(오늘 뒤)} (11-25 옛 이름 done · future · label 을 읽어 늘 빈 점이었음)
+      const WD = ["월", "화", "수", "목", "금", "토", "일"];
+      const dots = days.map((d, i) => `<span class="wdot ${d.on === true ? "on" : (d.on === null ? "future" : "")}">${WD[i] || ""}</span>`).join("");
       const planLine = h.plan
         ? `약속: ${esc(h.plan)}${h.at ? ` (${esc(h.at)})` : ""}`
         : "공부 약속을 정해두면 매일 한 번 알려드려요";
@@ -1637,9 +1643,15 @@
     openModal("회의 상세", `<p class="meta"><span class="spinner"></span> 불러오는 중…</p>`);
     try {
       const v = await directFetchJson("/meeting/view/" + encodeURIComponent(mid));
-      const pts = v.points || [];
+      // /meeting/view 모양 (11-25 맞춤): summary · decisions = 글 목록, unclear = 모호한 말 목록, transcript = [{t, spk, text}]
+      const lines = (x) => (Array.isArray(x) ? x.map((p) => (typeof p === "string" ? p : (p && (p.text || p.issue)) || "")).filter(Boolean) : (x ? [String(x)] : []));
+      const sumText = lines(v.summary).join("\n");
+      const pts = lines(v.decisions && v.decisions.length ? v.decisions : v.points);
       const todos = v.todos || [];
-      const unsure = v.unsure || [];
+      const unsure = v.unclear || v.unsure || [];
+      const trText = Array.isArray(v.transcript)
+        ? v.transcript.map((s) => (s && s.spk ? s.spk + ": " : "") + ((s && s.text) || "")).join("\n")
+        : String(v.transcript || "");
       const bodyHtml = `
         <div class="small">${esc(String(v.created || "").slice(0, 16))} ${v.duration ? "· " + Math.round(v.duration / 60) + "분" : ""}</div>
         <div class="pill-row" style="margin-bottom:10px;">
@@ -1647,8 +1659,8 @@
           <button type="button" class="btn tonal sm" id="mdMailKo">✉ 국문 회신 초안</button>
           <button type="button" class="btn sm" id="mdCopySum">요약 복사</button>
         </div>
-        ${v.summary ? `<div class="card" style="background:var(--surface-2);"><div style="font-weight:700;margin-bottom:4px;">요약</div><div style="white-space:pre-wrap;">${esc(v.summary)}</div></div>` : ""}
-        ${pts.length ? `<div class="card"><div style="font-weight:700;margin-bottom:4px;">핵심 결정·논의</div>${pts.map((p) => `<div style="margin-top:4px;">• ${esc(typeof p === "string" ? p : (p.text || ""))}</div>`).join("")}</div>` : ""}
+        ${sumText ? `<div class="card" style="background:var(--surface-2);"><div style="font-weight:700;margin-bottom:4px;">요약</div>${lines(v.summary).map((p) => `<div style="margin-top:4px;">• ${esc(p)}</div>`).join("")}</div>` : ""}
+        ${pts.length ? `<div class="card"><div style="font-weight:700;margin-bottom:4px;">정한 것</div>${pts.map((p) => `<div style="margin-top:4px;">• ${esc(p)}</div>`).join("")}</div>` : ""}
         ${todos.length ? `<div class="card"><div style="font-weight:700;margin-bottom:4px;">할 일 (${todos.length})</div>${todos.map((t) => `<div style="margin-top:4px;">☐ ${esc(typeof t === "string" ? t : (t.text || ""))}</div>`).join("")}</div>` : ""}
         <div class="card">
           <div style="font-weight:700;margin-bottom:6px;">⚠ 모호 용어 사전 영구 등록</div>
@@ -1662,10 +1674,10 @@
             <button type="submit" class="btn primary sm">사전 등록</button>
           </form>
         </div>
-        ${v.transcript ? `<details style="margin-top:8px;"><summary class="small" style="cursor:pointer;">전체 대본 펼치기</summary><pre style="white-space:pre-wrap;font-size:12.5px;background:var(--surface-2);padding:10px;border-radius:10px;max-height:260px;overflow:auto;">${esc(String(v.transcript).slice(0, 12000))}</pre></details>` : ""}
+        ${trText ? `<details style="margin-top:8px;"><summary class="small" style="cursor:pointer;">전체 대본 펼치기</summary><pre style="white-space:pre-wrap;font-size:12.5px;background:var(--surface-2);padding:10px;border-radius:10px;max-height:260px;overflow:auto;">${esc(trText.slice(0, 12000))}</pre></details>` : ""}
       `;
       openModal(v.title || mid, bodyHtml, (root) => {
-        $("mdCopySum").addEventListener("click", () => copyText(v.summary || "", "요약"));
+        $("mdCopySum").addEventListener("click", () => copyText(sumText, "요약"));
         $("mdMailEn").addEventListener("click", () => openMailDraftModal(mid, null, "en"));
         $("mdMailKo").addEventListener("click", () => openMailDraftModal(mid, null, "ko"));
         root.querySelectorAll("[data-fill-heard]").forEach((b) => {
@@ -1697,7 +1709,7 @@
       });
       if (!res.ok) throw new Error(res.error || "브리핑 생성 실패");
       const used = res.meetings || [];
-      const txt = res.brief || res.text || "";
+      const txt = res.markdown || res.brief || res.text || "";   // multi_meeting_brief 는 markdown 으로 준다 (11-25 맞춤)
       openModal(`✨ 통합 브리핑 (${used.length}건)`, `
         <div class="small" style="margin-bottom:8px;">포함 회의: ${esc(used.map((m) => m.title || m.id).join(" · "))}</div>
         <div style="white-space:pre-wrap;line-height:1.6;">${esc(txt)}</div>
@@ -1873,7 +1885,7 @@
           <div class="row-item">
             <span class="tag">${esc(a.src || "PC")}</span>
             <div class="row-main">
-              <div class="row-title">${esc(a.title || a.text.slice(0, 40))}</div>
+              <div class="row-title">${esc(a.title || String(a.text || "").slice(0, 40) || "알림")}</div>
               <div class="row-sub">${esc(a.t || "")}</div>
               ${a.text ? `<div style="font-size:13px;white-space:pre-wrap;margin-top:4px;color:var(--ink-2);">${esc(a.text)}</div>` : ""}
             </div>
