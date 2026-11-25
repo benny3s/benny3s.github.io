@@ -50,6 +50,7 @@
   let fbP = null;
   let kitP = null;
   let readyP = null;
+  let sessionGen = 0;   // 로그아웃하면 올라간다 — 그 전에 보낸 스냅샷 요청의 답은 버린다
   const scripts = {};
   let toastTimer = null;
 
@@ -305,6 +306,7 @@
   }
 
   async function loadSnapshot(silent = false) {
+    const gen = sessionGen;
     if (!silent) {
       const btn = $("btnRefresh");
       if (btn) btn.disabled = true;
@@ -321,12 +323,14 @@
         snap = JSON.parse(raw);
         setConn("relay", "🔒 보안 모드 적용중", "회사 PC 보안 중계 · 회의록·회사 할 일 원문 제외");
       }
+      if (gen !== sessionGen) return null;   // 그사이 로그아웃함 — 늦게 온 답을 화면에 되살리지 않는다
       state.snap = snap;
       state.lastSyncAt = Date.now();
       showAppView();
       renderAll();
       return snap;
     } catch (e) {
+      if (gen !== sessionGen) return null;
       if (e && e.kind === "auth") {
         showLoginView();
       } else if (!silent) {
@@ -2074,12 +2078,25 @@
   $("btnLogout").addEventListener("click", async () => {
     // 로그아웃 (11-25): 이 브라우저의 관리자 세션을 지운다 (같은 주소의 포털도 같이 로그아웃됨)
     $("btnLogout").disabled = true;
-    try { const app = await ensureFirebase(); await app.auth().signOut(); } catch (_) {}
+    let signedOut = false;
+    try { const app = await ensureFirebase(); await app.auth().signOut(); signedOut = true; } catch (_) {}
+    $("btnLogout").disabled = false;
+    if (!signedOut) {   // 못 지웠는데 지운 것처럼 보이면 안 된다
+      toast("로그아웃하지 못했어요. 다시 누르거나 이 탭을 닫아 주세요.", 5000);
+      return;
+    }
+    sessionGen += 1;
     try { sessionStorage.removeItem(CHAT_KEY); } catch (_) {}
     state.snap = null;
+    state.lastSyncAt = 0;
     state.chat = state.chat.slice(0, 1);
     readyP = null;
-    $("btnLogout").disabled = false;
+    closeModal();
+    // 숨긴 화면에도 앞 사람 내용이 남지 않게 비운다 (다시 로그인하면 새로 그림)
+    ["summary", "todo", "chat", "campus", "meetings"].forEach((p) => { const sec = $("page-" + p); if (sec) sec.innerHTML = ""; });
+    if (dlgBody) dlgBody.innerHTML = "";
+    { const ac = $("alertCount"); if (ac) ac.textContent = "0"; }
+    document.querySelectorAll('[data-badge="summary"]').forEach((el) => { el.textContent = ""; el.hidden = true; });
     showLoginView();
     toast("로그아웃했어요");
   });
