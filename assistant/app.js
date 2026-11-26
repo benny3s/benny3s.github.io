@@ -1673,7 +1673,8 @@
       const bodyHtml = `
         <div class="small">${esc(String(v.created || "").slice(0, 16))} ${v.duration ? "· " + Math.round(v.duration / 60) + "분" : ""}</div>
         <div class="pill-row" style="margin-bottom:10px;">
-          <button type="button" class="btn primary sm" id="mdMailEn">✉ 영문 회신 초안</button>
+          <button type="button" class="btn primary sm" id="mdActionTable">📊 이 회의 액션표</button>
+          <button type="button" class="btn tonal sm" id="mdMailEn">✉ 영문 회신 초안</button>
           <button type="button" class="btn tonal sm" id="mdMailKo">✉ 국문 회신 초안</button>
           <button type="button" class="btn sm" id="mdCopySum">요약 복사</button>
         </div>
@@ -1695,6 +1696,7 @@
         ${trText ? `<details style="margin-top:8px;"><summary class="small" style="cursor:pointer;">전체 대본 펼치기</summary><pre style="white-space:pre-wrap;font-size:12.5px;background:var(--surface-2);padding:10px;border-radius:10px;max-height:260px;overflow:auto;">${esc(trText.slice(0, 12000))}</pre></details>` : ""}
       `;
       openModal(v.title || mid, bodyHtml, (root) => {
+        $("mdActionTable").addEventListener("click", () => runMultiBrief([mid], "table"));
         $("mdCopySum").addEventListener("click", () => copyText(sumText, "요약"));
         $("mdMailEn").addEventListener("click", () => openMailDraftModal(mid, null, "en"));
         $("mdMailKo").addEventListener("click", () => openMailDraftModal(mid, null, "ko"));
@@ -1786,6 +1788,8 @@
       let activeTab = (initialTab === "brief" || !allRows.length) ? "brief" : "table";
       let catFilter = "all";
       let stFilter = "all";
+      let mineOnly = false;
+      const isMineOwner = (o) => /^(나|본인|베니|benny|me)(?:[\s(\/·]|$)/i.test(String(o || "").trim());
 
       const priBadge = (p) => {
         const v = String(p || "Med");
@@ -1808,6 +1812,7 @@
           if (catFilter !== "all" && r.category !== catFilter) return false;
           if (stFilter === "active" && !["WIP", "Open"].includes(r.status)) return false;
           if (stFilter === "wait" && !["Waiting", "Blocked"].includes(r.status)) return false;
+          if (mineOnly && !isMineOwner(r.owner)) return false;
           return true;
         });
 
@@ -1825,6 +1830,7 @@
             ${[["all", "모든 상태"], ["active", "진행(WIP·Open)"], ["wait", "대기·막힘"]].map(([k, lbl]) =>
               `<button type="button" class="btn sm ${stFilter === k ? "tonal" : ""}" data-stf="${k}">${esc(lbl)}</button>`
             ).join("")}
+            <button type="button" class="btn sm ${mineOnly ? "primary" : ""}" id="mbMineOnly">👤 내 담당</button>
           </div>
           ${filtered.length ? `
             <div tabindex="0" role="region" aria-labelledby="aiTblCap" class="table-wrapper">
@@ -1896,6 +1902,8 @@
           root.querySelectorAll("[data-stf]").forEach((b) => {
             b.addEventListener("click", () => { stFilter = b.dataset.stf; renderModalBody(); });
           });
+          const bMine = $("mbMineOnly");
+          if (bMine) bMine.addEventListener("click", () => { mineOnly = !mineOnly; renderModalBody(); });
           const bEx = $("mbCopyExcel");
           if (bEx) bEx.addEventListener("click", () => copyExcelTable(filtered, "엑셀 표"));
           const bTsv = $("mbCopyTsv");
