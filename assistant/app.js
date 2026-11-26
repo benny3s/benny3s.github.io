@@ -162,14 +162,16 @@
   const dlgTitle = $("dlgTitle");
   const dlgBody = $("dlgBody");
 
-  function openModal(title, html, onReady) {
+  function openModal(title, html, onReady, opts = {}) {
     dlgTitle.textContent = title || "상세";
     dlgBody.innerHTML = html || "";
+    modalDlg.classList.toggle("wide", Boolean(opts && opts.wide));
     if (!modalDlg.open) modalDlg.showModal();
     if (typeof onReady === "function") onReady(dlgBody);
   }
 
   function closeModal() {
+    if (modalDlg) modalDlg.classList.remove("wide");
     if (modalDlg && modalDlg.open) modalDlg.close();
   }
 
@@ -1600,12 +1602,13 @@
           <input id="mSearchIn" type="text" value="${esc(state.meetQuery)}" placeholder="회의 제목·키워드 검색…" style="flex:1;">
         </div>
         <div class="pill-row" style="margin-top:0;margin-bottom:10px;">
-          <button type="button" class="btn tonal sm" id="mMultiRecent">✨ 최근 회의 통합 브리핑</button>
+          <button type="button" class="btn primary sm" id="mActionTableRecent">📊 액션 아이템 표 (최근 6건)</button>
+          <button type="button" class="btn tonal sm" id="mMultiRecent">✨ 통합 브리핑</button>
           <button type="button" class="btn sm ${state.meetPickMode ? "primary" : ""}" id="mPickToggle">
-            ${state.meetPickMode ? `골라 묶기 취소 (${state.meetPicked.size})` : "골라 묶기"}
+            ${state.meetPickMode ? `골라 묶기 취소 (${state.meetPicked.size})` : "골라 묶기 (최대 12건)"}
           </button>
           ${state.meetPickMode && state.meetPicked.size >= 1
-            ? `<button type="button" class="btn primary sm" id="mRunPicked">선택 ${state.meetPicked.size}건 통합 브리핑</button>`
+            ? `<button type="button" class="btn primary sm" id="mRunPicked">선택 ${state.meetPicked.size}건 액션표 · 브리핑</button>`
             : ""}
         </div>
         <div class="list">
@@ -1630,14 +1633,15 @@
     const ml = $("mStartLive");
     if (ml) ml.addEventListener("click", () => Native && Native.openLiveMeeting && Native.openLiveMeeting());
     $("mSearchIn").addEventListener("input", (e) => { state.meetQuery = e.target.value; renderMeetings(); });
-    $("mMultiRecent").addEventListener("click", () => runMultiBrief(null));
+    $("mActionTableRecent").addEventListener("click", () => runMultiBrief(null, "table"));
+    $("mMultiRecent").addEventListener("click", () => runMultiBrief(null, "brief"));
     $("mPickToggle").addEventListener("click", () => {
       state.meetPickMode = !state.meetPickMode;
       if (!state.meetPickMode) state.meetPicked.clear();
       renderMeetings();
     });
     const rp = $("mRunPicked");
-    if (rp) rp.addEventListener("click", () => runMultiBrief([...state.meetPicked]));
+    if (rp) rp.addEventListener("click", () => runMultiBrief([...state.meetPicked].slice(0, 12), "table"));
 
     host.querySelectorAll("[data-mid]").forEach((row) => {
       row.addEventListener("click", (e) => {
@@ -1714,27 +1718,208 @@
     }
   }
 
-  async function runMultiBrief(ids) {
-    openModal("✨ 통합 회의 브리핑", `<p class="meta"><span class="spinner"></span> 여러 회의를 묶어 정리하는 중…</p>`);
+  const ACTION_COLS = [
+    ["category", "카테고리"],
+    ["block", "Block"],
+    ["status", "Status"],
+    ["priority", "Priority"],
+    ["open_date", "Open Date"],
+    ["eta", "ETA"],
+    ["owner", "Owner"],
+    ["item", "Items"],
+    ["comments", "Comments"],
+  ];
+
+  function buildActionTsv(rows) {
+    const clean = (v) => String(v == null ? "" : v).replace(/[\t\r\n]+/g, " ").trim();
+    const head = ACTION_COLS.map((c) => c[1]).join("\t");
+    const body = (rows || []).map((r) => ACTION_COLS.map((c) => clean(r[c[0]])).join("\t"));
+    return [head, ...body].join("\n");
+  }
+
+  function buildActionHtmlTable(rows) {
+    const ths = ACTION_COLS.map((c) => `<th style="background:#eef1f7;font-weight:bold;border:1px solid #cbd5e1;padding:4px 8px;">${esc(c[1])}</th>`).join("");
+    const trs = (rows || []).map((r) =>
+      "<tr>" + ACTION_COLS.map((c) => `<td style="border:1px solid #cbd5e1;padding:4px 8px;">${esc(r[c[0]] || "")}</td>`).join("") + "</tr>"
+    ).join("");
+    return `<table style="border-collapse:collapse;font-family:Malgun Gothic,sans-serif;font-size:10pt;"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  }
+
+  async function copyExcelTable(rows, label) {
+    const tsv = buildActionTsv(rows);
+    if (!tsv) return;
+    if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
+      try {
+        const html = buildActionHtmlTable(rows);
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/plain": new Blob([tsv], { type: "text/plain" }),
+            "text/html": new Blob([html], { type: "text/html" }),
+          }),
+        ]);
+        toast(`${label || "엑셀 표"}(${rows.length}행)을 복사했어요 — 엑셀에 Ctrl+V 하세요`, 3200);
+        return;
+      } catch (_) {
+        // 권한/WebView 제약 시 TSV 평문 복사로 폴백
+      }
+    }
+    copyText(tsv, `${label || "엑셀 표"}(${rows.length}행 TSV)`);
+  }
+
+  async function runMultiBrief(ids, initialTab = "table") {
+    openModal(
+      "📊 액션 아이템 · 통합 브리핑",
+      `<p class="meta"><span class="spinner"></span> 회의록을 중복 제거하고 엑셀 표·브리핑으로 정리하는 중…</p>`,
+      null,
+      { wide: true }
+    );
     try {
       const res = await directFetchJson("/meeting/multi_brief", {
         method: "POST",
-        body: ids ? { ids } : { today_only: false },
+        body: ids ? { ids, limit: Math.min(ids.length, 12) } : { today_only: false, limit: 6 },
+        timeout: 95000,
       });
       if (!res.ok) throw new Error(res.error || "브리핑 생성 실패");
       const used = res.meetings || [];
-      const txt = res.markdown || res.brief || res.text || "";   // multi_meeting_brief 는 markdown 으로 준다 (11-25 맞춤)
-      openModal(`✨ 통합 브리핑 (${used.length}건)`, `
-        <div class="small" style="margin-bottom:8px;">포함 회의: ${esc(used.map((m) => m.title || m.id).join(" · "))}</div>
-        <div style="white-space:pre-wrap;line-height:1.6;">${esc(txt)}</div>
-        <div class="pill-row">
-          <button type="button" class="btn primary sm" id="mbCopy">브리핑 복사</button>
-          <button type="button" class="btn tonal sm" id="mbMail">✉ 통합 회신 메일 초안</button>
-        </div>
-      `, () => {
-        $("mbCopy").addEventListener("click", () => copyText(txt, "통합 브리핑"));
-        $("mbMail").addEventListener("click", () => openMailDraftModal("", used.map((m) => m.id), "en"));
-      });
+      const allRows = Array.isArray(res.action_table) ? res.action_table : [];
+      const mdTxt = res.markdown || res.brief || res.text || "";
+      let activeTab = (initialTab === "brief" || !allRows.length) ? "brief" : "table";
+      let catFilter = "all";
+      let stFilter = "all";
+
+      const priBadge = (p) => {
+        const v = String(p || "Med");
+        const cls = v === "High" ? "urgent" : (v === "Low" ? "" : "warn");
+        return `<span class="tag ${cls}">${esc(v)}</span>`;
+      };
+      const stBadge = (st) => {
+        const v = String(st || "Open");
+        const cls = v === "Blocked" ? "urgent" : (v === "WIP" ? "primary" : (v === "Done" ? "ok" : (v === "Waiting" ? "warn" : "")));
+        return `<span class="tag ${cls}">${esc(v)}</span>`;
+      };
+      const catBadge = (c) => {
+        const v = String(c || "내부");
+        const cls = v === "고객" ? "work" : (v === "벤더" ? "warn" : "");
+        return `<span class="tag ${cls}">${esc(v)}</span>`;
+      };
+
+      const renderModalBody = () => {
+        const filtered = allRows.filter((r) => {
+          if (catFilter !== "all" && r.category !== catFilter) return false;
+          if (stFilter === "active" && !["WIP", "Open"].includes(r.status)) return false;
+          if (stFilter === "wait" && !["Waiting", "Blocked"].includes(r.status)) return false;
+          return true;
+        });
+
+        const tablePanel = `
+          <div class="pill-row" style="margin-top:0;">
+            <button type="button" class="btn primary sm" id="mbCopyExcel">📋 엑셀 복사 (${filtered.length}행)</button>
+            <button type="button" class="btn tonal sm" id="mbCopyTsv">📄 TSV만 복사</button>
+            <button type="button" class="btn sm" id="mbMail">✉ 회신 메일 초안</button>
+          </div>
+          <div class="pill-row" style="margin-top:8px;">
+            ${[["all", `전체 ${allRows.length}`], ["내부", "내부"], ["고객", "고객"], ["벤더", "벤더"]].map(([k, lbl]) =>
+              `<button type="button" class="btn sm ${catFilter === k ? "primary" : ""}" data-catf="${k}">${esc(lbl)}</button>`
+            ).join("")}
+            <span class="small" style="align-self:center;margin-left:4px;">|</span>
+            ${[["all", "모든 상태"], ["active", "진행(WIP·Open)"], ["wait", "대기·막힘"]].map(([k, lbl]) =>
+              `<button type="button" class="btn sm ${stFilter === k ? "tonal" : ""}" data-stf="${k}">${esc(lbl)}</button>`
+            ).join("")}
+          </div>
+          ${filtered.length ? `
+            <div tabindex="0" role="region" aria-labelledby="aiTblCap" class="table-wrapper">
+              <table class="ai-table" id="aiActionTable">
+                <caption id="aiTblCap">회의 통합 Action Item 표 (${filtered.length}건)</caption>
+                <thead>
+                  <tr>${ACTION_COLS.map((c) => `<th scope="col">${esc(c[1])}</th>`).join("")}</tr>
+                </thead>
+                <tbody>
+                  ${filtered.map((r) => `
+                    <tr>
+                      <th scope="row">${catBadge(r.category)}</th>
+                      <td class="col-nowrap">${esc(r.block || "All")}</td>
+                      <td class="col-nowrap">${stBadge(r.status)}</td>
+                      <td class="col-nowrap">${priBadge(r.priority)}</td>
+                      <td class="col-nowrap">${esc(r.open_date || "")}</td>
+                      <td class="col-nowrap">${esc(r.eta || "미정")}</td>
+                      <td class="col-nowrap">${esc(r.owner || "")}</td>
+                      <td class="col-item">${esc(r.item || "")}</td>
+                      <td class="col-cmt">${esc(r.comments || "")}</td>
+                    </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+            <p class="small" style="margin:6px 0 0;">💡 <b>엑셀 복사</b>를 누르거나 표를 직접 드래그 복사한 뒤 엑셀에 <code>Ctrl+V</code> 하면 9개 열이 그대로 나눠져 붙습니다.</p>
+          ` : `<p class="meta" style="margin-top:12px;">선택한 필터에 맞는 항목이 없어요.</p>`}
+        `;
+
+        const decs = res.decisions || [];
+        const issues = res.tech_issues || [];
+        const ambig = res.ambiguous_terms || [];
+        const briefPanel = `
+          <div class="card hero" style="margin-top:6px;">
+            <div style="font-size:15px;font-weight:800;">${esc(res.headline || "통합 브리핑")}</div>
+            <div class="small" style="margin-top:4px;">${esc(res.engine || "")} · ${esc(res.sec || 0)}초 · 회의 ${used.length}건</div>
+          </div>
+          ${decs.length ? `<div class="card"><div style="font-weight:800;margin-bottom:4px;">✅ 결정 사항 · 운영 기준 (${decs.length})</div>${decs.map((d) => `<div style="margin-top:4px;">• ${esc(d)}</div>`).join("")}</div>` : ""}
+          ${issues.length ? `<div class="card"><div style="font-weight:800;margin-bottom:6px;">⚠ 기술 이슈 · 리스크 (${issues.length})</div><div class="list">${issues.map((iss) => `
+            <div class="row-item">
+              <div class="row-main">
+                <div class="row-title">${esc(iss.issue || "")}</div>
+                ${iss.impact ? `<div class="row-sub">영향: ${esc(iss.impact)}</div>` : ""}
+                ${iss.status ? `<div class="row-sub">상태: ${esc(iss.status)}</div>` : ""}
+              </div>
+            </div>`).join("")}</div></div>` : ""}
+          ${ambig.length ? `<div class="card"><div style="font-weight:800;margin-bottom:6px;">🔤 전사 모호 용어 (누르면 사전 영구 등록)</div><div class="pill-row" style="margin-top:0;">${ambig.map((t, i) =>
+            `<button type="button" class="btn sm" data-reg-term="${i}">${esc(t.heard || "")}${t.guess ? " → " + esc(t.guess) : ""}</button>`
+          ).join("")}</div></div>` : ""}
+          <div class="pill-row">
+            <button type="button" class="btn primary sm" id="mbCopyMd">마크다운 전체 복사</button>
+            <button type="button" class="btn tonal sm" id="mbMail2">✉ 회신 메일 초안</button>
+          </div>
+        `;
+
+        openModal(`📊 회의 통합 정리 (${used.length}건)`, `
+          <div class="small" style="margin-bottom:8px;">참고 회의: ${esc(used.map((m) => `[${String(m.date || "").slice(5, 10)}] ${m.title || m.id}`).join(" · "))}</div>
+          <div class="sub-tablist" role="tablist" aria-label="통합 정리 보기">
+            <button type="button" role="tab" aria-selected="${activeTab === "table" ? "true" : "false"}" data-mbtab="table">📊 액션 아이템 표 (${allRows.length})</button>
+            <button type="button" role="tab" aria-selected="${activeTab === "brief" ? "true" : "false"}" data-mbtab="brief">📝 요약 · 결정 · 이슈</button>
+          </div>
+          ${activeTab === "table" ? tablePanel : briefPanel}
+        `, (root) => {
+          root.querySelectorAll("[data-mbtab]").forEach((b) => {
+            b.addEventListener("click", () => { activeTab = b.dataset.mbtab; renderModalBody(); });
+          });
+          root.querySelectorAll("[data-catf]").forEach((b) => {
+            b.addEventListener("click", () => { catFilter = b.dataset.catf; renderModalBody(); });
+          });
+          root.querySelectorAll("[data-stf]").forEach((b) => {
+            b.addEventListener("click", () => { stFilter = b.dataset.stf; renderModalBody(); });
+          });
+          const bEx = $("mbCopyExcel");
+          if (bEx) bEx.addEventListener("click", () => copyExcelTable(filtered, "엑셀 표"));
+          const bTsv = $("mbCopyTsv");
+          if (bTsv) bTsv.addEventListener("click", () => copyText(buildActionTsv(filtered), `TSV(${filtered.length}행)`));
+          const bMd = $("mbCopyMd");
+          if (bMd) bMd.addEventListener("click", () => copyText(mdTxt, "통합 브리핑"));
+          const bMail = $("mbMail") || $("mbMail2");
+          if (bMail) bMail.addEventListener("click", () => openMailDraftModal("", used.map((m) => m.id), "en"));
+          root.querySelectorAll("[data-reg-term]").forEach((b) => {
+            b.addEventListener("click", async () => {
+              const t = ambig[Number(b.dataset.regTerm)];
+              if (!t || !t.heard) return;
+              const term = t.guess || prompt(`'${t.heard}'의 정확한 용어를 입력해 주세요:`, "");
+              if (!term) return;
+              try {
+                const r = await directFetchJson("/meeting/termfix", { method: "POST", body: { heard: t.heard, term } });
+                toast(r.ok ? `'${t.heard}' → '${term}' 사전 등록 완료 ✓` : (r.error || "등록 실패"));
+              } catch (err) { toast(err.message); }
+            });
+          });
+        }, { wide: true });
+      };
+
+      renderModalBody();
     } catch (e) {
       openModal("통합 브리핑 오류", `<p class="meta">${esc(e.message)}</p>`);
     }
