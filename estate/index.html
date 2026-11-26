@@ -159,6 +159,30 @@
     background: var(--bn-ink); color: #fff; padding: 9px 16px; border-radius: 999px;
     font-size: 13px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.22);
   }
+  /* Checklist & Guide (Tab 3) */
+  .tabs { flex-wrap: wrap; }
+  .chk-list { display: flex; flex-direction: column; gap: 7px; }
+  .chk-item {
+    display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px;
+    border-radius: var(--bn-r-sm); border: 1px solid var(--bn-line);
+    background: var(--bn-surface-2); cursor: pointer; transition: .12s; font-size: 12.5px; line-height: 1.45;
+  }
+  .chk-item:hover { border-color: var(--bn-accent); }
+  .chk-item input[type="checkbox"] { margin-top: 2px; width: 16px; height: 16px; accent-color: var(--bn-accent); flex-shrink: 0; cursor: pointer; }
+  .chk-item.done { opacity: .62; }
+  .chk-item.done .chk-txt { text-decoration: line-through; }
+  .chk-tag { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; margin-right: 4px; vertical-align: middle; }
+  .chk-tag.crit { background: var(--bn-bad-soft); color: var(--bn-bad); }
+  .chk-tag.key { background: var(--bn-warn-soft); color: var(--bn-warn); }
+  .chk-tag.ok { background: var(--bn-ok-soft); color: var(--bn-ok); }
+  .rule-box { padding: 11px 12px; border-radius: var(--bn-r-md); border: 1px solid var(--bn-line); font-size: 12.5px; line-height: 1.5; }
+  .rule-box.ok { background: var(--bn-ok-soft); border-color: rgba(40,112,71,.25); }
+  .rule-box.warn { background: var(--bn-warn-soft); border-color: rgba(194,109,31,.28); }
+  .note-area {
+    width: 100%; min-height: 76px; padding: 9px 11px; border-radius: var(--bn-r-sm);
+    border: 1px solid var(--bn-line-strong); background: var(--bn-surface-2); color: var(--bn-ink);
+    font: 12.5px/1.5 var(--bn-font); resize: vertical;
+  }
 </style>
 </head>
 <body>
@@ -194,6 +218,7 @@
       <div class="tabs" role="tablist">
         <button type="button" class="tab-btn active" data-tab="funding">💰 1. 매수 비용 · 자금 조달</button>
         <button type="button" class="tab-btn" data-tab="repay">📈 2. 월별 상환 (58개월)</button>
+        <button type="button" class="tab-btn" data-tab="guide">📋 3. 임장 · 계약 체크</button>
       </div>
       <button type="button" id="btnCloudSave" class="btn primary sm">💾 설정 저장</button>
     </div>
@@ -454,6 +479,58 @@
           </thead>
           <tbody id="tableBody" class="num"></tbody>
         </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: Field Visit & Contract Checklist + KB Tracker -->
+  <section id="panelGuide" class="stack hidden">
+    <div class="card" style="padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="pill info" id="guideProgress">진행 0/0</span>
+        <span style="font-size:12px;color:var(--bn-ink-2);" id="guideSubtitle">임장 · 계약 · 잔금 단계별 필수 점검</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" id="btnResetChecks" class="btn sm">체크 초기화</button>
+        <button type="button" id="btnSaveGuide" class="btn primary sm">💾 체크·메모 저장</button>
+      </div>
+    </div>
+
+    <div id="guideAlertGrid" class="two-col"></div>
+    <div id="guideStepsGrid" class="two-col"></div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-hd">
+          <h3>📊 KB시세 컷 계산 · 도달 예측</h3>
+          <span id="kbStatusBadge" class="pill">-</span>
+        </div>
+        <div class="frow"><label>상위평균가 (억)</label><div class="fright"><input id="inKbHigh" type="number" step="0.05"><span>억</span></div></div>
+        <div class="frow"><label>하위평균가 (억)</label><div class="fright"><input id="inKbLow" type="number" step="0.05"><span>억</span></div></div>
+        <div class="frow"><label>기준 상한 (억)</label><div class="fright"><input id="inKbCap" type="number" step="0.5"><span>억</span></div></div>
+        <div class="frow"><label>주간 예상 하락률 (%)</label><div class="fright"><input id="inKbDrop" type="number" step="0.05"><span>%/주</span></div></div>
+        <div id="kbCalcResult" class="sub-box num" style="margin-top:8px;line-height:1.65;"></div>
+        <div style="display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+          <input id="inKbDate" type="text" placeholder="MM/DD" style="width:76px;padding:5px 8px;border-radius:6px;border:1px solid var(--bn-line-strong);background:var(--bn-surface-2);font:600 12px var(--bn-font);">
+          <button type="button" id="btnAddKbLog" class="btn sm">+ 주간 기록 추가</button>
+        </div>
+        <div class="tbl-wrap" style="margin-top:8px;">
+          <table style="min-width:340px;">
+            <thead><tr><th>기준일</th><th class="r">상위</th><th class="r">하위</th><th class="r">평균</th><th class="r">판정</th></tr></thead>
+            <tbody id="kbLogBody" class="num"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <h3>📝 현장 임장 메모</h3>
+          <span style="font-size:11.5px;color:var(--bn-ink-2);">동·호수 / 수리 / 네고 / 소장님 코멘트</span>
+        </div>
+        <textarea id="inFieldNote" class="note-area" style="min-height:230px;" placeholder="현장에서 확인한 동·호수, 수리 상태, 잔금 가능일, 네고 여지를 적어두고 저장하세요."></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+          <button type="button" id="btnSaveNote" class="btn primary sm">💾 메모 클라우드 저장</button>
+        </div>
       </div>
     </div>
   </section>
@@ -952,9 +1029,91 @@
     activeTab = tab;
     $("panelFunding").classList.toggle("hidden", tab !== "funding");
     $("panelRepay").classList.toggle("hidden", tab !== "repay");
+    $("panelGuide").classList.toggle("hidden", tab !== "guide");
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
     if (tab === "repay") { renderRepay(); setTimeout(() => rState.lastResult && drawChart(rState.lastResult), 30); }
+    else if (tab === "guide") renderGuide();
     else renderFunding(false);
+  }
+
+  function escHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  function ensureGuide() {
+    if (!CFG.guide) CFG.guide = { subtitle: "", alerts: [], steps: [], checked: {}, note: "", kb: { high: 26.0, low: 24.75, cap: 25.0, dropPct: 0.25, logs: [] } };
+    if (!CFG.guide.checked) CFG.guide.checked = {};
+    if (!CFG.guide.kb) CFG.guide.kb = { high: 26.0, low: 24.75, cap: 25.0, dropPct: 0.25, logs: [] };
+    if (!Array.isArray(CFG.guide.kb.logs)) CFG.guide.kb.logs = [];
+    return CFG.guide;
+  }
+
+  function renderKb() {
+    const g = ensureGuide(), kb = g.kb;
+    const avg = (Number(kb.high || 0) + Number(kb.low || 0)) / 2;
+    const cap = Number(kb.cap || 25);
+    const diffMan = Math.round((avg - cap) * 10000);
+    const pass = avg > 0 && avg <= cap;
+    const badge = $("kbStatusBadge");
+    badge.className = "pill " + (pass ? "ok" : "warn");
+    badge.textContent = pass ? "✅ 통과 (" + avg.toFixed(3) + "억)" : "⚠️ " + fmt(diffMan) + "만 초과";
+
+    const dropPct = Math.max(0.01, Number(kb.dropPct || 0.25));
+    const needPct = avg > cap ? ((avg - cap) / avg) * 100 : 0;
+    const weeks = needPct > 0 ? Math.ceil(needPct / dropPct) : 0;
+    const stepHigh = Math.max(0, Number(kb.high || 0) - 0.5);
+    const stepLow = Math.max(0, Number(kb.low || 0) - 0.25);
+    const stepAvg = (stepHigh + stepLow) / 2;
+
+    $("kbCalcResult").innerHTML =
+      "<div><strong>기준 시세 ((상+하)÷2):</strong> <span style='font-size:14px;font-weight:800;color:" + (pass ? "var(--bn-ok)" : "var(--bn-bad)") + "'>" + avg.toFixed(3) + "억</span> (상한 " + cap.toFixed(1) + "억)</div>" +
+      (pass
+        ? "<div style='color:var(--bn-ok);margin-top:3px;'>기준 상한 이하입니다 — 신청일 당일 시세 스냅샷 저장 권장</div>"
+        : "<div style='margin-top:3px;'>• <strong>필요 낙폭:</strong> -" + needPct.toFixed(2) + "% (-" + fmt(diffMan) + "만)</div>" +
+          "<div>• <strong>선형 예측 (주 -" + dropPct.toFixed(2) + "%):</strong> 약 <strong>" + weeks + "주</strong> 소요</div>" +
+          "<div>• <strong>계단식 1스텝</strong> (상 -0.5억 · 하 -0.25억): <strong>" + stepAvg.toFixed(3) + "억</strong> " + (stepAvg <= cap ? "→ <span style='color:var(--bn-ok);font-weight:700'>즉시 통과</span>" : "") + "</div>");
+
+    $("kbLogBody").innerHTML = kb.logs.slice().reverse().map(row => {
+      const a = (Number(row.high) + Number(row.low)) / 2;
+      const ok = a <= cap;
+      return "<tr><td>" + escHtml(row.date) + "</td><td class='r'>" + Number(row.high).toFixed(2) + "</td><td class='r'>" + Number(row.low).toFixed(2) +
+        "</td><td class='r'><strong>" + a.toFixed(3) + "</strong></td><td class='r'><span class='pill " + (ok ? "ok" : "warn") + "'>" + (ok ? "통과" : "+" + fmt(Math.round((a - cap) * 10000))) + "</span></td></tr>";
+    }).join("") || "<tr><td colspan='5' style='text-align:center;color:var(--bn-ink-2)'>기록 없음</td></tr>";
+  }
+
+  function renderGuide() {
+    const g = ensureGuide();
+    $("guideSubtitle").textContent = g.subtitle || "임장 · 계약 · 잔금 단계별 필수 점검";
+    $("guideAlertGrid").innerHTML = (g.alerts || []).map(a =>
+      '<div class="rule-box ' + (a.tone === "ok" ? "ok" : "warn") + '"><div style="font-weight:800;margin-bottom:4px;">' + escHtml(a.title) + '</div><div>' + escHtml(a.body) + '</div></div>'
+    ).join("");
+
+    let total = 0, done = 0;
+    $("guideStepsGrid").innerHTML = (g.steps || []).map(st => {
+      const itemsHtml = (st.items || []).map(it => {
+        total++;
+        const isDone = !!g.checked[it.id];
+        if (isDone) done++;
+        const tag = it.tag ? '<span class="chk-tag ' + (it.tone || "key") + '">' + escHtml(it.tag) + '</span>' : "";
+        return '<label class="chk-item ' + (isDone ? "done" : "") + '"><input type="checkbox" data-cid="' + escHtml(it.id) + '" ' + (isDone ? "checked" : "") + '><span class="chk-txt">' + tag + '<strong>' + escHtml(it.head) + '</strong> ' + escHtml(it.desc) + '</span></label>';
+      }).join("");
+      return '<div class="card"><div class="card-hd"><h3>' + escHtml(st.title) + '</h3>' + (st.badge ? '<span class="pill">' + escHtml(st.badge) + '</span>' : "") + '</div><div class="chk-list">' + itemsHtml + '</div></div>';
+    }).join("");
+
+    $("guideProgress").textContent = "체크 " + done + " / " + total;
+    $("guideStepsGrid").querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.onchange = () => {
+        g.checked[cb.dataset.cid] = cb.checked;
+        renderGuide();
+      };
+    });
+
+    $("inKbHigh").value = g.kb.high;
+    $("inKbLow").value = g.kb.low;
+    $("inKbCap").value = g.kb.cap;
+    $("inKbDrop").value = g.kb.dropPct;
+    $("inFieldNote").value = g.note || "";
+    renderKb();
   }
 
   function mountApp(cfg) {
@@ -990,9 +1149,29 @@
   $("btnCloudSave").onclick = async () => {
     try {
       CFG.profile.defaultLiving = rState.living;
+      if (CFG.guide) CFG.guide.note = $("inFieldNote").value;
       await saveCloudConfig(CFG);
       toast("클라우드에 저장했어요");
     } catch (e) { toast(e.message || "저장 실패"); }
+  };
+  $("btnSaveGuide").onclick = $("btnSaveNote").onclick = () => $("btnCloudSave").click();
+  $("btnResetChecks").onclick = () => {
+    const g = ensureGuide();
+    g.checked = {};
+    renderGuide();
+    toast("체크를 초기화했어요 (저장 버튼을 눌러 반영)");
+  };
+  $("inFieldNote").addEventListener("input", () => { ensureGuide().note = $("inFieldNote").value; });
+  [["inKbHigh","high"],["inKbLow","low"],["inKbCap","cap"],["inKbDrop","dropPct"]].forEach(([id, k]) => {
+    $(id).addEventListener("input", () => { ensureGuide().kb[k] = Number($(id).value) || 0; renderKb(); });
+  });
+  $("btnAddKbLog").onclick = () => {
+    const g = ensureGuide();
+    const d = ($("inKbDate").value || "").trim() || new Date().toISOString().slice(5, 10).replace("-", "/");
+    g.kb.logs.push({ date: d, high: Number(g.kb.high || 0), low: Number(g.kb.low || 0) });
+    $("inKbDate").value = "";
+    renderKb();
+    toast("주간 기록을 추가했어요 (저장 버튼을 눌러 반영)");
   };
 
   [["inSellPrice","sellPrice"],["inOldMort","oldMort"],["inBuyPrice","buyPrice"],["inRegFee","regFee"],
